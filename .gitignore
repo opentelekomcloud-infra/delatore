@@ -1,0 +1,10 @@
+*.retry
+.idea/
+.venv/
+*.egg-info/
+dist/
+/venv/
+/.vscode/
+
+# Crash log files
+crash.log
