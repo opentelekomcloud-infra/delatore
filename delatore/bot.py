@@ -1,7 +1,6 @@
-import json
+import configparser
 
 import requests
-import configparser
 
 from delatore.const import AWX_STATUSES, EMOJI_LIST
 from delatore.json2mdwn import convert
@@ -18,6 +17,7 @@ class Delatore(object):
         self.config.read('../config/config.ini')
         self.TG_BOT_TOKEN = self.config['DEFAULT']['token']
         self.URL = self.config['DEFAULT']['url'] + self.TG_BOT_TOKEN + '/'
+        self.chat_id = self.config['DEFAULT']['chat_id']
         return self
 
     def convert_message(self, text):
@@ -26,22 +26,14 @@ class Delatore(object):
             text = '* From Ansible Tower *\n' + text
         return self.add_emoji(text)
 
-    def get_chat_id(self):
-        url = self.URL + 'getUpdates'
-        response = self.session.get(url)
-        return json.loads(response.text)['result'][-1]['message']['chat']['id']
-
-    def send_message(self, chat_id, text):
+    def send_message(self, text):
         answer = {
-            'chat_id': chat_id,
+            'chat_id': self.chat_id,
             'text': self.convert_message(text),
             'parse_mode': 'Markdown'
         }
         response = self.session.post(self.URL + 'sendMessage', json=answer)
         return response.json()
-
-    def send_notification(self, text):
-        self.send_message(self.get_chat_id(), text)
 
     def add_emoji(self, text):
         if text.find('Ansible'):
