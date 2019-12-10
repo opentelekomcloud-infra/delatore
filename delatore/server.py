@@ -17,7 +17,7 @@ def index():
 def awx_notifications():
     if request.method == 'POST':
         response = request.get_json()
-        bot.send_notification(response)
+        bot.send_message(response)
         return jsonify(response)
 
 

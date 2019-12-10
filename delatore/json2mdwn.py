@@ -36,13 +36,13 @@ def parse_list(_list, depth):
 
 
 def add_value(key, value, depth):
-    chain = tab * (bool(depth - 1)) + '* ' + str(key) + ': ' + str(value) + ' *' + \
+    chain = tab * (bool(depth - 1)) + ' ' + str(key) + ' :  `' + str(value) + ' `' + \
             '\n'
     global markdown
     markdown += chain
 
 
 def add_header(value, depth):
-    chain = '* ' + '^' * (depth + 1) + ' value ' + ('^' * (depth + 1) + ' *' + '\n')
+    chain = '* ' + ' ' * (depth + 1) + ' value ' + ('' * (depth + 1) + ': *' + '\n')
     global markdown
     markdown += chain.replace('value', value.title())
