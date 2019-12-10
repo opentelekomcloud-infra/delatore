@@ -1,8 +1,8 @@
 AWX_STATUSES = {
-    'FAILED': 'status: failed',
-    'RUNNING': 'status: running',
-    'SUCCESS': 'status: success',
-    'CANCELED': 'status: canceled'
+    'FAILED': 'status :  `failed',
+    'RUNNING': 'status :  `running',
+    'SUCCESS': 'status :  `success',
+    'CANCELED': 'status :  `canceled'
 }
 
 EMOJI_LIST = {
