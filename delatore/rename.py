@@ -18,10 +18,10 @@ def connection(host, username, password, db, port=8086):
         ssl=True,
         verify_ssl=True)
 
-    proof_of_work = dict(lb_timing=get_time_delta(client, 'lb_timing'),
-                         lb_down_test=get_time_delta(client, 'lb_down_test'),
-                         iscsi_connection=get_time_delta(client, 'iscsi_connection'),
-                         ce_result=get_time_delta(client, 'ce_result'))
+    proof_of_work = dict(lb_timing_measurement=get_time_delta(client, 'lb_timing'),
+                         lb_down_test_measurement=get_time_delta(client, 'lb_down_test'),
+                         iscsi_connection_measurement=get_time_delta(client, 'iscsi_connection'),
+                         ce_result_measurement=get_time_delta(client, 'ce_result'))
     bot.send_message(proof_of_work)
 
 
@@ -44,5 +44,5 @@ def get_time_delta(client, entity):
 if __name__ == '__main__':
     connection(host='influx1.eco.tsi-dev.otc-service.com',
                username='csm',
-               password='*]Hs8vTPsI9?',
+               password='',
                db='csm')

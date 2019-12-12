@@ -4,6 +4,7 @@ import requests
 
 from delatore.const import AWX_STATUSES, INFLUX_STATUSES, EMOJI_LIST, INFLUX_EMOJI
 from delatore.json2mdwn import convert
+from delatore.notification import Notification
 
 
 class Delatore:
@@ -42,35 +43,28 @@ def convert_message(data):
     :param data: dict
     :return: Markdown string
     """
+    notification_type = Notification.NOTHING
     text = convert(data)
     if "awx." in text:
+        notification_type = Notification.AWX
         text = '* From Ansible Tower *\n' + text
-    else:
+    elif "measurement" in text:
+        notification_type = Notification.INFLUX
         text = '* From influxdb*\n' + text
-    return add_emoji(text)
+    return add_emoji(text, notification_type)
 
 
-def add_emoji(text):
+def add_emoji(text, notification_type):
     """
     Adds emoji to selected status
+    :param notification_type: Type of notification
     :param text: str
     :return: Markdown String with emoji
     """
-    if "Ansible" in text:
+    if notification_type == Notification.AWX:
         for item in AWX_STATUSES:
-            if item == 'FAILED':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-            elif item == 'RUNNING':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-            elif item == 'SUCCESS':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-        return text
-    else:
+            text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
+    elif notification_type == Notification.INFLUX:
         for item in INFLUX_STATUSES:
-            if item == 'OK':
-                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
-            elif item == 'FAIL':
-                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
-            elif item == 'NO DATA':
-                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
-        return text
+            text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
+    return text

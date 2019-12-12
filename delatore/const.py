@@ -12,9 +12,9 @@ INFLUX_STATUSES = {
 }
 
 INFLUX_EMOJI = {
-    'OK': '\U0001F330 ',
-    'FAIL': '\U0001F41B ',
-    'NO DATA': '\U0001F525 '
+    'OK': '\U00002705 ',
+    'FAIL': '\U0001F525 ',
+    'NO DATA': '\U000026A1 '
 }
 
 EMOJI_LIST = {
