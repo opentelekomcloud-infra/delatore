@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "delatore"
-version = "0.0.1"
+version = "0.0.2"
 description = "Telegram bot for CSM jobs notifications"
-authors = ["OTC customer service monitroing team"]
+authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/opentelekomcloud-infra/delatore"
@@ -11,7 +11,7 @@ repository = "https://github.com/opentelekomcloud-infra/delatore"
 python = "^3.7"
 
 flask = "^1.1"
-Flask-SSLify = "^0.1.5"
+requests = "^2.22"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
