@@ -3,6 +3,10 @@ import re
 
 from influxdb import InfluxDBClient
 
+from delatore.bot import Delatore
+
+bot = Delatore()
+
 
 def connection(host, username, password, db, port=8086):
     client = InfluxDBClient(
@@ -14,10 +18,13 @@ def connection(host, username, password, db, port=8086):
         ssl=True,
         verify_ssl=True)
 
-    lb_timing_delta = get_time_delta(client, 'lb_timing')
-    lb_down_test_delta = get_time_delta(client, 'lb_down_test')
-    iscsi_connection_delta = get_time_delta(client, 'iscsi_connection')
-    ce_result_delta = get_time_delta(client, 'ce_result')
+    proof_of_work = {
+        "lb_timing": get_time_delta(client, 'lb_timing'),
+        "lb_down_test": get_time_delta(client, 'lb_down_test'),
+        "iscsi_connection": get_time_delta(client, 'iscsi_connection'),
+        "ce_result": get_time_delta(client, 'ce_result')
+    }
+    bot.send_message(proof_of_work)
 
 
 def get_time_delta(client, entity):
@@ -27,13 +34,13 @@ def get_time_delta(client, entity):
         last_time = last_record.raw['series'][0]['values'][0][0]
         last_time_ms = datetime.datetime.strptime(re.sub(r"[.]\d{9}", ".000000", last_time), '%Y-%m-%dT%H:%M:%S.%fZ')
         if (datetime.datetime.utcnow() - last_time_ms).total_seconds() < 300:
-            return True
+            return "Ok"
         else:
-            return False
+            return "Fail"
     except ValueError:
-        return None
+        return "No data"
     except KeyError:
-        return None
+        return "No data"
 
 
 if __name__ == '__main__':
