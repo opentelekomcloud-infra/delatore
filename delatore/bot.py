@@ -2,7 +2,7 @@ import configparser
 
 import requests
 
-from delatore.const import AWX_STATUSES, EMOJI_LIST
+from delatore.const import AWX_STATUSES, INFLUX_STATUSES, EMOJI_LIST, INFLUX_EMOJI
 from delatore.json2mdwn import convert
 
 
@@ -43,8 +43,10 @@ def convert_message(data):
     :return: Markdown string
     """
     text = convert(data)
-    if text.find('awx.'):
+    if "awx." in text:
         text = '* From Ansible Tower *\n' + text
+    else:
+        text = '* From influxdb*\n' + text
     return add_emoji(text)
 
 
@@ -54,7 +56,7 @@ def add_emoji(text):
     :param text: str
     :return: Markdown String with emoji
     """
-    if text.find('Ansible'):
+    if "Ansible" in text:
         for item in AWX_STATUSES:
             if item == 'FAILED':
                 text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
@@ -62,4 +64,13 @@ def add_emoji(text):
                 text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
             elif item == 'SUCCESS':
                 text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
+        return text
+    else:
+        for item in INFLUX_STATUSES:
+            if item == 'OK':
+                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
+            elif item == 'FAIL':
+                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
+            elif item == 'NO DATA':
+                text = text.replace(INFLUX_STATUSES[item], INFLUX_EMOJI[item] + INFLUX_STATUSES[item])
         return text
