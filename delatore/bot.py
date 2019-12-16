@@ -48,9 +48,9 @@ def convert_message(data):
     if "awx." in text:
         notification_type = Notification.AWX
         text = '* From Ansible Tower *\n' + text
-    elif "measurement" in text:
+    elif "CSM" in text:
         notification_type = Notification.INFLUX
-        text = '* From influxdb*\n' + text
+        text = '* From influxdb *\n' + text
     return add_emoji(text, notification_type)
 
 

@@ -13,7 +13,7 @@ def index():
     return 'OK'
 
 
-@app.route('/notifications', methods=['POST'])
+@app.route('/sources', methods=['POST'])
 def awx_notifications():
     if request.method == 'POST':
         response = request.get_json()
