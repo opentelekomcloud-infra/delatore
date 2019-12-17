@@ -35,7 +35,5 @@ def get_time_delta(client, entity):
             return "OK"
         else:
             return "FAIL"
-    except ValueError:
-        return "NO DATA"
     except KeyError:
         return "NO DATA"
