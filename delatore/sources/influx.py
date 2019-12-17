@@ -3,7 +3,7 @@ import re
 
 from influxdb import InfluxDBClient
 
-from .base_source import BaseSource
+from delatore.sources.base_source import BaseSource
 
 
 class Influx(BaseSource):

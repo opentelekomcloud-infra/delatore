@@ -17,4 +17,5 @@ class TestSource:
                                  db='csm')
 
     def test_influx_delete_message(self):
-        pass
+        response = self.bot.delete_message(self.bot.chat_id, self.bot.last_message_id)
+        assert response.status_code == 200
