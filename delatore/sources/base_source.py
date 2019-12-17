@@ -1,11 +1,6 @@
 from abc import ABC
 
 
-class OneTimeField:
-    def __get__(self, instance, owner):
-        pass
-
-
 class Source(ABC):
     """Source API providing base `updates` field"""
 
