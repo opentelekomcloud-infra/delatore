@@ -1,11 +1,17 @@
 import gevent
 from flask import Flask, request
 
-from .base_source import BaseSource
+from .base_source import Source
 from ..bot import Delatore
 
 
-class HttpSource(BaseSource):
+class HttpSource(Source):
+
+    @property
+    def updates(self):
+        return self.__update
+
+    __update = None
 
     def __init__(self, bot: Delatore, port=2346):
         super().__init__(bot)
@@ -20,7 +26,7 @@ class HttpSource(BaseSource):
 
     def awx_notifications(self):
         response = request.get_json()
-        self.bot.message_queue.append(response)
+        self.__update = response
         return "OK"
 
     def run(self):
