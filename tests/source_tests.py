@@ -16,3 +16,7 @@ def test_influx_source(create_bot):
                              username='csm',
                              password=os.environ['INFLUX_PASSWORD'],
                              db='csm')
+
+
+def test_influx_delete_message():
+    pass
