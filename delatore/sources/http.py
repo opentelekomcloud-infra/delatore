@@ -1,33 +1,30 @@
-import gevent
+from threading import Thread
+
 from flask import Flask, request
 
 from .base_source import Source
-from ..bot import Delatore
 
 
 class HttpSource(Source):
+    """HTTP listener"""
 
-    @property
-    def updates(self):
-        return self.__update
-
-    __update = None
-
-    def __init__(self, bot: Delatore, port=2346):
-        super().__init__(bot)
+    def __init__(self, port):
         app = Flask(__name__)
-        app.route("/")(self.index)
-        app.route('/notifications', methods=['POST'])(self.awx_notifications)
+        app.route('/')(lambda: 'OK')
         self.app = app
         self.port = port
 
-    def index(self):
-        return 'OK'
-
-    def awx_notifications(self):
-        response = request.get_json()
-        self.__update = response
-        return "OK"
-
     def run(self):
-        gevent.spawn(self.app.run, port=self.port)
+        Thread(target=self.app.run, kwargs={'port': self.port}).start()
+
+
+class AWXSource(HttpSource):
+    AWX_PORT = 23834
+
+    def __init__(self, port=AWX_PORT):
+        super(AWXSource, self).__init__(port)
+        self.app.route("/notifications", methods=["POST"])(self.notifications)
+
+    def notifications(self):
+        self.updates = request.json
+        return 'OK'
