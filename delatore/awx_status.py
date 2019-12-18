@@ -37,8 +37,13 @@ if __name__ == '__main__':
 
     '''
     expected message in telegram:
-    You need to parse result of get_job_templates and create message for bot like:
+    You need create function that can parse result of get_job_templates and create message for bot like:
     
+    For all scenarios if argument: awx
+    For exact scenario if argument: awx:scenario1
+    For exact scenario and number of runs if arguments: awx:scenario1, 5
+    
+    template:
     [❌] (if status = failed)  name | playbook | last_job_run
     [✓] (if status = successful) name | playbook | last_job_run
     [⏳] (if status = never updated) name | playbook | last_job_run
