@@ -30,7 +30,22 @@ class Source(ABC):
 
     @classmethod
     @abstractmethod
-    def convert(cls, data: dict) -> dict:
+    def convert(cls, data: dict) -> str:
+        """Converts json-like object to Telegram supported Markdown
+
+        :param dict data:
+        :return: Markdown string
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def _add_emoji(cls, text: str) -> str:
+        """Adds emoji to selected status
+
+        :param str text:
+        :return: Markdown String with emoji
+        """
         raise NotImplementedError
 
     updates = SourceField("__updates__", "convert")
