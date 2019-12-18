@@ -22,7 +22,7 @@ class Influx(BaseSource):
                              CSM_LB_DOWN=get_time_delta(client, 'lb_down_test'),
                              CSM_SCSI_HDD_TEST=get_time_delta(client, 'iscsi_connection'),
                              CSM_RDS_TEST=get_time_delta(client, 'ce_result'))
-        self.bot.send_message(proof_of_work)
+        return proof_of_work
 
 
 def get_time_delta(client, entity):

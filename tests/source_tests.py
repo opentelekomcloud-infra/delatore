@@ -9,13 +9,14 @@ class TestSource:
     def setup(self):
         self.bot = Delatore()
 
-    def test_influx_source(self):
+    def test_influx_source(self, method):
         notifications = Influx(self.bot)
-        notifications.connection(host='influx1.eco.tsi-dev.otc-service.com',
-                                 username='csm',
-                                 password=os.environ['INFLUX_PASSWORD'],
-                                 db='csm')
+        message = notifications.connection(host='influx1.eco.tsi-dev.otc-service.com',
+                                           username='csm',
+                                           password=os.environ['INFLUX_PASSWORD'],
+                                           db='csm')
+        self.bot.send_message(message)
 
-    def test_influx_delete_message(self):
+    def teardown_method(self, method):
         response = self.bot.delete_message(self.bot.chat_id, self.bot.last_message_id)
         assert response.status_code == 200
