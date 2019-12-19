@@ -3,8 +3,8 @@ from threading import Thread
 
 from flask import Flask, request
 
-from ..const import AWX_STATUSES, EMOJI_LIST
 from .base import Source
+from ..const import AWX_STATUSES, EMOJI_LIST
 from ..json2mdwn import convert
 
 
