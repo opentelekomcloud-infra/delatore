@@ -30,7 +30,7 @@ class AWXSource(HttpSource):
         return text
 
     @classmethod
-    def convert(cls, data: dict) -> dict:
+    def convert(cls, data: dict) -> str:
         text = convert(data)
         text = '* From Ansible Tower *\n' + text
         return cls._add_emoji(text)
