@@ -2,11 +2,11 @@ import configparser
 
 import requests
 
-from delatore.const import AWX_STATUSES, EMOJI_LIST
-from delatore.json2mdwn import convert
+from .sources.http import AWXSource
 
 
 class Delatore:
+    sources_list = {'AWX': AWXSource()}
     last_message_id = 0
 
     def __init__(self):
@@ -20,7 +20,7 @@ class Delatore:
     def send_message(self, text, disable_notification=False):
         answer = {
             'chat_id': self.chat_id,
-            'text': convert_message(text),
+            'text': text,
             'parse_mode': 'Markdown',
             'disable_notification': disable_notification
         }
@@ -34,32 +34,3 @@ class Delatore:
         }
         response = self.session.post(self.url + 'deleteMessage', params=params)
         return response
-
-
-def convert_message(data):
-    """
-    Converts json-like object to Telegram supported Markdown
-    :param data: dict
-    :return: Markdown string
-    """
-    text = convert(data)
-    if text.find('awx.'):
-        text = '* From Ansible Tower *\n' + text
-    return add_emoji(text)
-
-
-def add_emoji(text):
-    """
-    Adds emoji to selected status
-    :param text: str
-    :return: Markdown String with emoji
-    """
-    if text.find('Ansible'):
-        for item in AWX_STATUSES:
-            if item == 'FAILED':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-            elif item == 'RUNNING':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-            elif item == 'SUCCESS':
-                text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-        return text
