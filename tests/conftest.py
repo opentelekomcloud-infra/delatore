@@ -3,14 +3,14 @@ from random import choice, randint
 
 import pytest
 
-from delatore.bot import Delatore
+from delatore.bot import CSM_CHAT, Delatore
 
 
 @pytest.fixture
 def bot():
     _bot = Delatore()
     yield _bot
-    _bot.delete_message(_bot.chat_id, _bot.last_message_id)
+    _bot.delete_message(CSM_CHAT, _bot.last_message_id)
 
 
 def random_with_length(length):
