@@ -9,4 +9,5 @@ dist/
 # Crash log files
 crash.log
 
-./config/config.ini
+config/config.ini
+__pycache__
