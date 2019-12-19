@@ -38,14 +38,4 @@ class Source(ABC):
         """
         raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def _add_emoji(cls, text: str) -> str:
-        """Adds emoji to selected status
-
-        :param str text:
-        :return: Markdown String with emoji
-        """
-        raise NotImplementedError
-
-    updates = SourceField("__updates__", "convert")
+    updates = SourceField('__updates__', 'convert')

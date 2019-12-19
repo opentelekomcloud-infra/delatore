@@ -3,8 +3,8 @@ from threading import Thread
 
 from flask import Flask, request
 
-from delatore.const import AWX_STATUSES, EMOJI_LIST
-from .base_source import Source
+from ..const import AWX_STATUSES, EMOJI_LIST
+from .base import Source
 from ..json2mdwn import convert
 
 
@@ -35,9 +35,9 @@ class AWXSource(HttpSource):
         text = '* From Ansible Tower *\n' + text
         return cls._add_emoji(text)
 
-    AWX_PORT = 23834
+    PORT = 23834
 
-    def __init__(self, port=AWX_PORT):
+    def __init__(self, port=PORT):
         super(AWXSource, self).__init__(port)
         self.app.route('/notifications', methods=['POST'])(self.notifications)
 

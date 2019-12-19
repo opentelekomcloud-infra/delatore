@@ -27,16 +27,16 @@ def random_string(length=10):
 @pytest.fixture
 def awx_data():
     message = {
-        "From": "Ansible Tower",
-        "test_job_id": random_with_length(3),
-        "test_name": f"Test Send Message {random_string(4)}",
-        "status": "failed",
-        "test_url": f"https://{random_string()}.{random_string(3)}",
-        "test_dict": {
-            "test": {
-                "failed": choice([True, False]),
-                "changed": random_with_length(1),
-                "ok": random_with_length(2),
+        'From': 'Ansible Tower',
+        'test_job_id': random_with_length(3),
+        'test_name': f'Test Send Message {random_string(4)}',
+        'status': 'failed',
+        'test_url': f'https://{random_string()}.{random_string(3)}',
+        'test_dict': {
+            'test': {
+                'failed': choice([True, False]),
+                'changed': random_with_length(1),
+                'ok': random_with_length(2),
             }
         }
     }
@@ -50,7 +50,7 @@ def awx_data():
 *   Test-Dict : *
 *    Test : *
      failed :  `{message['test_dict']['test']['failed']} `
-     changed :  `{message["test_dict"]['test']['changed']} `
-     ok :  `{message["test_dict"]['test']['ok']} `
+     changed :  `{message['test_dict']['test']['changed']} `
+     ok :  `{message['test_dict']['test']['ok']} `
 """
     return message, ideal_message

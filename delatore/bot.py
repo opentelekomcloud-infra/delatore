@@ -2,11 +2,11 @@ import configparser
 
 import requests
 
-from delatore.sources.http import AWXSource
+from .sources.http import AWXSource
 
 
 class Delatore:
-    AWXHandler = AWXSource()
+    sources_list = {'AWX': AWXSource()}
     last_message_id = 0
 
     def __init__(self):
