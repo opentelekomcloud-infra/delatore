@@ -29,11 +29,28 @@ class AwxApiClient:
         return response.json()
 
 
+    def f(self, argument):
+             k_value = ('status', 'name', ' playbook', 'last_job_run')
+             if __name__ == '__main__':
+                 self.client = AwxApiClient()
+                 big_d = self.client.get_job_templates()
+             """
+             big_d - большой словарь
+             k_value - список значений трех ключей
+             находим по ключу result внутренний большой список big_d['results']
+             """
+             l = []
+             for i in [i for i in big_d['results']]:
+                 small_dicts = {}
+                 for k, v in i.items():
+                     if k in k_value:
+                         small_dicts[k].append(v)
+                 l.append(small_dicts)
+             return l
+
+
 """ to be removed """
-if __name__ == '__main__':
-    client = AwxApiClient()
-    result = client.get_job_templates()
-    print(result)
+
 
     '''
     expected message in telegram:

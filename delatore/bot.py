@@ -4,6 +4,7 @@ from typing import NamedTuple
 import requests
 import telebot
 from ocomone import Resources
+from telebot.types import Message
 
 from .sources.http import AWXSource
 
@@ -33,13 +34,15 @@ CSM_CHAT = _BOT_CONFIG.chat_id
 MARKDOWN = 'Markdown'
 
 
+
+
 class Delatore:
+    bot = telebot.TeleBot(_BOT_CONFIG.token)
     sources_list = {'AWX': AWXSource()}
     last_message_id = 0
 
     def __init__(self):
         self.session = requests.session()
-        self.bot = telebot.TeleBot(_BOT_CONFIG.token)
 
     def start(self):
         """Start bot polling telegram API ignoring exceptions"""
@@ -64,3 +67,8 @@ class Delatore:
 
     def delete_message(self, chat_id, message_id):
         return self.bot.delete_message(chat_id, message_id)
+
+    @bot.message_handler(commands=['status'])
+    def handle_start_help(self, message: Message):
+        bot_reply_to()
+        pass
