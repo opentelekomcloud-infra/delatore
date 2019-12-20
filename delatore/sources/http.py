@@ -4,7 +4,7 @@ from threading import Thread
 from flask import Flask, request
 
 from .base import Source
-from ..const import AWX_STATUSES, EMOJI_LIST
+from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
 
@@ -22,18 +22,19 @@ class HttpSource(Source, ABC):
 
 
 class AWXSource(HttpSource):
-
-    @classmethod
-    def _add_emoji(cls, text: str) -> str:
-        for item in AWX_STATUSES:
-            text = text.replace(AWX_STATUSES[item], AWX_STATUSES[item] + EMOJI_LIST[item])
-        return text
+    EMOJI_MAP = {
+        '`failed`': Emoji.FAILED,
+        '`running`': Emoji.RUNNING,
+        '`success`': Emoji.SUCCESS,
+        '`cancelled`': Emoji.CANCELED
+    }
 
     @classmethod
     def convert(cls, data: dict) -> str:
+        data.pop('From', None)
         text = convert(data)
-        text = '* From Ansible Tower *\n' + text
-        return cls._add_emoji(text)
+        text = '** From Ansible Tower **\n' + replace_emoji(text, cls.EMOJI_MAP)
+        return text.strip()
 
     PORT = 23834
 

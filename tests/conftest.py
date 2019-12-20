@@ -41,16 +41,14 @@ def awx_data():
         }
     }
 
-    ideal_message = f"""* From Ansible Tower *
-     From :  `Ansible Tower `
-     test-job-id :  `{message['test_job_id']} `
-     test-name :  `{message['test_name']} `
-     status :  `{message['status']} ❌ `
-     test-url :  `{message['test_url']} `
-*   Test-Dict : *
-*    Test : *
-     failed :  `{message['test_dict']['test']['failed']} `
-     changed :  `{message['test_dict']['test']['changed']} `
-     ok :  `{message['test_dict']['test']['ok']} `
-"""
+    ideal_message = f"""** From Ansible Tower **
+Test Job Id :    `{message['test_job_id']}`
+Test Name :    `{message['test_name']}`
+Status :    ❌ `{message['status']}`
+Test Url :    `{message['test_url']}`
+Test Dict :
+    Test :
+        Failed :    `{message['test_dict']['test']['failed']}`
+        Changed :    `{message['test_dict']['test']['changed']}`
+        Ok :    `{message['test_dict']['test']['ok']}`"""
     return message, ideal_message

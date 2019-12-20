@@ -27,10 +27,10 @@ def __read_config():
     """Read configuration from configuration file"""
     config = configparser.ConfigParser()
     config.read(CONFIG['config.ini'])
-    if config.sections():
-        default = config['DEFAULT']
-        token = default.get('token', os.environ['token'])
-        chat_id = default.get('chat_id', os.environ['chat_id'])
+    defaults = config.defaults()
+    if defaults:
+        token = defaults.get('token', os.getenv('token', None))
+        chat_id = defaults.get('chat_id', os.getenv('chat_id', None))
         return BotConfig(token, chat_id)
     return BotConfig(
         os.environ['token'],
