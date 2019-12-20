@@ -1,4 +1,5 @@
 import configparser
+import os
 from typing import NamedTuple
 
 import requests
@@ -9,22 +10,32 @@ from .sources.http import AWXSource
 
 CONFIG = Resources(__file__, '../config')
 
+TG_URL = 'https://api.telegram.org/bot'
+
 
 class BotConfig(NamedTuple):
     """Bot configuration container"""
     token: str
-    url: str
     chat_id: str
+
+    @property
+    def url(self):
+        return f'{TG_URL}{self.token}/'
 
 
 def __read_config():
     """Read configuration from configuration file"""
     config = configparser.ConfigParser()
     config.read(CONFIG['config.ini'])
-    token = config['DEFAULT']['token']
-    url = config['DEFAULT']['url'] + token + '/'
-    chat_id = config['DEFAULT']['chat_id']
-    return BotConfig(token, url, chat_id)
+    if config.sections():
+        default = config['DEFAULT']
+        token = default.get('token', os.environ['token'])
+        chat_id = default.get('chat_id', os.environ['chat_id'])
+        return BotConfig(token, chat_id)
+    return BotConfig(
+        os.environ['token'],
+        os.environ['chat_id'],
+    )
 
 
 _BOT_CONFIG = __read_config()
