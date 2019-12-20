@@ -23,10 +23,10 @@ def test_backtick():
             "item": "value"
         }
     }
-    expected = """Item :    `value`
-List :
-    `a`
-    `b`
-Dict :
-    Item :    `value`"""
+    expected = ("Item :    `value`\n"
+                "List :\n"
+                "    `a`\n"
+                "    `b`\n"
+                "Dict :\n"
+                "    Item :    `value`")
     assert convert(data) == expected
