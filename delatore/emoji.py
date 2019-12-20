@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+from typing import Dict, NamedTuple
 
 
 class Emoji(NamedTuple):
@@ -9,11 +9,20 @@ class Emoji(NamedTuple):
     CANCELED = '⛔'
 
 
-def replace_emoji(source: str, alias_map: dict):
+def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
     """Replace all aliases in text with given emoji
 
-    `alias_map` is just a plain string, not regex
+    `alias_map` is map of `{"alias": "<emoji>"}`, where "alias" is replaced according to `replacement` schema
+
+    `replacement` has following syntax: `%e` for emoji, `%a` for alias, others characters is treated as plain text
     """
     pattern = re.compile('|'.join(alias_map.keys()))
-    text = pattern.sub(lambda p: f'{alias_map[re.escape(p.group(0))]} {p.group(0)}', source)
+
+    def _replace_re(match):
+        alias = re.escape(match.group(0))
+        rep_pattern = replacement. \
+            replace('%e', alias_map[alias]). \
+            replace('%a', alias)
+        return rep_pattern
+    text = pattern.sub(_replace_re, source)
     return text
