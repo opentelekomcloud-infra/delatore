@@ -10,7 +10,7 @@ def backtick_values(data):
     return f"`{data}`"
 
 
-__MARKS = re.compile(r"\{|\"|,|\}|\[|\]")
+__MARKS = re.compile(r"[{}\",\[\]]")
 
 
 def convert(data):
