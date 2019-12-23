@@ -7,6 +7,9 @@ import telebot
 from ocomone import Resources
 from telebot.types import Message
 
+from .awx_status import AwxApiClient
+from .json2mdwn import convert
+
 from .sources.http import AWXSource
 
 CONFIG = Resources(__file__, '../config')
@@ -81,5 +84,21 @@ class Delatore:
 
     @bot.message_handler(commands=['status'])
     def handle_start_help(self, message: Message):
-        bot_reply_to()
-        pass
+        # msg_text = "/status awx:scenario1 5"
+        message_text: str = message.text
+        _, *arguments = message_text.split(" ")
+        if not arguments:
+            return
+        if len(arguments) > 1:
+            count = int(arguments[1])
+        else:
+            count = 1
+        target: str = arguments.pop(0).split(":")
+        if target[0] == 'awx':
+            if len(target) > 1:
+                template = target[1]
+            else:
+                template = ''
+            response = AwxApiClient().get_status(template, count)
+            self.bot.send_message(message.chat.id, convert(response))
+

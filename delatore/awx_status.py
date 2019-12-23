@@ -1,6 +1,20 @@
 import os
+import time
+from typing import Union, Dict, NamedTuple, List
 
 import requests
+#from .emoji import replace_emoji
+
+
+class Status(NamedTuple):
+    timestamp: float
+    status: str
+
+    def __str__(self):
+        timestamp = time.gmtime(self.timestamp)
+        status = "sjdjkl" #replace_emoji(self.status)
+        return f"{timestamp} — {status}"
+
 
 
 class AwxApiClient:
@@ -29,27 +43,22 @@ class AwxApiClient:
         return response.json()
 
 
-    def f(self, argument):
-             k_value = ('status', 'name', ' playbook', 'last_job_run')
-             if __name__ == '__main__':
-                 self.client = AwxApiClient()
-                 big_d = self.client.get_job_templates()
-             """
-             big_d - большой словарь
-             k_value - список значений трех ключей
-             находим по ключу result внутренний большой список big_d['results']
-             """
-             l = []
-             for i in [i for i in big_d['results']]:
-                 small_dicts = {}
-                 for k, v in i.items():
-                     if k in k_value:
-                         small_dicts[k].append(v)
-                 l.append(small_dicts)
-             return l
 
+    def get_status(self, template: str, count: Union[str, int]) -> List[Dict[str, Dict]]:
+        """Get template status from AWX
+        :param template: name of template, if empty — all scenarios
+        :param count: count of last statuses
+        """
+        big_d = self.get_job_templates()
+        k_value = ['name', 'status', ]
+        l = []  # список словарей, описывающий данные одного сценария
+        for i in [i for i in big_d['result']]:
+            small_dicts = {}
+            for k, v in i.items():
+                if k in k_value:
+                    small_dicts[k].append(v)
+            l.append(small_dicts)
 
-""" to be removed """
 
 
     '''
