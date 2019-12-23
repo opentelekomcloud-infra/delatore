@@ -10,7 +10,7 @@ repository = "https://github.com/opentelekomcloud-infra/delatore"
 [tool.poetry.dependencies]
 python = "^3.7"
 
-ocomone = "^0.4.1"
+ocomone = "^0.4.2"
 flask = "^1.1"
 pyTelegramBotAPI = "^3.6"
 
