@@ -52,3 +52,21 @@ Test Dict :
         Changed :    `{message['test_dict']['test']['changed']}`
         Ok :    `{message['test_dict']['test']['ok']}`"""
     return message, ideal_message
+
+
+@pytest.fixture
+def influx_data():
+    message = {
+        'From': 'InfluxDB',
+        'CSM_LB_LOAD': 'OK',
+        'CSM_LB_DOWN': 'OK',
+        'CSM_SCSI_HDD_TEST': 'OK',
+        'CSM_RDS_TEST': 'OK'
+    }
+
+    ideal_message = f"""** From InfluxDB **
+CSM_LB_LOAD :    ✅ `{message['CSM_LB_LOAD']}`
+CSM_LB_DOWN :    ✅ `{message['CSM_LB_DOWN']}`
+CSM_SCSI_HDD_TEST :    ✅ `{message['CSM_SCSI_HDD_TEST']}`
+CSM_RDS_TEST :    ✅ `{message['CSM_RDS_TEST']}`"""
+    return message, ideal_message
