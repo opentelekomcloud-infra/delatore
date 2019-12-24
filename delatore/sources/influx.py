@@ -1,6 +1,5 @@
 import datetime
 import os
-import re
 
 from influxdb import InfluxDBClient
 
@@ -20,7 +19,7 @@ class InfluxSource(Source):
     EMOJI_MAP = {
         '`OK`': Emoji.SUCCESS,
         '`FAIL`': Emoji.FAILED,
-        '`NO DATA`': Emoji.CANCELED,
+        '`NO_DATA`': Emoji.NO_DATA,
     }
 
     @classmethod
@@ -52,10 +51,15 @@ def get_time_delta(client, entity):
     try:
         last_record = client.query(query)
         last_time = last_record.raw['series'][0]['values'][0][0]
-        last_time_ms = datetime.datetime.strptime(re.sub(r"[.]\d{9}", ".000000", last_time), '%Y-%m-%dT%H:%M:%S.%fZ')
+        time_parts = last_time.split('.');
+        second_part = '.123456'
+        for item in time_parts[1]:
+            if item.isalpha():
+                second_part += item
+        last_time_ms = datetime.datetime.strptime(time_parts[0] + second_part, '%Y-%m-%dT%H:%M:%S.%fZ')
         if (datetime.datetime.utcnow() - last_time_ms).total_seconds() < 300:
             return "OK"
         else:
             return "FAIL"
     except KeyError:
-        return "NO DATA"
+        return "NO_DATA"

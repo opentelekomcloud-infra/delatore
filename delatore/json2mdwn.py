@@ -2,12 +2,6 @@ import json
 import re
 
 
-def _normalize_key(src: str):
-    if src.isupper():
-        return src
-    return src.replace("_", " ").title()
-
-
 def backtick_values(data):
     """Escape json values with backticks
 
@@ -16,7 +10,7 @@ def backtick_values(data):
     if hasattr(data, "__md__"):
         return data.__md__()
     if isinstance(data, dict):
-        return {f"{_normalize_key(key)} ": backtick_values(data[key]) for key in data}
+        return {f"{key} ".replace("_", " ").title(): backtick_values(data[key]) for key in data}
     if isinstance(data, list):
         return [backtick_values(item) for item in data]
     return f"`{data}`"

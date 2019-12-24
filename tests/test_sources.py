@@ -1,3 +1,4 @@
+from delatore.bot import CSM_CHAT
 from delatore.sources.http import AWXSource
 from delatore.sources.influx import InfluxSource
 
@@ -12,3 +13,10 @@ def test_influx_source(influx_data):
     message, expected = influx_data
     message = InfluxSource.convert(message)
     assert message == expected
+
+
+def test_influx_message_sending(bot):
+    source = InfluxSource()
+    message = source.connection()
+    message_converted = source.convert(message)
+    bot.send_message(message_converted, CSM_CHAT)
