@@ -4,6 +4,7 @@ from random import choice, randint
 import pytest
 
 from delatore.bot import CSM_CHAT, Delatore
+from delatore.emoji import Emoji
 
 
 @pytest.fixture
@@ -59,14 +60,14 @@ def influx_data():
     message = {
         'From': 'InfluxDB',
         'CSM_LB_LOAD': 'OK',
-        'CSM_LB_DOWN': 'OK',
-        'CSM_SCSI_HDD_TEST': 'OK',
+        'CSM_LB_DOWN': 'FAIL',
+        'CSM_SCSI_HDD_TEST': 'NO_DATA',
         'CSM_RDS_TEST': 'OK'
     }
 
     ideal_message = f"""** From InfluxDB **
-CSM_LB_LOAD :    ✅ `{message['CSM_LB_LOAD']}`
-CSM_LB_DOWN :    ✅ `{message['CSM_LB_DOWN']}`
-CSM_SCSI_HDD_TEST :    ✅ `{message['CSM_SCSI_HDD_TEST']}`
-CSM_RDS_TEST :    ✅ `{message['CSM_RDS_TEST']}`"""
+`CSM_LB_LOAD` :    {Emoji.SUCCESS} `{message['CSM_LB_LOAD']}`
+`CSM_LB_DOWN` :    {Emoji.FAILED} `{message['CSM_LB_DOWN']}`
+`CSM_SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['CSM_SCSI_HDD_TEST']}`
+`CSM_RDS_TEST` :    {Emoji.SUCCESS} `{message['CSM_RDS_TEST']}`"""
     return message, ideal_message
