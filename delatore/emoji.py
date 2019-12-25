@@ -7,7 +7,7 @@ class Emoji(NamedTuple):
     RUNNING = '🏃'
     SUCCESS = '✅'
     CANCELED = '⛔'
-    NO_DATA = '⚠'
+    NO_DATA = '❔'
 
 
 def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
