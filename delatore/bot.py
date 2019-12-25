@@ -7,8 +7,7 @@ import telebot
 from ocomone import Resources
 from telebot.types import Message
 
-from .awx_status import AwxApiClient
-from .json2mdwn import convert
+from delatore.sources.awx_api import AwxApiClient
 
 from .sources.http import AWXSource
 
@@ -94,12 +93,11 @@ class Delatore:
         else:
             count = 1
         target: str = arguments.pop(0).split(":")
+        response = ''
+        template = None
         if target[0] == 'awx':
             if len(target) > 1:
                 template = target[1]
-                response = AwxApiClient().create_message_status(template, count)
-            else:
-                template = ''
-            response = AwxApiClient().create_message_status(template, count)
-            self.bot.send_message(message.chat.id, response)
+        response = AwxApiClient().create_status_message(template)
+        self.bot.send_message(message.chat.id, response)
 
