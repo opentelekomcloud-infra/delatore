@@ -3,6 +3,12 @@ import re
 
 
 def backtick_values(data):
+    """Escape json values with backticks
+
+    To define your behaviour, implement `__md__` method in your class
+    """
+    if hasattr(data, "__md__"):
+        return data.__md__()
     if isinstance(data, dict):
         return {f"{key} ".replace("_", " ").title(): backtick_values(data[key]) for key in data}
     if isinstance(data, list):
