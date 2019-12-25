@@ -42,4 +42,3 @@ Status command for AWX source has following syntax:
 Examples:
  - `/status awx` — return last job status for all _scenarios_
  - `/status awx:template2` — return last job status for AWX template with name _template2_
- - `/status awx:template2 5` — return last 5 job status for AWX template with name _template2_
