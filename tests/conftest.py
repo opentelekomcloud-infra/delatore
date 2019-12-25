@@ -4,6 +4,8 @@ from random import choice, randint
 import pytest
 
 from delatore.bot import CSM_CHAT, Delatore
+from delatore.emoji import Emoji
+from delatore.sources.influx import InfluxSource
 
 
 @pytest.fixture
@@ -11,6 +13,11 @@ def bot():
     _bot = Delatore()
     yield _bot
     _bot.delete_message(CSM_CHAT, _bot.last_message_id)
+
+
+@pytest.fixture
+def influxdb():
+    return InfluxSource()
 
 
 def random_with_length(length):
@@ -51,4 +58,22 @@ Test Dict :
         Failed :    `{message['test_dict']['test']['failed']}`
         Changed :    `{message['test_dict']['test']['changed']}`
         Ok :    `{message['test_dict']['test']['ok']}`"""
+    return message, ideal_message
+
+
+@pytest.fixture
+def influx_data():
+    message = {
+        'From': 'InfluxDB',
+        'LB_LOAD': 'OK',
+        'LB_DOWN': 'FAIL',
+        'SCSI_HDD_TEST': 'NO_DATA',
+        'RDS_TEST': 'OK'
+    }
+
+    ideal_message = f"""** From InfluxDB **
+`LB_LOAD` :    {Emoji.SUCCESS} `{message['LB_LOAD']}`
+`LB_DOWN` :    {Emoji.FAILED} `{message['LB_DOWN']}`
+`SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['SCSI_HDD_TEST']}`
+`RDS_TEST` :    {Emoji.SUCCESS} `{message['RDS_TEST']}`"""
     return message, ideal_message
