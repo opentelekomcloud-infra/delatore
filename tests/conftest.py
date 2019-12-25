@@ -5,6 +5,7 @@ import pytest
 
 from delatore.bot import CSM_CHAT, Delatore
 from delatore.emoji import Emoji
+from delatore.sources.influx import InfluxSource
 
 
 @pytest.fixture
@@ -12,6 +13,11 @@ def bot():
     _bot = Delatore()
     yield _bot
     _bot.delete_message(CSM_CHAT, _bot.last_message_id)
+
+
+@pytest.fixture
+def influxdb():
+    return InfluxSource()
 
 
 def random_with_length(length):

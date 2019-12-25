@@ -1,5 +1,4 @@
 from delatore.bot import CSM_CHAT
-from delatore.sources.influx import InfluxSource
 
 
 def test_send_message(bot):
@@ -7,8 +6,8 @@ def test_send_message(bot):
     assert bot.last_message_id == response['message_id']
 
 
-def test_influx_message_sending(bot):
-    source = InfluxSource()
-    message = source.connection()
-    message_converted = source.convert(message)
-    bot.send_message(message_converted, CSM_CHAT)
+def test_influx_message_sending(bot, influxdb):
+    message = influxdb.get_influx_statuses()
+    message_converted = influxdb.convert(message)
+    response = bot.send_message(message_converted, CSM_CHAT)
+    assert bot.last_message_id == response['message_id']

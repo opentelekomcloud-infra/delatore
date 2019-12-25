@@ -29,7 +29,7 @@ class InfluxSource(Source):
         text = '** From InfluxDB **\n' + replace_emoji(text, cls.EMOJI_MAP)
         return text.strip()
 
-    def connection(self):
+    def get_influx_statuses(self):
         client = InfluxDBClient(
             host=self.host,
             port=self.port,
@@ -52,14 +52,14 @@ def get_time_delta(client, entity):
         last_record = client.query(query)
         last_time = last_record.raw['series'][0]['values'][0][0]
         time_parts = last_time.split('.');
-        second_part = '.123456'
+        time_zone = ''
         for item in time_parts[1]:
             if item.isalpha():
-                second_part += item
-        last_time_ms = datetime.datetime.strptime(time_parts[0] + second_part, '%Y-%m-%dT%H:%M:%S.%fZ')
+                time_zone += item
+        second_part = '.123456' + time_zone
+        last_time_ms = datetime.datetime.strptime(time_parts[0] + second_part, f'%Y-%m-%dT%H:%M:%S.%f{time_zone}')
         if (datetime.datetime.utcnow() - last_time_ms).total_seconds() < 300:
             return "OK"
-        else:
-            return "FAIL"
+        return "FAIL"
     except KeyError:
         return "NO_DATA"
