@@ -65,15 +65,15 @@ Test Dict :
 def influx_data():
     message = {
         'From': 'InfluxDB',
-        'CSM_LB_LOAD': 'OK',
-        'CSM_LB_DOWN': 'FAIL',
-        'CSM_SCSI_HDD_TEST': 'NO_DATA',
-        'CSM_RDS_TEST': 'OK'
+        'LB_LOAD': 'OK',
+        'LB_DOWN': 'FAIL',
+        'SCSI_HDD_TEST': 'NO_DATA',
+        'RDS_TEST': 'OK'
     }
 
     ideal_message = f"""** From InfluxDB **
-`CSM_LB_LOAD` :    {Emoji.SUCCESS} `{message['CSM_LB_LOAD']}`
-`CSM_LB_DOWN` :    {Emoji.FAILED} `{message['CSM_LB_DOWN']}`
-`CSM_SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['CSM_SCSI_HDD_TEST']}`
-`CSM_RDS_TEST` :    {Emoji.SUCCESS} `{message['CSM_RDS_TEST']}`"""
+`LB_LOAD` :    {Emoji.SUCCESS} `{message['LB_LOAD']}`
+`LB_DOWN` :    {Emoji.FAILED} `{message['LB_DOWN']}`
+`SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['SCSI_HDD_TEST']}`
+`RDS_TEST` :    {Emoji.SUCCESS} `{message['RDS_TEST']}`"""
     return message, ideal_message
