@@ -1,10 +1,10 @@
-import datetime
 import os
+from datetime import datetime
 
 from influxdb import InfluxDBClient
 
 from .base import Source
-from ..emoji import replace_emoji, Emoji
+from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
 
@@ -51,14 +51,14 @@ def get_time_delta(client, entity):
     try:
         last_record = client.query(query)
         last_time = last_record.raw['series'][0]['values'][0][0]
-        time_parts = last_time.split('.');
+        time_parts = last_time.split('.')
         time_zone = ''
         for item in time_parts[1]:
             if item.isalpha():
                 time_zone += item
         second_part = '.123456' + time_zone
-        last_time_ms = datetime.datetime.strptime(time_parts[0] + second_part, f'%Y-%m-%dT%H:%M:%S.%f{time_zone}')
-        if (datetime.datetime.utcnow() - last_time_ms).total_seconds() < 300:
+        last_time_ms = datetime.strptime(time_parts[0] + second_part, f'%Y-%m-%dT%H:%M:%S.%f{time_zone}')
+        if (datetime.utcnow() - last_time_ms).total_seconds() < 300:
             return "OK"
         return "FAIL"
     except KeyError:
