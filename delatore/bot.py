@@ -97,8 +97,9 @@ class Delatore:
         if target[0] == 'awx':
             if len(target) > 1:
                 template = target[1]
+                response = AwxApiClient().create_message_status(template, count)
             else:
                 template = ''
-            response = AwxApiClient().get_status(template, count)
-            self.bot.send_message(message.chat.id, convert(response))
+            response = AwxApiClient().create_message_status(template, count)
+            self.bot.send_message(message.chat.id, response)
 
