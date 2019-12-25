@@ -1,4 +1,4 @@
-from delatore.bot import CSM_CHAT
+from delatore.configuration import CSM_CHAT
 
 
 def test_send_message(bot):

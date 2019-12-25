@@ -1,9 +1,11 @@
+import os
 import string
-from random import choice, randint
+from random import choice, randint, randrange
 
 import pytest
 
-from delatore.bot import CSM_CHAT, Delatore
+from delatore.bot import Delatore
+from delatore.configuration import CSM_CHAT
 from delatore.emoji import Emoji
 from delatore.sources.influx import InfluxSource
 
@@ -28,7 +30,7 @@ def random_with_length(length):
 
 def random_string(length=10):
     letters = string.ascii_lowercase
-    return ''.join(choice(letters) for i in range(length))
+    return ''.join(choice(letters) for _ in range(length))
 
 
 @pytest.fixture
@@ -77,3 +79,35 @@ def influx_data():
 `SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['SCSI_HDD_TEST']}`
 `RDS_TEST` :    {Emoji.SUCCESS} `{message['RDS_TEST']}`"""
     return message, ideal_message
+
+
+@pytest.fixture
+def token():
+    return f'{randrange(999999999):09}:{random_string(35)}'
+
+
+@pytest.fixture
+def chat_id():
+    return f'{randrange(-0xffffffff, 0xffffffff)}'
+
+
+@pytest.fixture
+def config_file(token, chat_id):
+    base_path = './tmp'
+    os.makedirs(base_path, exist_ok=True)
+    file_path = os.path.abspath(f'{base_path}/cfg.ini')
+
+    with open(file_path, 'w+') as cfg:
+        cfg.write(f'[DEFAULT]\ntoken = {token}\nchat_id = {chat_id}')
+    yield file_path
+    os.remove(file_path)
+
+
+@pytest.fixture
+def empty_env_vars():
+    env_vars = {var: os.getenv(var) for var in ['token', 'chat_id']}
+    for var in env_vars:
+        os.environ[var] = ''
+    yield
+    for var, val in env_vars.items():
+        os.environ[var] = val

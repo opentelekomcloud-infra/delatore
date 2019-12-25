@@ -1,46 +1,9 @@
-import configparser
-import os
-from typing import NamedTuple
-
 import requests
 import telebot
-from ocomone import Resources
 
+from .configuration import BOT_CONFIG
 from .sources.http import AWXSource
 
-CONFIG = Resources(__file__, '../config')
-
-TG_URL = 'https://api.telegram.org/bot'
-
-
-class BotConfig(NamedTuple):
-    """Bot configuration container"""
-    token: str
-    chat_id: str
-
-    @property
-    def url(self):
-        return f'{TG_URL}{self.token}/'
-
-
-def __read_config():
-    """Read configuration from configuration file"""
-    config = configparser.ConfigParser()
-    config.read(CONFIG['config.ini'])
-    defaults = config.defaults()
-    if defaults:
-        token = defaults.get('token', os.getenv('token', None))
-        chat_id = defaults.get('chat_id', os.getenv('chat_id', None))
-        return BotConfig(token, chat_id)
-    return BotConfig(
-        os.environ['token'],
-        os.environ['chat_id'],
-    )
-
-
-_BOT_CONFIG = __read_config()
-
-CSM_CHAT = _BOT_CONFIG.chat_id
 MARKDOWN = 'Markdown'
 
 
@@ -50,7 +13,7 @@ class Delatore:
 
     def __init__(self):
         self.session = requests.session()
-        self.bot = telebot.TeleBot(_BOT_CONFIG.token)
+        self.bot = telebot.TeleBot(BOT_CONFIG.token)
 
     def start(self):
         """Start bot polling telegram API ignoring exceptions"""
