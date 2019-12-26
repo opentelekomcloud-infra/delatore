@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from threading import Thread
 from typing import Dict
 
 from telebot import TeleBot
@@ -71,15 +72,15 @@ class DelatoreBot(TeleBot):
                     self.alert(BOT_CONFIG.chat_id, source.convert(updates))
             await asyncio.sleep(self.SOURCE_POLLING_INTERVAL)
 
-    async def monitor_sources(self):
+    def monitor_sources(self):
         """Start monitoring of given sources as coroutines"""
         response_lock = asyncio.Lock()
         coroutines = [self._monitor_source(src, response_lock) for src in self.sources]
-        await asyncio.gather(*coroutines)
+        asyncio.run(asyncio.gather(*coroutines))
 
     def start(self):
         """Start bot polling telegram API ignoring exceptions"""
-        asyncio.run(self.monitor_sources())
+        Thread(target=self.monitor_sources, daemon=True).start()
         self.infinity_polling(interval=self.TG_POLLING_INTERVAL)
 
 
