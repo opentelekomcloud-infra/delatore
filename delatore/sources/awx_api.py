@@ -4,7 +4,7 @@ from typing import NamedTuple, List
 
 import requests
 
-from delatore import json2mdwn
+from ..json2mdwn import backtick_values, convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -16,18 +16,15 @@ class TemplateStatus(NamedTuple):
     last_status: str
     playbook: str
 
-    def __str__(self):
-        return f"name:  {self.name} \n" \
-               f"last_run_timestamp:  {self.last_run_timestamp} \n" \
-               f"last_run_timestamp:  {self.playbook} \n" \
-               f"last_status:  {self.last_status}"
+    def __md__(self):
+        return backtick_values(self._asdict())
 
 
 class AwxApiClient:
 
     def __init__(self):
         self.session = requests.session()
-        self.session.headers.update({"Authorization": f"Bearer {os.getenv('AWX_AUTH_TOKEN')}"})
+        self.session.headers.update({'Authorization': f'Bearer {os.getenv("AWX_AUTH_TOKEN")}'})
         self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
 
     def create_status_message(self, template: str = None):
@@ -35,10 +32,10 @@ class AwxApiClient:
 
         :param template: name of template, if empty — all scenarios
         """
-        _filter = {"name__iexact": template}
+        _filter = {'name__iexact': template}
         json_data = self.get_templates(_filter)
         template_data = get_templates_statuses_from_json(json_data)
-        message = json2mdwn.convert(template_data)
+        message = '\n'.join(convert(i) for i in template_data)
         return message
 
     def get_templates(self, filters: dict = None):
@@ -63,10 +60,9 @@ class AwxApiClient:
 
 def get_templates_statuses_from_json(json_data) -> List[TemplateStatus]:
     """Get status for all templates or for concrete template"""
-    list_template_status = []
+    template_data = []
     for i in json_data:
-        list_template_status.append(
+        template_data.append(
             TemplateStatus(name=i['name'], last_run_timestamp=i['last_job_run'], last_status=i['status'],
                            playbook=i['playbook']))
-    return list_template_status
-
+    return template_data

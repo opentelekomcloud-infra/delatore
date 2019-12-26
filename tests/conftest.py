@@ -5,7 +5,8 @@ import pytest
 
 from delatore.bot import CSM_CHAT, Delatore
 from delatore.emoji import Emoji
-from delatore.sources.influx import InfluxSource
+from delatore.sources import InfluxSource
+from delatore.sources.awx_api import TemplateStatus
 
 
 @pytest.fixture
@@ -77,3 +78,13 @@ def influx_data():
 `SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{message['SCSI_HDD_TEST']}`
 `RDS_TEST` :    {Emoji.SUCCESS} `{message['RDS_TEST']}`"""
     return message, ideal_message
+
+
+@pytest.fixture
+def template_status():
+    obj = TemplateStatus(name='Scenario 1', last_run_timestamp='15.08', last_status='failed', playbook='playbook')
+    message = 'Name :    `Scenario 1`\n' \
+              'Last Run Timestamp :    `15.08`\n' \
+              'Last Status :    `failed`\n' \
+              'Playbook :    `playbook`'
+    return obj, message
