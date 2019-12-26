@@ -4,7 +4,7 @@ from random import choice, randint, randrange
 
 import pytest
 
-from delatore.bot import Delatore
+from delatore.bot import bot
 from delatore.configuration import CSM_CHAT
 from delatore.emoji import Emoji
 from delatore.sources import InfluxSource
@@ -12,10 +12,10 @@ from delatore.sources.awx_api import TemplateStatus
 
 
 @pytest.fixture
-def bot():
-    _bot = Delatore()
-    yield _bot
-    _bot.delete_message(CSM_CHAT, _bot.last_message_id)
+def cleanup_message():
+    yield
+    if bot.last_message_id is not None:
+        bot.delete_message(CSM_CHAT, bot.last_message_id)
 
 
 @pytest.fixture

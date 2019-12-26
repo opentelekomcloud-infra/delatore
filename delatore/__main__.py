@@ -25,9 +25,8 @@ def _config():
 
 def _main():
     _config()
-    from delatore import bot
-    delatore = bot.Delatore()
-    delatore.start()
+    from delatore.bot import bot
+    bot.start()
 
 
 _main()
