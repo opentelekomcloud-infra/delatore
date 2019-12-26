@@ -4,10 +4,17 @@ from typing import NamedTuple, List
 
 import requests
 
-from ..json2mdwn import backtick_values, convert
+from ..emoji import replace_emoji, Emoji
+from ..json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
+
+EMOJI_MAP = {
+    'successful': Emoji.SUCCESS,
+    'failed': Emoji.FAILED,
+    'never updated': Emoji.NO_DATA,
+}
 
 
 class TemplateStatus(NamedTuple):
@@ -16,8 +23,10 @@ class TemplateStatus(NamedTuple):
     last_status: str
     playbook: str
 
-    def __md__(self):
-        return backtick_values(self._asdict())
+    def __str__(self):
+        status = replace_emoji(self.last_status, EMOJI_MAP, '%e')
+        playbook = self.playbook.replace('playbooks/', '')
+        return f'{status}   —   `{self.name}`  (`{playbook}`)'
 
 
 class AwxApiClient:
@@ -35,7 +44,7 @@ class AwxApiClient:
         _filter = {'name__iexact': template}
         json_data = self.get_templates(_filter)
         template_data = get_templates_statuses_from_json(json_data)
-        message = '\n'.join(convert(i) for i in template_data)
+        message = '\n'.join(str(i) for i in template_data)
         return message
 
     def get_templates(self, filters: dict = None):

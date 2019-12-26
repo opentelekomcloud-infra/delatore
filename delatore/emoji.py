@@ -20,7 +20,7 @@ def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
     pattern = re.compile('|'.join(alias_map.keys()))
 
     def _replace_re(match):
-        alias = re.escape(match.group(0))
+        alias = match.group(0)
         rep_pattern = replacement. \
             replace('%e', alias_map[alias]). \
             replace('%a', alias)
