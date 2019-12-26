@@ -1,11 +1,11 @@
 import logging
 import os
+import time
 from typing import NamedTuple, List
 
 import requests
 
 from ..emoji import replace_emoji, Emoji
-from ..json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -25,8 +25,10 @@ class TemplateStatus(NamedTuple):
 
     def __str__(self):
         status = replace_emoji(self.last_status, EMOJI_MAP, '%e')
-        playbook = self.playbook.replace('playbooks/', '')
-        return f'{status}   —   `{self.name}`  (`{playbook}`)'
+        timestamp = self.last_run_timestamp
+        if timestamp is not None:
+            timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ'))
+        return f'{status}   —   `{self.name}`  (`{timestamp}`)'
 
 
 class AwxApiClient:
@@ -69,9 +71,11 @@ class AwxApiClient:
 
 def get_templates_statuses_from_json(json_data) -> List[TemplateStatus]:
     """Get status for all templates or for concrete template"""
-    template_data = []
-    for i in json_data:
-        template_data.append(
-            TemplateStatus(name=i['name'], last_run_timestamp=i['last_job_run'], last_status=i['status'],
-                           playbook=i['playbook']))
-    return template_data
+    statuses = []
+    for template_data in json_data:
+        statuses.append(
+            TemplateStatus(name=template_data['name'],
+                           last_run_timestamp=template_data['last_job_run'],
+                           last_status=template_data['status'],
+                           playbook=template_data['playbook']))
+    return statuses

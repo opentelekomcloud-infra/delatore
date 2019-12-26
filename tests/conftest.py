@@ -82,9 +82,6 @@ def influx_data():
 
 @pytest.fixture
 def template_status():
-    obj = TemplateStatus(name='Scenario 1', last_run_timestamp='15.08', last_status='failed', playbook='playbook')
-    message = 'Name :    `Scenario 1`\n' \
-              'Last Run Timestamp :    `15.08`\n' \
-              'Last Status :    `failed`\n' \
-              'Playbook :    `playbook`'
+    obj = TemplateStatus(name='Scenario 1', last_run_timestamp='2019-12-12T11:04:55.33Z', last_status='failed', playbook='playbook')
+    message = f'❌   —   `{obj.name}`  (`12.12.19 11:04`)'
     return obj, message

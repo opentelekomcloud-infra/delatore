@@ -1,4 +1,3 @@
-from delatore.json2mdwn import convert
 from delatore.sources import AWXSource, InfluxSource
 
 
@@ -16,5 +15,5 @@ def test_influx_source(influx_data):
 
 def test_convert_template_status(template_status):
     obj, message_e = template_status
-    message = convert(obj)
+    message = str(obj)
     assert message == message_e
