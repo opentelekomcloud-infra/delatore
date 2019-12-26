@@ -1,5 +1,3 @@
-import os
-
 from delatore.configuration import BOT_CONFIG, BotConfig, read_config
 
 
@@ -9,7 +7,7 @@ def test_config_load(config_file, token, chat_id):
     assert new == BotConfig(token, chat_id)
 
 
-def test_config_load_empty():
+def test_config_load_empty(empty_env_vars):
     file_name = "fl"
     with open(file_name, "w+") as file:
         file.write("[DEFAULT]\n")

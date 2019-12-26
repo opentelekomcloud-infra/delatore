@@ -96,18 +96,18 @@ def config_file(token, chat_id):
     base_path = './tmp'
     os.makedirs(base_path, exist_ok=True)
     file_path = os.path.abspath(f'{base_path}/cfg.ini')
-
     with open(file_path, 'w+') as cfg:
         cfg.write(f'[DEFAULT]\ntoken = {token}\nchat_id = {chat_id}')
     yield file_path
     os.remove(file_path)
+    os.rmdir(base_path)
 
 
 @pytest.fixture
 def empty_env_vars():
     env_vars = {var: os.getenv(var) for var in ['token', 'chat_id']}
     for var in env_vars:
-        os.environ[var] = ''
+        os.environ.pop(var, None)
     yield
     for var, val in env_vars.items():
         os.environ[var] = val
