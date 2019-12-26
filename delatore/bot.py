@@ -1,8 +1,9 @@
-import threading
-import time
+import asyncio
+import logging
 from typing import Dict, Type
 
-import telebot
+from telebot import TeleBot
+from telebot.apihelper import ApiException
 from telebot.types import Message
 
 from .configuration import BOT_CONFIG
@@ -11,11 +12,15 @@ from .sources.base import Source
 
 MARKDOWN = 'Markdown'
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
-class DelatoreBot(telebot.TeleBot):
+
+class DelatoreBot(TeleBot):
     """TeleBot tweaked for delatore"""
 
-    POLLING_INTERVAL = 0.5
+    SOURCE_POLLING_INTERVAL = 10
+    TG_POLLING_INTERVAL = 0.5
 
     last_message_id = None
 
@@ -28,45 +33,53 @@ class DelatoreBot(telebot.TeleBot):
         }
         super().__init__(*args, **kwargs)
 
-    def alert(self, text, chat):
+    def alert(self, chat, text):
         """Send message with channel notifying"""
-        return self.send_message(text, chat, disable_notification=False)
+        return self.send_message(chat, text, disable_notification=False)
 
-    def silent(self, text, chat):
+    def silent(self, chat, text):
         """Send message without notifying channel"""
-        return self.send_message(text, chat, True)
+        return self.send_message(chat, text, disable_notification=True)
 
-    def send_message(self, text, chat, disable_notification=False, **kwargs):
+    def send_message(self, chat_id, text, disable_notification=False, **kwargs):
         """Send telegram message"""
-        kwargs.pop('disable_notification', None)
-        message = super().send_message(
-            chat, text,
-            parse_mode=MARKDOWN,
-            disable_notification=disable_notification,
-            **kwargs
-        )
+        try:
+            message = super().send_message(
+                chat_id, text,
+                parse_mode=MARKDOWN,
+                disable_notification=disable_notification,
+                **kwargs
+            )
+        except ApiException:
+            LOGGER.exception("Message can't be sent:\nChat:%s\nMessage:\n%s", chat_id, text)
+            return None
         bot.last_message_id = message.message_id
         return message.json
 
-    def monitor_sources(self):
-        """Start monitoring of given sources in dedicated thread"""
+    async def _monitor_source(self, src_name, lock):
+        """Monitor resource and post updates to """
+        try:
+            source = self.sources[src_name]()
+        except Exception:
+            LOGGER.exception("Failed to init source `%s`", src_name)
+            return
+        while True:
+            updates = source.updates  # read and clean updates field
+            if updates:
+                async with lock:
+                    self.alert(BOT_CONFIG.chat_id, source.convert(updates))
+            await asyncio.sleep(self.SOURCE_POLLING_INTERVAL)
 
-        def _mon(src):
-            if isinstance(src, type):
-                src = src()
-            while True:
-                updates = src.updates  # read and clean updates field
-                if updates:
-                    self.alert(src.convert(updates), BOT_CONFIG.chat_id)
-                time.sleep(self.POLLING_INTERVAL)
-
-        for source in self.sources.values():
-            threading.Thread(target=_mon, args=(source,), daemon=True).start()
+    async def monitor_sources(self):
+        """Start monitoring of given sources as coroutines"""
+        response_lock = asyncio.Lock()
+        coroutines = [self._monitor_source(src, response_lock) for src in self.sources]
+        await asyncio.gather(*coroutines)
 
     def start(self):
         """Start bot polling telegram API ignoring exceptions"""
-        self.monitor_sources()
-        self.infinity_polling(interval=self.POLLING_INTERVAL)
+        asyncio.run(self.monitor_sources())
+        self.infinity_polling(interval=self.TG_POLLING_INTERVAL)
 
 
 bot = DelatoreBot(BOT_CONFIG.token)
@@ -89,4 +102,4 @@ def handle_start_help(message: Message):
         if len(target) > 1:
             template = target[1]
         response = AwxApiClient().create_status_message(template)
-        bot.alert(response, message.chat.id)
+        bot.alert(message.chat.id, response)
