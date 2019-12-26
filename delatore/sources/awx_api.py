@@ -4,6 +4,8 @@ from typing import NamedTuple, List
 
 import requests
 
+from delatore import json2mdwn
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
@@ -32,19 +34,17 @@ class AwxApiClient:
         """Get last job statuses for concrete template or all templates
 
         :param template: name of template, if empty — all scenarios
-        :param count: count of last statuses
         """
         _filter = {"name__iexact": template}
         json_data = self.get_templates(_filter)
-        list_templates_statuses = get_templates_statuses_from_json(json_data)
-        message = '\n\n'.join(str(stt) for stt in list_templates_statuses)
+        template_data = get_templates_statuses_from_json(json_data)
+        message = json2mdwn.convert(template_data)
         return message
 
     def get_templates(self, filters: dict = None):
         """Returns list of all job templates for csm organization
 
         This methods support ansible tower filtering https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
-        Supported filters:
         """
         response = self.session.get(url=self.url + '/job_templates', params=filters)
         assert response.status_code == 200, f'Expected response 200, got {response.status_code} ({response.text})'
@@ -56,11 +56,7 @@ class AwxApiClient:
             raise
 
     def get_api_endpoints(self):
-        """
-        Returns list of all awx api endpoints
-
-        :return:
-        """
+        """Returns list of all awx api endpoints """
         response = self.session.get(url=self.url)
         return response.json()
 
@@ -74,19 +70,3 @@ def get_templates_statuses_from_json(json_data) -> List[TemplateStatus]:
                            playbook=i['playbook']))
     return list_template_status
 
-
-'''
-expected message in telegram:
-You need create function that can parse result of get_job_templates and create message for bot like:
-
-For all scenarios if argument: awx
-For exact scenario if argument: awx:scenario1
-For exact scenario and number of runs if arguments: awx:scenario1, 5
-
-template:
-[❌] (if status = failed)  name | playbook | last_job_run
-[✓] (if status = successful) name | playbook | last_job_run
-[⏳] (if status = never updated) name | playbook | last_job_run
-...
-
-'''
