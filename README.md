@@ -21,3 +21,24 @@ Given project is just a concept
 1. Configured telegram chanel
 1. Direct messages to configured users
 1. Control target user/channel by severity map
+
+## Bot commands
+
+Telegram bot accepts following commands:
+
+### `/status`
+Bot reply to the message with last status(-es) retrieved from given source
+
+Status has following syntax:
+
+`/status <source>[:detailed_source] [history_depth]`
+
+#### AWX Source
+
+Status command for AWX source has following syntax:
+
+`/status awx[:template_name] [history_depth]`
+
+Examples:
+ - `/status awx` — return last job status for all _scenarios_
+ - `/status awx:template2` — return last job status for AWX template with name _template2_
