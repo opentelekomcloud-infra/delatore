@@ -87,7 +87,7 @@ class Delatore:
             count = int(arguments[1])
         else:
             count = 1
-        target: str = arguments.pop(0).split(":")
+        target: list = arguments.pop(0).split(":")
         template = None
         if target[0] == 'awx':
             if len(target) > 1:

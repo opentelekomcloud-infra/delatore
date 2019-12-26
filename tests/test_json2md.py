@@ -1,5 +1,3 @@
-import pytest
-
 from delatore.emoji import Emoji, replace_emoji
 from delatore.json2mdwn import convert
 
