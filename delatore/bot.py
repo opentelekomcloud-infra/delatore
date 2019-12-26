@@ -89,4 +89,4 @@ def handle_start_help(message: Message):
         if len(target) > 1:
             template = target[1]
         response = AwxApiClient().create_status_message(template)
-        bot.alert(message.chat.id, response)
+        bot.alert(response, message.chat.id)
