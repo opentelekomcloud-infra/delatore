@@ -39,3 +39,7 @@ class Source(ABC):
         raise NotImplementedError
 
     updates = SourceField('__updates__', 'convert')
+
+    @abstractmethod
+    def start(self):
+        """Start consuming"""

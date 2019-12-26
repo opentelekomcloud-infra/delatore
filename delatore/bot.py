@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, Type
+from typing import Dict
 
 from telebot import TeleBot
 from telebot.apihelper import ApiException
@@ -24,12 +24,12 @@ class DelatoreBot(TeleBot):
 
     last_message_id = None
 
-    sources: Dict[str, Type[Source]] = None
+    sources: Dict[str, Source] = None
 
     def __init__(self, *args, **kwargs):
         self.sources = {
-            'AWX': AWXSource,
-            'Influx': InfluxSource,
+            'AWX': AWXSource(),
+            'Influx': InfluxSource(),
         }
         super().__init__(*args, **kwargs)
 
@@ -59,7 +59,7 @@ class DelatoreBot(TeleBot):
     async def _monitor_source(self, src_name, lock):
         """Monitor resource and post updates to """
         try:
-            source = self.sources[src_name]()
+            source = self.sources[src_name].start()
         except Exception:
             LOGGER.exception("Failed to init source `%s`", src_name)
             return

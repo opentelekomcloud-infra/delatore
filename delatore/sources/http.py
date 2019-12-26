@@ -17,8 +17,8 @@ class HttpSource(Source, ABC):
         self.app = app
         self.port = port
 
-    def run(self):
-        Thread(target=self.app.run, kwargs={'port': self.port}).start()
+    def start(self):
+        Thread(target=self.app.run, kwargs={'port': self.port}, daemon=True).start()
 
 
 class AWXSource(HttpSource):

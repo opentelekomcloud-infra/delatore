@@ -1,7 +1,9 @@
 import logging
 import os
 import re
+import time
 from datetime import datetime
+from threading import Thread
 
 from influxdb import InfluxDBClient
 
@@ -21,6 +23,8 @@ class InfluxSource(Source):
         self.db = 'csm'
         self.port = 8086
 
+    INFLUX_POLLING_INTERVAL = 60
+
     EMOJI_MAP = {
         '`OK`': Emoji.SUCCESS,
         '`FAIL`': Emoji.FAILED,
@@ -33,6 +37,19 @@ class InfluxSource(Source):
         text = convert(data)
         text = '** From InfluxDB **\n' + replace_emoji(text, cls.EMOJI_MAP)
         return text.strip()
+
+    def start(self):
+        """Start InfluxDB polling"""
+
+        def _polling():
+            while True:
+                try:
+                    self.updates = convert(self.get_influx_statuses())
+                except Exception:
+                    LOGGER.exception("Failed to get influx status")
+                time.sleep(self.INFLUX_POLLING_INTERVAL)
+
+        Thread(target=_polling, daemon=True).start()
 
     def get_influx_statuses(self):
         client = InfluxDBClient(
