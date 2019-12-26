@@ -84,7 +84,10 @@ def influx_data():
 
 @pytest.fixture
 def template_status():
-    obj = TemplateStatus(name='Scenario 1', last_run_timestamp='2019-12-12T11:04:55.33Z', last_status='failed', playbook='playbook')
+    obj = TemplateStatus(name='Scenario 1',
+                         last_run_timestamp='2019-12-12T11:04:55.33Z',
+                         last_status='failed',
+                         playbook='playbook')
     message = f'❌   —   `{obj.name}`  (`12.12.19 11:04`)'
     return obj, message
 
@@ -118,4 +121,5 @@ def empty_env_vars():
         os.environ.pop(var, None)
     yield
     for var, val in env_vars.items():
-        os.environ[var] = val
+        if val:
+            os.environ[var] = val
