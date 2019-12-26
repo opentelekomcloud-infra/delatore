@@ -1,5 +1,4 @@
-from delatore.sources.http import AWXSource
-from delatore.sources.influx import InfluxSource
+from delatore.sources import AWXSource, InfluxSource
 
 
 def test_awx_source(awx_data):
@@ -12,3 +11,9 @@ def test_influx_source(influx_data):
     message, expected = influx_data
     message = InfluxSource.convert(message)
     assert message == expected
+
+
+def test_convert_template_status(template_status):
+    obj, message_e = template_status
+    message = str(obj)
+    assert message == message_e
