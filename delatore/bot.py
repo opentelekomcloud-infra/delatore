@@ -76,6 +76,10 @@ class DelatoreBot(TeleBot):
         """Start monitoring of given sources as coroutines"""
         response_lock = asyncio.Lock()
         coroutines = [self._monitor_source(src, response_lock) for src in self.sources]
+        try:
+            asyncio.get_event_loop()
+        except RuntimeError:
+            asyncio.set_event_loop(asyncio.new_event_loop())
         asyncio.run(asyncio.gather(*coroutines))
 
     def start(self):
