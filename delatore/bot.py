@@ -58,8 +58,9 @@ class DelatoreBot(TeleBot):
 
     async def _monitor_source(self, src_name, lock):
         """Monitor resource and post updates to """
+        source = self.sources[src_name]
         try:
-            source = self.sources[src_name].start()
+            source.start()
         except Exception:
             LOGGER.exception("Failed to init source `%s`", src_name)
             return
