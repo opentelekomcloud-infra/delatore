@@ -74,15 +74,12 @@ class DelatoreBot(TeleBot):
     def monitor_sources(self):
         """Start monitoring of given sources as coroutines"""
         coroutines = [self._monitor_source(src) for src in self.sources]
-        try:
-            asyncio.get_event_loop()
-        except RuntimeError:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-        asyncio.run(asyncio.gather(*coroutines))
+        wait_future = asyncio.wait(coroutines)
+        Thread(target=asyncio.run, args=(wait_future,), daemon=True).start()
 
     def start(self):
         """Start bot polling telegram API ignoring exceptions"""
-        Thread(target=self.monitor_sources, daemon=True).start()
+        self.monitor_sources()
         self.infinity_polling(interval=self.TG_POLLING_INTERVAL)
 
 
