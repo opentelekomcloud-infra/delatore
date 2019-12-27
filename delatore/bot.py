@@ -8,7 +8,7 @@ from telebot.apihelper import ApiException
 from telebot.types import Message
 
 from .configuration import BOT_CONFIG
-from .sources import AWXSource, AwxApiClient, InfluxSource
+from .sources import AWXApiClient, AWXListenerSource, InfluxSource
 from .sources.base import Source
 
 MARKDOWN = "Markdown"
@@ -29,7 +29,7 @@ class DelatoreBot(TeleBot):
 
     def __init__(self, *args, **kwargs):
         self.sources = {
-            "AWX": AWXSource(),
+            "AWX": AWXListenerSource(),
             "Influx": InfluxSource(),
         }
         super().__init__(*args, **kwargs)
@@ -88,7 +88,6 @@ bot = DelatoreBot(BOT_CONFIG.token)
 
 @bot.message_handler(commands=["status"])
 def handle_start_help(message: Message):
-    # msg_text = "/status awx:scenario1 5"
     message_text: str = message.text
     LOGGER.debug("Got message: %s", message_text)
     _, *arguments = message_text.split(" ")
@@ -104,5 +103,5 @@ def handle_start_help(message: Message):
         if len(target) > 1:
             template = target[1]
         LOGGER.debug("Getting AWX status")
-        response = AwxApiClient().create_status_message(template)
+        response = AWXApiClient().create_status_message(template)
         bot.alert(message.chat.id, response)

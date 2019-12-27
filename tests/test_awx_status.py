@@ -3,18 +3,18 @@ import re
 import pytest
 
 from delatore.emoji import Emoji
-from delatore.sources.awx_api import AwxApiClient
+from delatore.sources.awx_api import AWXApiClient
 
 
 @pytest.fixture
 def awx_client():
-    client = AwxApiClient()
+    client = AWXApiClient()
     return client
 
 
 @pytest.fixture
 def awx_client():
-    client = AwxApiClient()
+    client = AWXApiClient()
     return client
 
 
