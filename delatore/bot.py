@@ -57,7 +57,7 @@ class DelatoreBot(TeleBot):
         bot.last_message_id = message.message_id
         return message.json
 
-    async def _monitor_source(self, src_name, lock):
+    async def _monitor_source(self, src_name):
         """Monitor resource and post updates to """
         source = self.sources[src_name]
         try:
@@ -68,14 +68,12 @@ class DelatoreBot(TeleBot):
         while True:
             updates = source.updates  # read and clean updates field
             if updates:
-                async with lock:
-                    self.alert(BOT_CONFIG.chat_id, source.convert(updates))
+                self.alert(BOT_CONFIG.chat_id, source.convert(updates))
             await asyncio.sleep(self.SOURCE_POLLING_INTERVAL)
 
     def monitor_sources(self):
         """Start monitoring of given sources as coroutines"""
-        response_lock = asyncio.Lock()
-        coroutines = [self._monitor_source(src, response_lock) for src in self.sources]
+        coroutines = [self._monitor_source(src) for src in self.sources]
         try:
             asyncio.get_event_loop()
         except RuntimeError:
