@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from threading import Thread
 
@@ -7,8 +8,11 @@ from .base import Source
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
-class HttpSource(Source, ABC):
+
+class HttpListenerSource(Source, ABC):
     """HTTP listener"""
 
     def __init__(self, port):
@@ -17,11 +21,13 @@ class HttpSource(Source, ABC):
         self.app = app
         self.port = port
 
-    def run(self):
-        Thread(target=self.app.run, kwargs={'port': self.port}).start()
+    def start(self):
+        """Start server in dedicated thread"""
+        Thread(target=self.app.run, kwargs={'port': self.port}, daemon=True).start()
+        LOGGER.info(f"{type(self).__name__} source started")
 
 
-class AWXSource(HttpSource):
+class AWXListenerSource(HttpListenerSource):
     EMOJI_MAP = {
         '`failed`': Emoji.FAILED,
         '`running`': Emoji.RUNNING,
@@ -32,14 +38,14 @@ class AWXSource(HttpSource):
     @classmethod
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
-        text = convert(data)
+        text = convert(data).strip()
         text = '** From Ansible Tower **\n' + replace_emoji(text, cls.EMOJI_MAP)
-        return text.strip()
+        return text
 
     PORT = 23834
 
     def __init__(self, port=PORT):
-        super(AWXSource, self).__init__(port)
+        super(AWXListenerSource, self).__init__(port)
         self.app.route('/notifications', methods=['POST'])(self.notifications)
 
     def notifications(self):

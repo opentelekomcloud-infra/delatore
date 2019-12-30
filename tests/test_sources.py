@@ -1,9 +1,9 @@
-from delatore.sources import AWXSource, InfluxSource
+from delatore.sources import AWXListenerSource, InfluxSource
 
 
 def test_awx_source(awx_data):
     message, expected = awx_data
-    message = AWXSource.convert(message)
+    message = AWXListenerSource.convert(message)
     assert message == expected
 
 

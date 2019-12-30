@@ -1,7 +1,10 @@
+import functools
 import logging
 import os
 import re
+import time
 from datetime import datetime
+from threading import Thread
 
 from influxdb import InfluxDBClient
 
@@ -21,6 +24,8 @@ class InfluxSource(Source):
         self.db = 'csm'
         self.port = 8086
 
+    INFLUX_POLLING_INTERVAL = 60
+
     EMOJI_MAP = {
         '`OK`': Emoji.SUCCESS,
         '`FAIL`': Emoji.FAILED,
@@ -34,6 +39,20 @@ class InfluxSource(Source):
         text = '** From InfluxDB **\n' + replace_emoji(text, cls.EMOJI_MAP)
         return text.strip()
 
+    def start(self):
+        """Start InfluxDB polling in dedicated thread"""
+
+        def _polling():
+            while True:
+                try:
+                    self.updates = convert(self.get_influx_statuses())
+                except Exception:
+                    LOGGER.exception('Failed to get influx status')
+                time.sleep(self.INFLUX_POLLING_INTERVAL)
+
+        Thread(target=_polling, daemon=True, name='Thread-Influx').start()
+        LOGGER.info('InfluxDB polling started')
+
     def get_influx_statuses(self):
         client = InfluxDBClient(
             host=self.host,
@@ -44,10 +63,13 @@ class InfluxSource(Source):
             ssl=True,
             verify_ssl=True)
 
-        proof_of_work = dict(LB_LOAD=get_status(client, 'lb_timing'),
-                             LB_DOWN=get_status(client, 'lb_down_test'),
-                             SCSI_HDD_TEST=get_status(client, 'iscsi_connection'),
-                             RDS_TEST=get_status(client, 'ce_result'))
+        _get_status = functools.partial(get_status, client)
+        proof_of_work = {
+            'LB_LOAD': _get_status('lb_timing'),
+            'LB_DOWN': _get_status('lb_down_test'),
+            'SCSI_HDD_TEST': _get_status('iscsi_connection'),
+            'RDS_TEST': _get_status('ce_result')
+        }
         return proof_of_work
 
 

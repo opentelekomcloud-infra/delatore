@@ -1,11 +1,11 @@
 import logging
 import os
 import time
-from typing import NamedTuple, List
+from typing import List, NamedTuple
 
 import requests
 
-from ..emoji import replace_emoji, Emoji
+from ..emoji import Emoji, replace_emoji
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -31,7 +31,7 @@ class TemplateStatus(NamedTuple):
         return f'{status}   —   `{self.name}`  (`{timestamp}`)'
 
 
-class AwxApiClient:
+class AWXApiClient:
 
     def __init__(self):
         self.session = requests.session()

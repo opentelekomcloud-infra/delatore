@@ -1,13 +1,14 @@
-from delatore.bot import CSM_CHAT
+from delatore.bot import bot
+from delatore.configuration import CSM_CHAT
 
 
-def test_send_message(bot):
-    response = bot.send_message('test post to chat', CSM_CHAT, disable_notification=True)
+def test_send_message(cleanup_message):
+    response = bot.silent(CSM_CHAT, 'test post to chat')
     assert bot.last_message_id == response['message_id']
 
 
-def test_influx_message_sending(bot, influxdb):
+def test_influx_message_sending(cleanup_message, influxdb):
     message = influxdb.get_influx_statuses()
     message_converted = influxdb.convert(message)
-    response = bot.send_message(message_converted, CSM_CHAT)
+    response = bot.silent(CSM_CHAT, message_converted)
     assert bot.last_message_id == response['message_id']

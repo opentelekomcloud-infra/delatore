@@ -1,19 +1,21 @@
+import os
 import string
-from random import choice, randint
+from random import choice, randint, randrange
 
 import pytest
 
-from delatore.bot import CSM_CHAT, Delatore
+from delatore.bot import bot
+from delatore.configuration import CSM_CHAT
 from delatore.emoji import Emoji
 from delatore.sources import InfluxSource
 from delatore.sources.awx_api import TemplateStatus
 
 
 @pytest.fixture
-def bot():
-    _bot = Delatore()
-    yield _bot
-    _bot.delete_message(CSM_CHAT, _bot.last_message_id)
+def cleanup_message():
+    yield
+    if bot.last_message_id is not None:
+        bot.delete_message(CSM_CHAT, bot.last_message_id)
 
 
 @pytest.fixture
@@ -29,7 +31,7 @@ def random_with_length(length):
 
 def random_string(length=10):
     letters = string.ascii_lowercase
-    return ''.join(choice(letters) for i in range(length))
+    return ''.join(choice(letters) for _ in range(length))
 
 
 @pytest.fixture
@@ -82,6 +84,42 @@ def influx_data():
 
 @pytest.fixture
 def template_status():
-    obj = TemplateStatus(name='Scenario 1', last_run_timestamp='2019-12-12T11:04:55.33Z', last_status='failed', playbook='playbook')
+    obj = TemplateStatus(name='Scenario 1',
+                         last_run_timestamp='2019-12-12T11:04:55.33Z',
+                         last_status='failed',
+                         playbook='playbook')
     message = f'❌   —   `{obj.name}`  (`12.12.19 11:04`)'
     return obj, message
+
+
+@pytest.fixture
+def token():
+    return f'{randrange(999999999):09}:{random_string(35)}'
+
+
+@pytest.fixture
+def chat_id():
+    return f'{randrange(-0xffffffff, 0xffffffff)}'
+
+
+@pytest.fixture
+def config_file(token, chat_id):
+    base_path = './tmp'
+    os.makedirs(base_path, exist_ok=True)
+    file_path = os.path.abspath(f'{base_path}/cfg.ini')
+    with open(file_path, 'w+') as cfg:
+        cfg.write(f'[DEFAULT]\ntoken = {token}\nchat_id = {chat_id}')
+    yield file_path
+    os.remove(file_path)
+    os.rmdir(base_path)
+
+
+@pytest.fixture
+def empty_env_vars():
+    env_vars = {var: os.getenv(var) for var in ['token', 'chat_id']}
+    for var in env_vars:
+        os.environ.pop(var, None)
+    yield
+    for var, val in env_vars.items():
+        if val:
+            os.environ[var] = val
