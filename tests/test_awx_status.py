@@ -29,7 +29,6 @@ def test_get_data(awx_client):
     assert RE_STATUS.findall(message), message
 
 
-
 def test_get_all_scenarios(awx_client):
     single = awx_client.create_status_message(template=TEMPLATE_NAME)
     multiple = awx_client.create_status_message()
