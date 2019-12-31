@@ -103,12 +103,17 @@ def chat_id():
 
 
 @pytest.fixture
-def config_file(token, chat_id):
+def influx_password():
+    return random_string(30)
+
+
+@pytest.fixture
+def config_file(token, chat_id, influx_password):
     base_path = './tmp'
     os.makedirs(base_path, exist_ok=True)
     file_path = os.path.abspath(f'{base_path}/cfg.ini')
     with open(file_path, 'w+') as cfg:
-        cfg.write(f'[DEFAULT]\ntoken = {token}\nchat_id = {chat_id}')
+        cfg.write(f'[DEFAULT]\ntoken = {token}\nchat_id = {chat_id}\ninflux_password = {influx_password}')
     yield file_path
     os.remove(file_path)
     os.rmdir(base_path)

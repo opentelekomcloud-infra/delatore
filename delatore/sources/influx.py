@@ -8,6 +8,7 @@ from threading import Thread
 
 from influxdb import InfluxDBClient
 
+from delatore.configuration import BOT_CONFIG
 from .base import Source
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
@@ -20,7 +21,7 @@ class InfluxSource(Source):
     def __init__(self):
         self.host = 'influx1.eco.tsi-dev.otc-service.com'
         self.username = 'csm'
-        self.password = os.environ['INFLUX_PASSWORD']
+        self.password = BOT_CONFIG.influx_password
         self.db = 'csm'
         self.port = 8086
 

@@ -13,6 +13,7 @@ class BotConfig(NamedTuple):
     """Bot configuration container"""
     token: str
     chat_id: str
+    influx_password: str
 
     @property
     def url(self):
@@ -25,12 +26,14 @@ def read_config(config_file=RESOURCES['config.ini']):
     config.read(config_file)
     defaults = config.defaults()
     if defaults:
-        token = defaults.get('token', os.getenv('token'))
-        chat_id = defaults.get('chat_id', os.getenv('chat_id'))
-        return BotConfig(token, chat_id)
+        token = defaults.get('token')
+        chat_id = defaults.get('chat_id')
+        influx_password = defaults.get('influx_password')
+        return BotConfig(token, chat_id, influx_password)
     return BotConfig(
         os.getenv('token'),
         os.getenv('chat_id'),
+        os.getenv('influx_password')
     )
 
 
