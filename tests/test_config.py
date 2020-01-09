@@ -1,6 +1,4 @@
-import pytest
 from delatore.configuration import BOT_CONFIG, BotConfig, read_config
-
 
 
 def test_config_load(config_file, token, chat_id, influx_password):

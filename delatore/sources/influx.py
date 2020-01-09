@@ -1,6 +1,5 @@
 import functools
 import logging
-import os
 import re
 import time
 from datetime import datetime
@@ -8,8 +7,8 @@ from threading import Thread
 
 from influxdb import InfluxDBClient
 
-from delatore.configuration import BOT_CONFIG
 from .base import Source
+from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 

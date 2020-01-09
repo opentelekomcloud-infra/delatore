@@ -26,9 +26,9 @@ def read_config(config_file=RESOURCES['config.ini']):
     config.read(config_file)
     defaults = config.defaults()
     if defaults:
-        token = defaults.get('token')
-        chat_id = defaults.get('chat_id')
-        influx_password = defaults.get('influx_password')
+        token = defaults.get('token', os.getenv('token'))
+        chat_id = defaults.get('chat_id', os.getenv('chat_id'))
+        influx_password = defaults.get('influx_password', os.getenv('influx_password'))
         return BotConfig(token, chat_id, influx_password)
     return BotConfig(
         os.getenv('token'),
