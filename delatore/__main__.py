@@ -11,7 +11,7 @@ def _config():
     arg_p.add_argument("--chat", default=os.getenv("chat_id"), help="Chat for notifications")
     arg_p.add_argument("--token", default=os.getenv("token"), help="Telegram bot token")
     arg_p.add_argument("--influx_password", default=os.getenv("INFLUX_PASSWORD"), help="Influx password")
-    arg_p.add_argument("--awx_auth_token", default=os.getenv("AWX_AUTH_TOKEN"), help="AWX_AUTH_TOKEN")
+    arg_p.add_argument("--awx_auth_token", default=os.getenv("AWX_AUTH_TOKEN"), help="OAuth2 Token for Ansible Tower")
     args = arg_p.parse_args()
     config_file = args.config
     token, chat_id, influx_password = args.token, args.chat, args.influx_password
