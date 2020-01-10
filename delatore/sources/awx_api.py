@@ -1,10 +1,10 @@
 import logging
 import time
 from typing import List, NamedTuple
-from delatore.configuration import BOT_CONFIG
 
 import requests
 
+from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 
 LOGGER = logging.getLogger(__name__)

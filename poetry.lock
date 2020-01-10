@@ -273,6 +273,17 @@ mccabe = ">=0.6,<0.7"
 
 [[package]]
 category = "dev"
+description = "Quote consistency checker for PyLint.."
+name = "pylint-quotes"
+optional = false
+python-versions = ">=3.4"
+version = "0.2.1"
+
+[package.dependencies]
+pylint = ">=1.7.6"
+
+[[package]]
+category = "dev"
 description = "Python parsing module"
 name = "pyparsing"
 optional = false
@@ -447,7 +458,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "87e9137fdfadf02c900a80afa572367599eff973ae9b28829063c69f18653b64"
+content-hash = "71bcc9f4377d389936d314ea5e5c424d1f400966b18aaa09d1962cbe497f293a"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -619,6 +630,10 @@ py = [
 pylint = [
     {file = "pylint-2.4.4-py3-none-any.whl", hash = "sha256:886e6afc935ea2590b462664b161ca9a5e40168ea99e5300935f6591ad467df4"},
     {file = "pylint-2.4.4.tar.gz", hash = "sha256:3db5468ad013380e987410a8d6956226963aed94ecb5f9d3a28acca6d9ac36cd"},
+]
+pylint-quotes = [
+    {file = "pylint-quotes-0.2.1.tar.gz", hash = "sha256:c53d2a63b4cd16c9fa426d243de6396910ff04c65001efdbea37427d401fce72"},
+    {file = "pylint_quotes-0.2.1-py2.py3-none-any.whl", hash = "sha256:5332fa8b48ce5d8780df196d684f38c00614f8233fdc4c67efbdc0bbe7dc51d7"},
 ]
 pyparsing = [
     {file = "pyparsing-2.4.6-py2.py3-none-any.whl", hash = "sha256:c342dccb5250c08d45fd6f8b4a559613ca603b57498511740e65cd11a2e7dcec"},
