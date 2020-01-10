@@ -10,11 +10,12 @@ def _config():
     arg_p.add_argument("--config", default=None, help="Configuration file to use")
     arg_p.add_argument("--chat", default=os.getenv("chat_id"), help="Chat for notifications")
     arg_p.add_argument("--token", default=os.getenv("token"), help="Telegram bot token")
+    arg_p.add_argument("--influx_password", default=os.getenv("INFLUX_PASSWORD"), help="Influx password")
     args = arg_p.parse_args()
     config_file = args.config
-    token, chat_id = args.token, args.chat
-    if all([token, chat_id]):
-        configuration.BOT_CONFIG = configuration.BotConfig(args.token, args.chat)
+    token, chat_id, influx_password = args.token, args.chat, args.influx_password
+    if all([token, chat_id, influx_password]):
+        configuration.BOT_CONFIG = configuration.BotConfig(args.token, args.chat, args.influx_password)
     elif config_file:
         if not os.path.isfile(config_file):
             raise FileNotFoundError
