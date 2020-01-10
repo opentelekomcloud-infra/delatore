@@ -1,10 +1,10 @@
 import logging
-import os
 import time
 from typing import List, NamedTuple
 
 import requests
 
+from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 
 LOGGER = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class AWXApiClient:
 
     def __init__(self):
         self.session = requests.session()
-        self.session.headers.update({'Authorization': f'Bearer {os.getenv("AWX_AUTH_TOKEN")}'})
+        self.session.headers.update({'Authorization': f'Bearer {BOT_CONFIG.awx_auth_token}'})
         self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
 
     def create_status_message(self, template: str = None):
