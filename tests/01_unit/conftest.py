@@ -122,7 +122,7 @@ def empty_env_vars():
 
 @pytest.fixture
 def empty_config_file(tmp_dir):
-    file_name = f'{tmp_dir}/fl'
+    file_name = f'{tmp_dir}/empty.ini'
     with open(file_name, 'w+') as cfg:
         cfg.write('[DEFAULT]\n')
     yield file_name
