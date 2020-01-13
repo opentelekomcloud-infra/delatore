@@ -52,7 +52,7 @@ class AWXApiClient:
     def get_templates(self, filters: dict = None):
         """Returns list of all job templates for csm organization
 
-        This methods support ansible tower filtering https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
+        This methods support Ansible tower filtering https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         response = self.session.get(url=self.url + '/job_templates', params=filters)
         assert response.status_code == 200, f'Expected response 200, got {response.status_code} ({response.text})'

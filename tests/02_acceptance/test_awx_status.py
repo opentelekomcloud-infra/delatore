@@ -1,22 +1,6 @@
 import re
 
-import pytest
-
 from delatore.emoji import Emoji
-from delatore.sources.awx_api import AWXApiClient
-
-
-@pytest.fixture
-def awx_client():
-    client = AWXApiClient()
-    return client
-
-
-@pytest.fixture
-def awx_client():
-    client = AWXApiClient()
-    return client
-
 
 TEMPLATE_NAME = 'Scenario 1.5'
 __RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
@@ -32,5 +16,4 @@ def test_get_data(awx_client):
 def test_get_all_scenarios(awx_client):
     single = awx_client.create_status_message(template=TEMPLATE_NAME)
     multiple = awx_client.create_status_message()
-    print(multiple)
     assert single in multiple
