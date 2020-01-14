@@ -7,9 +7,12 @@ from telebot import TeleBot
 from telebot.apihelper import ApiException
 from telebot.types import Message
 
-from .configuration import BOT_CONFIG
-from .sources import AWXApiClient, AWXListenerSource, InfluxSource
-from .sources.base import Source
+from .parsing import CommandParsingError, parse_command
+from ..configuration import BOT_CONFIG
+from ..helpers import log_errors
+from ..sources import AWXApiClient, AWXListenerSource, InfluxSource
+from ..sources.awx_api import NoSuchTemplate
+from ..sources.base import Source
 
 MARKDOWN = "Markdown"
 
@@ -62,11 +65,11 @@ class DelatoreBot(TeleBot):
         source = self.sources[src_name]
         try:
             source.start()
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             LOGGER.exception("Failed to init source `%s`", src_name)
             return
         while True:
-            updates = source.updates  # read and clean updates field
+            updates = source.updates  # red and clean updates field
             if updates:
                 self.alert(BOT_CONFIG.chat_id, source.convert(updates))
             await asyncio.sleep(self.SOURCE_POLLING_INTERVAL)
@@ -83,25 +86,21 @@ class DelatoreBot(TeleBot):
         self.infinity_polling(interval=self.TG_POLLING_INTERVAL)
 
 
-bot = DelatoreBot(BOT_CONFIG.token)
+bot = DelatoreBot(BOT_CONFIG.token)  # pylint: disable=invalid-name
+
+STATUS = 'status'
 
 
-@bot.message_handler(commands=["status"])
+@log_errors
+@bot.message_handler(commands=[STATUS])
 def handle_start_help(message: Message):
-    message_text: str = message.text
-    LOGGER.debug("Got message: %s", message_text)
-    _, *arguments = message_text.split(" ")
-    if not arguments:
-        return
-    if len(arguments) > 1:
-        count = int(arguments[1])
-    else:
-        count = 1
-    target: list = arguments.pop(0).split(":")
-    template = None
-    if target[0] == "awx":
-        if len(target) > 1:
-            template = target[1]
-        LOGGER.debug("Getting AWX status")
-        response = AWXApiClient().create_status_message(template)
-        bot.alert(message.chat.id, response)
+    try:
+        source, template_name, count = parse_command(message.text)
+    except CommandParsingError:
+        response = bot.reply_to(message, 'Invalid command. Please check command syntax')
+        return bot.alert(message.chat.id, response)
+    try:
+        response = AWXApiClient().create_status_message(template_name)
+    except NoSuchTemplate:
+        response = f'No template with name {template_name}'
+    return bot.alert(message.chat.id, response)
