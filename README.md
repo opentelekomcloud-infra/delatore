@@ -1,4 +1,6 @@
 # Delatore
+[![Build Status](https://travis-ci.org/opentelekomcloud-infra/delatore.svg?branch=master)](https://travis-ci.org/opentelekomcloud-infra/delatore)
+
 Monitor and report status of customer service monitoring scenarios
 
 ## State
