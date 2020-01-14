@@ -7,7 +7,8 @@ from telebot import TeleBot
 from telebot.apihelper import ApiException
 from telebot.types import Message
 
-from .parsing import parse_command
+from delatore.sources.awx_api import NoSuchTemplate
+from .parsing import parse_command, CommandParsingError
 from ..configuration import BOT_CONFIG
 from ..sources import AWXListenerSource, AWXApiClient, InfluxSource
 from ..sources.base import Source
@@ -88,8 +89,16 @@ bot = DelatoreBot(BOT_CONFIG.token)
 
 STATUS = "status"
 
+
 @bot.message_handler(commands=[STATUS])
 def handle_start_help(message: Message):
-    source, template_name, count = parse_command(message)
-    response = AWXApiClient().create_status_message(template_name)
-    bot.alert(message.chat.id, response)
+    try:
+        source, template_name, count = parse_command(message.text)
+    except CommandParsingError:
+        response = bot.reply_to(message, "Invalid command. Please check command syntax")
+        return bot.alert(message.chat.id, response)
+    try:
+        response = AWXApiClient().create_status_message(template_name)
+        bot.alert(message.chat.id, response)
+    except:
+        raise NoSuchTemplate(f'Scenario {template_name} does not exist')

@@ -17,6 +17,13 @@ EMOJI_MAP = {
 }
 
 
+class NoSuchTemplate(Exception):
+    """Template not found"""
+
+    def __init__(self, template_name):
+        super(NoSuchTemplate, self).__init__(f"Template {template_name} does not exist")
+
+
 class TemplateStatus(NamedTuple):
     name: str
     last_run_timestamp: str

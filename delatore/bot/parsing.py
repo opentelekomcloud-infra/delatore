@@ -1,5 +1,6 @@
 import logging
-from typing import NamedTuple
+import shlex
+from collections import namedtuple
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -7,33 +8,31 @@ LOGGER.setLevel(logging.DEBUG)
 __all__ = ["parse_command"]
 
 
+class CommandParsingError(Exception):
+    """Error during command parsing"""
+
+    def __init__(self, command_name):
+        super().__init__(f"Error during {command_name} parsing")
+
+
 def parse_command(message):
-    if message.startswith('/status'):
-        message = message [len('/status'):]
-    return _parse_status(message)
-
-
-def _parse_status(message):
     LOGGER.debug("Got message: %s", message)
-    message = message.replace("\"", "\'")
-    print(message)
-    arguments = message.split("\'")
-    if not arguments:
-        return
-    arguments[0] = arguments[0].replace(' ', '')
-    target: str = arguments[0].split(":")
-    name_template = None
-    count = 1
-    if target[0] == 'awx':
-        if len(arguments) > 1:
-            name_template = arguments[1].strip()
-            if (len(arguments) > 2) & (arguments[2] != ''):
-                arguments[2] = arguments[2].replace(" ","")
-                count = int(arguments[2])
+    cmd, target, *args = shlex.split(message)
+    depth = None
+    if ("\'" not in message) and (len(args) > 1):
+        raise CommandParsingError(f"Invalid syntax command arguments: {message}")
+    detailed = args.pop(0) if args else None
+    try:
+        depth = int(args.pop(0))
+    except IndexError:
+        if detailed == None:
+            depth = None
         else:
-            count = None
-        LOGGER.debug("Getting AWX status")
-    return target[0], name_template, count
-
-
+            depth = 1
+    except ValueError:
+        raise CommandParsingError(f"Invalid depth value: {depth}")
+    if args:
+     raise CommandParsingError(f"Command {cmd} got unexpected arguments: {args}")
+    LOGGER.debug("Getting AWX status")
+    return target, detailed, depth
 
