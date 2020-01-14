@@ -3,7 +3,6 @@
 
 Monitor and report status of customer service monitoring scenarios
 
-
 ## State
 Given project is just a concept
 
