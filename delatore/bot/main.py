@@ -7,10 +7,10 @@ from telebot import TeleBot
 from telebot.apihelper import ApiException
 from telebot.types import Message
 
-from delatore.sources.awx_api import NoSuchTemplate
 from .parsing import parse_command, CommandParsingError
 from ..configuration import BOT_CONFIG
 from ..sources import AWXListenerSource, AWXApiClient, InfluxSource
+from ..sources.awx_api import NoSuchTemplate
 from ..sources.base import Source
 
 MARKDOWN = "Markdown"
