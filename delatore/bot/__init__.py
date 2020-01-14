@@ -1,1 +1,1 @@
-from .main import bot
+from .main import DISP, alert, remove, silent
