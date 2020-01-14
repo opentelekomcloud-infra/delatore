@@ -48,7 +48,10 @@ class AWXApiClient:
         :param template: name of template, if empty — all scenarios
         """
         _filter = {'name__iexact': template}
-        json_data = self.get_templates(_filter)
+        try:
+            json_data = self.get_templates(_filter)
+        except KeyError:
+            raise NoSuchTemplate("No template which has such name")
         template_data = get_templates_statuses_from_json(json_data)
         message = '\n'.join(str(i) for i in template_data)
         return message

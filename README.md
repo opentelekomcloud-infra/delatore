@@ -31,13 +31,15 @@ Bot reply to the message with last status(-es) retrieved from given source
 
 Status has following syntax:
 
-`/status <source> '[detailed_source]' [history_depth]`
+`/status <source> [detailed_source] [history_depth]`
+
+If some argument contains spaces, it should be surrounded by quotes, either `'...'` or `"..."`
 
 #### AWX Source
 
 Status command for AWX source has following syntax:
 
-`/status awx '[template_name]' [history_depth]`
+`/status awx [template_name] [history_depth]`
 
 Examples:
  - `/status awx` — return last job status for all _scenarios_
