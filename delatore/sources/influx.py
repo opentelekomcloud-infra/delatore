@@ -1,13 +1,12 @@
 import asyncio
 import json
 import logging
-import random
 import re
 from datetime import datetime
 from typing import Dict
 
 import aiohttp
-from aiohttp import BasicAuth, ClientResponseError, ServerConnectionError
+from aiohttp import BasicAuth
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
@@ -37,7 +36,7 @@ class AsyncInfluxClient(InfluxDBClient):
                     raise_errors=True,
                     chunked=False,
                     chunk_size=0,
-                    method="GET"):
+                    method='GET'):
         if params is None:
             params = {}
 
@@ -82,7 +81,7 @@ class AsyncInfluxClient(InfluxDBClient):
 
     async def request(self, url, method='GET', params=None, data=None,
                       expected_response_code=200, headers=None):
-        url = "{0}/{1}".format(self._baseurl, url)
+        url = f'{self._baseurl}/{url}'
 
         if headers is None:
             headers = self._headers

@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+from aiogram.types import Message, ParseMode
 
 from .parsing import CommandParsingError, parse_command
 from ..configuration import BOT_CONFIG
@@ -10,13 +10,11 @@ from ..sources import AWXApiClient, AWXListenerSource, InfluxSource
 from ..sources.awx_api import NoSuchTemplate
 from ..sources.base import Source
 
-MARKDOWN = 'MarkdownV2'
-
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-BOT = Bot(BOT_CONFIG.token, parse_mode=MARKDOWN)  # pylint: disable=invalid-name
-DISP = Dispatcher(BOT)  # pylint: disable=invalid-name
+BOT = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
+DISP = Dispatcher(BOT)
 
 SOURCE_POLLING_INTERVAL = 2
 
@@ -39,23 +37,23 @@ async def remove(chat_id, message_id):
 
 
 # noinspection PyBroadException
-async def _monitor_source(source: Source):
+async def _monitor_source(source: Source, stop_event: asyncio.Event):
     """Monitor resource and post updates to """
 
     async def __alert_on_update():
-        while not STOP_EVENT.is_set():
+        while not stop_event.is_set():
             updates = source.updates  # read and clean updates field
             if updates:
                 await alert(BOT_CONFIG.chat_id, source.convert(updates))
             await asyncio.sleep(SOURCE_POLLING_INTERVAL)
 
-    scr_start = source.start(STOP_EVENT)
+    scr_start = source.start(stop_event)
     alert_start = __alert_on_update()
     await asyncio.wait([scr_start, alert_start])
 
 
 async def monitor_sources():
-    source_coros = [_monitor_source(src()) for src in [AWXListenerSource, InfluxSource]]
+    source_coros = [_monitor_source(src(), STOP_EVENT) for src in [AWXListenerSource, InfluxSource]]
     STOP_EVENT.clear()
     await asyncio.wait(source_coros)
 
