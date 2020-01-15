@@ -32,7 +32,7 @@ class TemplateStatus(NamedTuple):
         timestamp = self.last_run_timestamp
         if timestamp is not None:
             timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ'))
-        return f'{status}   —   `{self.name}`  (`{timestamp}`)'
+        return rf'{status}   —   `{self.name}`  \(`{timestamp}`\)'
 
 
 def get_session():
