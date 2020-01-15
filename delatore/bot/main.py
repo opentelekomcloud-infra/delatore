@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, ParseMode
+from aiogram.types import Message
 
 from .parsing import CommandParsingError, parse_command
 from ..configuration import BOT_CONFIG
@@ -13,7 +13,7 @@ from ..sources.base import Source
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-BOT = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
+BOT = Bot(BOT_CONFIG.token, parse_mode='Markdown')
 DISP = Dispatcher(BOT)
 
 SOURCE_POLLING_INTERVAL = 2
