@@ -1,106 +1,79 @@
 import asyncio
 import logging
-from threading import Thread
-from typing import Dict
 
-from telebot import TeleBot
-from telebot.apihelper import ApiException
-from telebot.types import Message
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message, ParseMode
 
 from .parsing import CommandParsingError, parse_command
 from ..configuration import BOT_CONFIG
-from ..helpers import log_errors
 from ..sources import AWXApiClient, AWXListenerSource, InfluxSource
 from ..sources.awx_api import NoSuchTemplate
 from ..sources.base import Source
 
-MARKDOWN = "Markdown"
-
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
+BOT = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
+DISP = Dispatcher(BOT)
 
-class DelatoreBot(TeleBot):
-    """TeleBot tweaked for delatore"""
+SOURCE_POLLING_INTERVAL = 2
 
-    SOURCE_POLLING_INTERVAL = 10
-    TG_POLLING_INTERVAL = 0.5
+STOP_EVENT = asyncio.Event()
 
-    last_message_id = None
 
-    sources: Dict[str, Source] = None
+async def alert(chat_id, message):
+    """Send message to chat alerting users"""
+    return await BOT.send_message(chat_id, message, disable_notification=False)
 
-    def __init__(self, *args, **kwargs):
-        self.sources = {
-            "AWX": AWXListenerSource(),
-            "Influx": InfluxSource(),
-        }
-        super().__init__(*args, **kwargs)
 
-    def alert(self, chat, text):
-        """Send message with channel notifying"""
-        return self.send_message(chat, text, disable_notification=False)
+async def silent(chat_id, message):
+    """Send message to chat without user alerting"""
+    return await BOT.send_message(chat_id, message, disable_notification=True)
 
-    def silent(self, chat, text):
-        """Send message without notifying channel"""
-        return self.send_message(chat, text, disable_notification=True)
 
-    def send_message(self, chat_id, text, disable_notification=False, **kwargs):
-        """Send telegram message"""
-        try:
-            message = super().send_message(
-                chat_id, text,
-                parse_mode=MARKDOWN,
-                disable_notification=disable_notification,
-                **kwargs
-            )
-        except ApiException:
-            LOGGER.exception("Message can't be sent:\nChat:%s\nMessage:\n%s", chat_id, text)
-            return None
-        bot.last_message_id = message.message_id
-        return message.json
+async def remove(chat_id, message_id):
+    """Remove message from chat"""
+    return await BOT.delete_message(chat_id, message_id)
 
-    async def _monitor_source(self, src_name):
-        """Monitor resource and post updates to """
-        source = self.sources[src_name]
-        try:
-            source.start()
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception("Failed to init source `%s`", src_name)
-            return
-        while True:
-            updates = source.updates  # red and clean updates field
+
+# noinspection PyBroadException
+async def _monitor_source(source: Source, stop_event: asyncio.Event):
+    """Monitor resource and post updates to """
+
+    async def __alert_on_update():
+        while not stop_event.is_set():
+            updates = source.updates  # read and clean updates field
             if updates:
-                self.alert(BOT_CONFIG.chat_id, source.convert(updates))
-            await asyncio.sleep(self.SOURCE_POLLING_INTERVAL)
+                await alert(BOT_CONFIG.chat_id, source.convert(updates))
+            await asyncio.sleep(SOURCE_POLLING_INTERVAL)
 
-    def monitor_sources(self):
-        """Start monitoring of given sources as coroutines"""
-        coroutines = [self._monitor_source(src) for src in self.sources]
-        wait_future = asyncio.wait(coroutines)
-        Thread(target=asyncio.run, args=(wait_future,), daemon=True).start()
-
-    def start(self):
-        """Start bot polling telegram API ignoring exceptions"""
-        self.monitor_sources()
-        self.infinity_polling(interval=self.TG_POLLING_INTERVAL)
+    scr_start = source.start(stop_event)
+    alert_start = __alert_on_update()
+    await asyncio.wait([scr_start, alert_start])
 
 
-bot = DelatoreBot(BOT_CONFIG.token)  # pylint: disable=invalid-name
+async def monitor_sources():
+    source_coros = [_monitor_source(src(), STOP_EVENT) for src in [AWXListenerSource, InfluxSource]]
+    STOP_EVENT.clear()
+    await asyncio.wait(source_coros)
+
+
+def stop_monitoring():
+    STOP_EVENT.set()
+
 
 STATUS = 'status'
 
 
-@log_errors
-@bot.message_handler(commands=[STATUS])
-def handle_start_help(message: Message):
+@DISP.message_handler(commands=[STATUS])
+async def handle_status(message: Message):
     try:
         source, template_name, count = parse_command(message.text)
     except CommandParsingError:
-        response = bot.reply_to(message, 'Invalid command. Please check command syntax')
-        return bot.alert(message.chat.id, response)
+        return await message.answer('Invalid command. Please check command syntax')
     try:
-        response = AWXApiClient().create_status_message(template_name)
+        client = AWXApiClient()
+        response = await client.create_status_message(template_name)
     except NoSuchTemplate:
         response = f'No template with name {template_name}'
-    return bot.alert(message.chat.id, response)
+    return await message.answer(response)

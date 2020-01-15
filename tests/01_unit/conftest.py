@@ -62,7 +62,7 @@ def template_status():
                          last_run_timestamp='2019-12-12T11:04:55.33Z',
                          last_status='failed',
                          playbook='playbook')
-    message = f'❌   —   `{obj.name}`  (`12.12.19 11:04`)'
+    message = rf'❌   —   `{obj.name}`  \(`12.12.19 11:04`\)'
     return obj, message
 
 

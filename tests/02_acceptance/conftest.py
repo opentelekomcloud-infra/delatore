@@ -1,7 +1,7 @@
+import asyncio
+
 import pytest
 
-from delatore.bot import bot
-from delatore.configuration import CSM_CHAT
 from delatore.sources import AWXApiClient, InfluxSource
 
 
@@ -10,13 +10,12 @@ def awx_client():
     return AWXApiClient()
 
 
-@pytest.fixture
-def cleanup_message():
-    yield
-    if bot.last_message_id is not None:
-        bot.delete_message(CSM_CHAT, bot.last_message_id)
-
-
 @pytest.fixture(scope='session')
 def influxdb():
     return InfluxSource()
+
+
+@pytest.fixture(scope='session')  # change default loop fixture
+def event_loop():
+    loop = asyncio.get_event_loop()
+    return loop

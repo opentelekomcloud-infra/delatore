@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 
 
@@ -41,5 +42,5 @@ class Source(ABC):
     updates = SourceField('__updates__', 'convert')
 
     @abstractmethod
-    def start(self):
+    async def start(self, stop_event: asyncio.Event):
         """Start consuming"""

@@ -1,8 +1,9 @@
+import asyncio
 import logging
 from abc import ABC
-from threading import Thread
 
-from flask import Flask, request
+from aiohttp import web
+from aiohttp.web_request import Request
 
 from .base import Source
 from ..emoji import Emoji, replace_emoji
@@ -12,19 +13,28 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
+async def ok(_: Request):
+    return web.Response(text='OK')
+
+
 class HttpListenerSource(Source, ABC):
     """HTTP listener"""
 
     def __init__(self, port):
-        app = Flask(__name__)
-        app.route('/')(lambda: 'OK')
+        app = web.Application()
+        app.add_routes([web.get('/', ok)])
         self.app = app
         self.port = port
 
-    def start(self):
-        """Start server in dedicated thread"""
-        Thread(target=self.app.run, kwargs={'port': self.port}, daemon=True).start()
-        LOGGER.info(f"{type(self).__name__} source started")
+    async def start(self, stop_event):
+        """Start server coroutine"""
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, port=self.port)
+        await site.start()
+        while not stop_event.is_set():
+            await asyncio.sleep(.1)
+        await runner.cleanup()
 
 
 class AWXListenerSource(HttpListenerSource):
@@ -46,8 +56,10 @@ class AWXListenerSource(HttpListenerSource):
 
     def __init__(self, port=PORT):
         super(AWXListenerSource, self).__init__(port)
-        self.app.route('/notifications', methods=['POST'])(self.notifications)
+        self.app.add_routes([
+            web.get('/notifications', self.notifications)
+        ])
 
-    def notifications(self):
-        self.updates = request.json
-        return 'OK'
+    async def notifications(self, request: web.Request):
+        self.updates = await request.json()
+        return web.Response(text='OK')

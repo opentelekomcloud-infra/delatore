@@ -14,7 +14,7 @@ class BotConfig(NamedTuple):
     token: str
     chat_id: str
     influx_password: str
-    awx_auth_token : str
+    awx_auth_token: str
 
     @property
     def url(self):
@@ -31,7 +31,7 @@ def read_config(config_file=RESOURCES['config.ini']):
         chat_id = defaults.get('chat_id', os.getenv('chat_id'))
         influx_password = defaults.get('influx_password', os.getenv('INFLUX_PASSWORD'))
         awx_auth_token = defaults.get('awx_auth_token', os.getenv('AWX_AUTH_TOKEN'))
-        return BotConfig(token, chat_id, influx_password,awx_auth_token)
+        return BotConfig(token, chat_id, influx_password, awx_auth_token)
     return BotConfig(
         os.getenv('token'),
         os.getenv('chat_id'),
