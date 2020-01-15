@@ -1,5 +1,4 @@
 """Run bot as python module"""
-import asyncio
 import os
 from argparse import ArgumentParser
 
@@ -33,7 +32,7 @@ def _config():
 def _main():
     _config()
     from delatore.bot import DISP
-    asyncio.run(executor.start_polling(DISP))
+    executor.start_polling(DISP)
 
 
 _main()
