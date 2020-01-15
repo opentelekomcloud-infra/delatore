@@ -25,7 +25,7 @@ class Source(ABC):
 
     @abstractmethod
     async def get_update(self) -> Optional[Json]:
-        """Get source update"""""
+        """Get source update"""
 
     @classmethod
     @abstractmethod

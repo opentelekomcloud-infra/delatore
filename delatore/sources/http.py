@@ -21,6 +21,8 @@ async def ok(_: Request):
 class HttpListenerSource(Source, ABC):
     """HTTP listener"""
 
+    # pylint: disable=abstract-method
+
     def __init__(self, port, client: Client):
         super().__init__(client, .1)
         app = web.Application()

@@ -39,9 +39,9 @@ async def remove(chat_id, message_id):
 STATUS = 'status'
 
 IN_TOPICS = [
-    InfluxSource.TOPIC,
-    AWXApiClient.TOPIC,
-    AWXListenerSource.TOPIC,
+    InfluxSource.TOPIC,  # pylint: disable=no-member
+    AWXApiClient.TOPIC,  # pylint: disable=no-member
+    AWXListenerSource.TOPIC,  # pylint: disable=no-member
 ]
 
 

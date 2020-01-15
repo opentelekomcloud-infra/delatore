@@ -92,9 +92,8 @@ class AsyncInfluxClient(InfluxDBClient):
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
 
-        # Try to send the request more than once by default (see #103)
-        retry = True
-        _try = 0
+        # retry = True
+        # _try = 0
         kwargs = dict(
             method=method,
             url=url,
@@ -112,10 +111,9 @@ class AsyncInfluxClient(InfluxDBClient):
         # if there's not an error, there must have been a successful response
         if 500 <= response.status < 600:
             raise InfluxDBServerError(data)
-        elif response.status == expected_response_code:
+        if response.status == expected_response_code:
             return data
-        else:
-            raise InfluxDBClientError(data, response.status)
+        raise InfluxDBClientError(data, response.status)
 
 
 INFLUX_POLLING_INTERVAL = 60
