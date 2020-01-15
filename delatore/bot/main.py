@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+from aiogram.types import Message, ParseMode
 
 from .parsing import CommandParsingError, parse_command
 from ..configuration import BOT_CONFIG
@@ -13,7 +13,7 @@ from ..sources.base import Source
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-BOT = Bot(BOT_CONFIG.token, parse_mode='Markdown')
+BOT = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
 DISP = Dispatcher(BOT)
 
 SOURCE_POLLING_INTERVAL = 2
@@ -76,4 +76,4 @@ async def handle_status(message: Message):
         response = await client.create_status_message(template_name)
     except NoSuchTemplate:
         response = f'No template with name {template_name}'
-    return await message.answer(message.chat.id, response)
+    return await message.answer(response)
