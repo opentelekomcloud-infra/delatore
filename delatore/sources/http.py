@@ -1,11 +1,12 @@
-import asyncio
 import logging
 from abc import ABC
+from asyncio import Queue
 
 from aiohttp import web
 from aiohttp.web_request import Request
+from apubsub.client import Client
 
-from .base import Source
+from .base import NoUpdates, Source
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
@@ -20,46 +21,54 @@ async def ok(_: Request):
 class HttpListenerSource(Source, ABC):
     """HTTP listener"""
 
-    def __init__(self, port):
+    def __init__(self, port, client: Client):
+        super().__init__(client, .1)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
         self.app = app
         self.port = port
 
-    async def start(self, stop_event):
+    async def start(self, stop_event, no_duplicates=True):
         """Start server coroutine"""
         runner = web.AppRunner(self.app)
         await runner.setup()
         site = web.TCPSite(runner, port=self.port)
         await site.start()
-        while not stop_event.is_set():
-            await asyncio.sleep(.1)
+        await super().start(stop_event, no_duplicates)
         await runner.cleanup()
 
 
+AWX_LISTENER_EMOJI_MAP = {
+    '`failed`': Emoji.FAILED,
+    '`running`': Emoji.RUNNING,
+    '`success`': Emoji.SUCCESS,
+    '`cancelled`': Emoji.CANCELED
+}
+
+
 class AWXListenerSource(HttpListenerSource):
-    EMOJI_MAP = {
-        '`failed`': Emoji.FAILED,
-        '`running`': Emoji.RUNNING,
-        '`success`': Emoji.SUCCESS,
-        '`cancelled`': Emoji.CANCELED
-    }
+    PORT = 23834
+    TOPIC = 'AWX_LISTENER'
 
     @classmethod
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data).strip()
-        text = '** From Ansible Tower **\n' + replace_emoji(text, cls.EMOJI_MAP)
+        text = '** From Ansible Tower **\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
         return text
 
-    PORT = 23834
-
-    def __init__(self, port=PORT):
-        super(AWXListenerSource, self).__init__(port)
+    def __init__(self, client):
+        super().__init__(self.PORT, client)
         self.app.add_routes([
             web.get('/notifications', self.notifications)
         ])
+        self.updates = Queue()
 
     async def notifications(self, request: web.Request):
-        self.updates = await request.json()
+        await self.updates.put(await request.json())
         return web.Response(text='OK')
+
+    async def get_update(self):
+        if self.updates.empty():
+            raise NoUpdates
+        return await self.updates.get()

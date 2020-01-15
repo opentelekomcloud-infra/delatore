@@ -4,6 +4,7 @@ import re
 import pytest
 
 from delatore.emoji import Emoji
+from delatore.sources.awx_api import single_template_filter
 
 TEMPLATE_NAME = 'Scenario 1.5'
 __RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
@@ -13,14 +14,18 @@ RE_STATUS = re.compile(r'[%s]\s+—\s+`[\w\s\d.]+`\s+\\\(`%s`\\\)' % (__RE_AWX_E
 
 @pytest.mark.asyncio
 async def test_get_data(awx_client):
-    message = await awx_client.create_status_message(template=TEMPLATE_NAME)
+    _filter = single_template_filter(TEMPLATE_NAME)
+    single = await awx_client.get_templates(_filter)
+    assert len(single) == 1
+    message = awx_client.convert(single)
     assert RE_STATUS.findall(message), message
 
 
 @pytest.mark.asyncio
 async def test_get_all_scenarios(awx_client):
+    _filter = single_template_filter(TEMPLATE_NAME)
     single, multiple = await asyncio.gather(
-        awx_client.create_status_message(template=TEMPLATE_NAME),
-        awx_client.create_status_message(),
+        awx_client.get_templates(_filter),
+        awx_client.get_templates(),
     )
-    assert single in multiple
+    assert single[0] in multiple

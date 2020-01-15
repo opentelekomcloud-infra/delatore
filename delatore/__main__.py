@@ -1,10 +1,13 @@
 """Run bot as python module"""
+import asyncio
 import os
 from argparse import ArgumentParser
 
-from aiogram import executor
+from apubsub import Service
 
 from delatore import configuration as cfg
+from delatore.outputs import start_outputs
+from delatore.sources import start_sources
 
 
 def _config():
@@ -30,9 +33,22 @@ def _config():
 
 
 def _main():
-    _config()
-    from delatore.bot import DISP
-    executor.start_polling(DISP)
+    service = Service()
+    service.start()
+
+    try:
+        _config()
+
+        # all other services are running concurrently
+        stop_event = asyncio.Event()
+
+        asyncio.run(asyncio.wait([
+            start_sources(service, stop_event),
+            start_outputs(service, stop_event),
+        ]))
+    finally:
+        service.stop()
 
 
-_main()
+if __name__ == '__main__':
+    _main()

@@ -3,15 +3,16 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 import aiohttp
 from aiohttp import BasicAuth
+from apubsub.client import Client
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
-from .base import Source
+from .base import Json, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
@@ -73,7 +74,6 @@ class AsyncInfluxClient(InfluxDBClient):
             in data.get('results', [])
         ]
 
-        # TODO(aviau): Always return a list. (This would be a breaking change)
         if len(results) == 1:
             return results[0]
 
@@ -118,43 +118,43 @@ class AsyncInfluxClient(InfluxDBClient):
             raise InfluxDBClientError(data, response.status)
 
 
+INFLUX_POLLING_INTERVAL = 60
+INFLUX_EMOJI_MAP = {
+    '`OK`': Emoji.SUCCESS,
+    '`FAIL`': Emoji.FAILED,
+    '`NO_DATA`': Emoji.NO_DATA,
+}
+
+
 class InfluxSource(Source):
-    def __init__(self):
-        self.client = AsyncInfluxClient(
-            host='influx1.eco.tsi-dev.otc-service.com',
-            port=8086,
-            username='csm',
-            password=BOT_CONFIG.influx_password,
-            database='csm',
-            ssl=True,
-            verify_ssl=True)
+    TOPIC = 'INFLUX'
 
-    INFLUX_POLLING_INTERVAL = 60
+    def __init__(self, client: Client):
+        super().__init__(client, polling_interval=INFLUX_POLLING_INTERVAL)
+        self._influx_client = None
 
-    EMOJI_MAP = {
-        '`OK`': Emoji.SUCCESS,
-        '`FAIL`': Emoji.FAILED,
-        '`NO_DATA`': Emoji.NO_DATA,
-    }
+    @property
+    def influx_client(self):
+        """Return new instance of influx client"""
+        if self._influx_client is None:
+            self._influx_client = AsyncInfluxClient(
+                host='influx1.eco.tsi-dev.otc-service.com',
+                port=8086,
+                username='csm',
+                password=BOT_CONFIG.influx_password,
+                database='csm',
+                ssl=True,
+                verify_ssl=True)
+        return self._influx_client
 
     @classmethod
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data)
-        text = '** From InfluxDB **\n' + replace_emoji(text, cls.EMOJI_MAP)
+        text = '** From InfluxDB **\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
         return text.strip()
 
-    # noinspection PyBroadException
-    async def start(self, stop_event):
-        """Start InfluxDB polling"""
-        while not stop_event.is_set():
-            try:
-                self.updates = convert(await self.get_influx_statuses())
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception('Failed to get influx status')
-            await asyncio.sleep(self.INFLUX_POLLING_INTERVAL)
-
-    async def get_influx_statuses(self):
+    async def get_update(self) -> Optional[Json]:
         results = await asyncio.gather(
             self._get_status('lb_timing'),
             self._get_status('lb_down_test'),
@@ -170,7 +170,7 @@ class InfluxSource(Source):
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
         try:
-            last_record = await self.client.query(query)
+            last_record = await self.influx_client.query(query)
             last_time = last_record.raw['series'][0]['values'][0][0]
             last_time_ms = _convert_time(last_time)
             if (datetime.utcnow() - last_time_ms).total_seconds() < 300:

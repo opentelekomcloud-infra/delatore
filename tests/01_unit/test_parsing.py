@@ -1,10 +1,10 @@
 """Testing of parsing command arguments"""
 import pytest
 
-from delatore.bot.parsing import CommandParsingError, parse_command
+from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
 
 
-@pytest.mark.parametrize(['quo'], "\'\"")
+@pytest.mark.parametrize(['quo'], '\'\"')
 def test_parse_quotted_message(quo):
     """Testing of parsing quotted message"""
     expected = ('awx', 'Scenario 1.5', 5)

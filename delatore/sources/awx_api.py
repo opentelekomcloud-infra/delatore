@@ -1,16 +1,19 @@
+import asyncio
 import logging
 import time
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 from aiohttp import ClientSession
+from apubsub.client import Client
 
+from .base import NoUpdates, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-EMOJI_MAP = {
+AWX_EMOJI_MAP = {
     'successful': Emoji.SUCCESS,
     'failed': Emoji.FAILED,
     'never updated': Emoji.NO_DATA,
@@ -28,7 +31,7 @@ class TemplateStatus(NamedTuple):
     playbook: str
 
     def __str__(self):
-        status = replace_emoji(self.last_status, EMOJI_MAP, '%e')
+        status = replace_emoji(self.last_status, AWX_EMOJI_MAP, '%e')
         timestamp = self.last_run_timestamp
         if timestamp is not None:
             timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ'))
@@ -40,29 +43,39 @@ def get_session():
     return ClientSession(headers={'Authorization': f'Bearer {BOT_CONFIG.awx_auth_token}'})
 
 
-class AWXApiClient:
+class AWXApiClient(Source):
+    """AWX API Client"""
 
-    def __init__(self):
-        self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
+    async def get_update(self):
+        template_name = self.client.get_single()
+        if template_name is None:
+            raise NoUpdates
 
-    async def create_status_message(self, template: str = None):
-        """Get last job statuses for concrete template or all templates
-
-        :param template: name of template, if empty — all scenarios
-        """
-        _filter = {'name__iexact': template} if template is not None else None
+        _filter = single_template_filter(template_name)
         try:
-            json_data = await self.get_templates(_filter)
+            return await self.get_templates(_filter)
         except KeyError:
-            raise NoSuchTemplate("No template which has such name")
-        except Exception:
-            LOGGER.exception("Failed to create status message")
-            return
-        template_data = get_templates_statuses_from_json(json_data)
+            return [f'No template with name {template_name} found']
+
+    @classmethod
+    def convert(cls, data: list) -> str:
+        template_data = _status_json(data)
         message = '\n'.join(str(i) for i in template_data)
         return message
 
-    async def get_templates(self, filters: dict = None):
+    TOPIC_IN = 'AWX_CLIENT_IN'
+    TOPIC = 'AWX_CLIENT_OUT'
+
+    def __init__(self, client: Client):
+        super().__init__(client)
+        self.polling_interval = .1
+        self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
+
+    async def start(self, stop_event: asyncio.Event, no_duplicates=True):
+        self.client.subscribe(self.TOPIC_IN)
+        await super().start(stop_event, no_duplicates)
+
+    async def get_templates(self, filters: dict = None) -> Optional[list]:
         """Returns list of all job templates for csm organization
 
         This methods support Ansible tower filtering https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
@@ -84,7 +97,12 @@ class AWXApiClient:
                 return await response.json()
 
 
-def get_templates_statuses_from_json(json_data) -> List[TemplateStatus]:
+def single_template_filter(template_name):
+    """Filter by exact template name"""
+    return {'name__iexact': template_name}
+
+
+def _status_json(json_data) -> List[TemplateStatus]:
     """Get status for all templates or for concrete template"""
     statuses = []
     for template_data in json_data:
