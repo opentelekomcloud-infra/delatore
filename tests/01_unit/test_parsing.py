@@ -1,7 +1,7 @@
 """Testing of parsing command arguments"""
 import pytest
 
-from delatore.bot.parsing import parse_command, CommandParsingError
+from delatore.bot.parsing import CommandParsingError, parse_command
 
 
 @pytest.mark.parametrize(['quo'], "\'\"")
@@ -24,10 +24,12 @@ def test_parse_command(message, expected):
     source, detailed, count = parse_command(message)
     assert (source, detailed, count) == expected
 
-@pytest.mark.parametrize(('message'),
+
+@pytest.mark.parametrize('message',
                          [
-                             ('/status awx Destroy test host 5' ),
-                             ('/status awx Scenario 5' )
+                             '/status awx Destroy test host 5',
+                             '/status awx Scenario 1.5',
+                             '/status awx "Scenario 1" 2 some other arguments',
                          ])
 def test_parse_err(message):
     """Testing of handling exceptions during parsing command arguments"""
