@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from ocomone import Resources
 
-RESOURCES = Resources('.', '../config')
+RESOURCES = Resources('.', './config')
 
 TG_URL = 'https://api.telegram.org/bot'
 

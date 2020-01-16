@@ -50,7 +50,7 @@ description = "Message service implementing publisher/subscriber pattern"
 name = "apubsub"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.1.0"
+version = "0.2.0"
 
 [package.dependencies]
 uvloop = ">=0.14.0,<0.15.0"
@@ -458,8 +458,8 @@ category = "main"
 description = "Python 2 and 3 compatibility utilities"
 name = "six"
 optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*"
-version = "1.13.0"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+version = "1.14.0"
 
 [[package]]
 category = "dev"
@@ -537,7 +537,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "af2d212f6fb3dadf416d02bb41e352b9a7dcb2980cb275d1d15d786179227913"
+content-hash = "dca8dde771e96ae109a456065b8728840fbb9fb736d01d4ce69b113823e28f56"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -564,8 +564,8 @@ aiohttp = [
     {file = "aiohttp-3.6.2.tar.gz", hash = "sha256:259ab809ff0727d0e834ac5e8a283dc5e3e0ecc30c4d80b3cd17a4139ce1f326"},
 ]
 apubsub = [
-    {file = "apubsub-0.1.0-py3-none-any.whl", hash = "sha256:b4706c2d894ccc73c511286abb6210a64ed587ee9f478a16e3486099caeada94"},
-    {file = "apubsub-0.1.0.tar.gz", hash = "sha256:6dd1095a08a17f63080f55c8e80bb2e31fc7d71f91164828b4f38ff18b5beddd"},
+    {file = "apubsub-0.2.0-py3-none-any.whl", hash = "sha256:eb9f37a8947baa151a4b0cac331461ae8c6aad2f1a5bed53dcd8d9cec9ae55e6"},
+    {file = "apubsub-0.2.0.tar.gz", hash = "sha256:6d44d177bc2d0445ff3c62ea6e7ad59035280d5dd08204995ee492fe3bc71ca8"},
 ]
 astroid = [
     {file = "astroid-2.3.3-py3-none-any.whl", hash = "sha256:840947ebfa8b58f318d42301cf8c0a20fd794a33b61cc4638e28e9e61ba32f42"},
@@ -823,8 +823,8 @@ requests = [
     {file = "requests-2.22.0.tar.gz", hash = "sha256:11e007a8a2aa0323f5a921e9e6a2d7e4e67d9877e85773fba9ba6419025cbeb4"},
 ]
 six = [
-    {file = "six-1.13.0-py2.py3-none-any.whl", hash = "sha256:1f1b7d42e254082a9db6279deae68afb421ceba6158efa6131de7b3003ee93fd"},
-    {file = "six-1.13.0.tar.gz", hash = "sha256:30f610279e8b2578cab6db20741130331735c781b56053c59c4076da27f06b66"},
+    {file = "six-1.14.0-py2.py3-none-any.whl", hash = "sha256:8f3cd2e254d8f793e7f3d6d9df77b92252b52637291d0f0da013c76ea2724b6c"},
+    {file = "six-1.14.0.tar.gz", hash = "sha256:236bdbdce46e6e6a3d61a337c0f8b763ca1e8717c03b369e87a7ec7ce1319c0a"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},

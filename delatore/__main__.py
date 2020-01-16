@@ -5,12 +5,9 @@ from argparse import ArgumentParser
 
 from apubsub import Service
 
-from delatore import configuration as cfg
-from delatore.outputs import start_outputs
-from delatore.sources import start_sources
-
 
 def _config():
+    from delatore import configuration as cfg
     arg_p = ArgumentParser(description='Bot for reporting CSM monitoring status to telegram channel')
     arg_p.add_argument('--config', default=None, help='Configuration file to use')
     arg_p.add_argument('--chat', default=os.getenv('chat_id'), help='Chat for notifications')
@@ -36,8 +33,11 @@ def _main():
     service = Service()
     service.start()
 
+    _config()
+
     try:
-        _config()
+        from delatore.outputs import start_outputs
+        from delatore.sources import start_sources
 
         # all other services are running concurrently
         stop_event = asyncio.Event()

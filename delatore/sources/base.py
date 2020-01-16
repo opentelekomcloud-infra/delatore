@@ -37,18 +37,16 @@ class Source(ABC):
         """
 
     async def start(self, stop_event: asyncio.Event, no_duplicates=True):
-        """Start consuming"""
+        """Start processing updates"""
         last = None
         while not stop_event.is_set():
             try:
-                new = await self.get_update()
-            except NoUpdates:
-                await asyncio.sleep(self.polling_interval)
+                new = await asyncio.wait_for(self.get_update(), self.polling_interval)
+            except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if (new is None) or ((new == last) and no_duplicates):
-                await asyncio.sleep(self.polling_interval)
+            if new in [last, None] and no_duplicates:
                 continue
             md_message = self.convert(new)
-            self.client.publish(self.TOPIC, md_message)
+            await self.client.publish(self.TOPIC, md_message)
             last = new
             await asyncio.sleep(self.polling_interval)

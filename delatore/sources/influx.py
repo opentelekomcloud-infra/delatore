@@ -92,8 +92,6 @@ class AsyncInfluxClient(InfluxDBClient):
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
 
-        # retry = True
-        # _try = 0
         kwargs = dict(
             method=method,
             url=url,
@@ -171,7 +169,8 @@ class InfluxSource(Source):
             last_record = await self.influx_client.query(query)
             last_time = last_record.raw['series'][0]['values'][0][0]
             last_time_ms = _convert_time(last_time)
-            if (datetime.utcnow() - last_time_ms).total_seconds() < 300:
+            now = datetime.utcnow().timestamp()
+            if now - last_time_ms < 300:
                 return 'OK'
             return 'FAIL'
         except KeyError:
@@ -182,9 +181,14 @@ class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
 
 
-def _convert_time(timestamp):
-    time_groups = re.match(r'(.+)\.(\d+)(Z)', timestamp)
-    if time_groups is None:
+_RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
+
+
+def _convert_time(timestamp) -> float:
+    match_ts = _RE_TIME_GROUPS.match(timestamp)
+    if match_ts is None:
         raise InfluxTimestampParseException
-    time_groups = time_groups.groups()
-    return datetime.strptime(f'{time_groups[0]}.{time_groups[1][:6]:<06}{time_groups[2]}', '%Y-%m-%dT%H:%M:%S.%fZ')
+    timestamp, nsec, timezone, *_ = match_ts.groups()
+    msec = nsec[:6]
+    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
+    return dtime.timestamp()

@@ -24,6 +24,10 @@ class NoSuchTemplate(Exception):
     """Template not found"""
 
 
+TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+"""Timestamp format with milliseconds"""
+
+
 class TemplateStatus(NamedTuple):
     name: str
     last_run_timestamp: str
@@ -34,7 +38,7 @@ class TemplateStatus(NamedTuple):
         status = replace_emoji(self.last_status, AWX_EMOJI_MAP, '%e')
         timestamp = self.last_run_timestamp
         if timestamp is not None:
-            timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ'))
+            timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, TIMESTAMP_FORMAT))
         return rf'{status}   —   `{self.name}`  \(`{timestamp}`\)'
 
 
@@ -47,7 +51,7 @@ class AWXApiClient(Source):
     """AWX API Client"""
 
     async def get_update(self):
-        template_name = self.client.get_single()
+        template_name = await self.client.get(None)
         if template_name is None:
             raise NoUpdates
 
@@ -72,7 +76,8 @@ class AWXApiClient(Source):
         self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
 
     async def start(self, stop_event: asyncio.Event, no_duplicates=True):
-        self.client.subscribe(self.TOPIC_IN)
+        await self.client.start_consuming()
+        await self.client.subscribe(self.TOPIC_IN)
         await super().start(stop_event, no_duplicates)
 
     async def get_templates(self, filters: dict = None) -> Optional[list]:
