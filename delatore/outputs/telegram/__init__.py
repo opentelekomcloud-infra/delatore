@@ -1,1 +1,1 @@
-from .main import BotRunner, start_bot
+from .bot import BotRunner, start_bot

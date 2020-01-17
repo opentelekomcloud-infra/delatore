@@ -61,7 +61,7 @@ description = "Message service implementing publisher/subscriber pattern"
 name = "apubsub"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.2.0"
+version = "0.2.1"
 
 [package.dependencies]
 uvloop = ">=0.14.0,<0.15.0"
@@ -379,7 +379,7 @@ description = "pytest: simple powerful testing with Python"
 name = "pytest"
 optional = false
 python-versions = ">=3.5"
-version = "5.3.2"
+version = "5.3.3"
 
 [package.dependencies]
 atomicwrites = ">=1.0"
@@ -396,6 +396,7 @@ python = "<3.8"
 version = ">=0.12"
 
 [package.extras]
+checkqa-mypy = ["mypy (v0.761)"]
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xmlschema"]
 
 [[package]]
@@ -571,7 +572,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "297b2d0b1f653865f608aa9e80ac7f424fb391e3ffd2ab65c83352c0d00d73ff"
+content-hash = "b0b42b79e52168a92d7853811fc4ed5a87ccd2b9c643849977a601e831856e60"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -601,8 +602,8 @@ ansi2html = [
     {file = "ansi2html-1.5.2.tar.gz", hash = "sha256:96ae85ae7b26b7da674d87de2870ba4d1964bca733ae4614587080b6358c3ba9"},
 ]
 apubsub = [
-    {file = "apubsub-0.2.0-py3-none-any.whl", hash = "sha256:eb9f37a8947baa151a4b0cac331461ae8c6aad2f1a5bed53dcd8d9cec9ae55e6"},
-    {file = "apubsub-0.2.0.tar.gz", hash = "sha256:6d44d177bc2d0445ff3c62ea6e7ad59035280d5dd08204995ee492fe3bc71ca8"},
+    {file = "apubsub-0.2.1-py3-none-any.whl", hash = "sha256:90479e805783d3ab6c8207e1fd565c1a1aac38117317448bfe030509b59a9415"},
+    {file = "apubsub-0.2.1.tar.gz", hash = "sha256:50af3f283b87d0770e131de0e12951f61387a876f5a5deb75a367911de75f52d"},
 ]
 astroid = [
     {file = "astroid-2.3.3-py3-none-any.whl", hash = "sha256:840947ebfa8b58f318d42301cf8c0a20fd794a33b61cc4638e28e9e61ba32f42"},
@@ -836,8 +837,8 @@ pyparsing = [
     {file = "pyparsing-2.4.6.tar.gz", hash = "sha256:4c830582a84fb022400b85429791bc551f1f4871c33f23e44f353119e92f969f"},
 ]
 pytest = [
-    {file = "pytest-5.3.2-py3-none-any.whl", hash = "sha256:e41d489ff43948babd0fad7ad5e49b8735d5d55e26628a58673c39ff61d95de4"},
-    {file = "pytest-5.3.2.tar.gz", hash = "sha256:6b571215b5a790f9b41f19f3531c53a45cf6bb8ef2988bc1ff9afb38270b25fa"},
+    {file = "pytest-5.3.3-py3-none-any.whl", hash = "sha256:9f8d44f4722b3d06b41afaeb8d177cfbe0700f8351b1fc755dd27eedaa3eb9e0"},
+    {file = "pytest-5.3.3.tar.gz", hash = "sha256:f5d3d0e07333119fe7d4af4ce122362dc4053cdd34a71d2766290cf5369c64ad"},
 ]
 pytest-asyncio = [
     {file = "pytest-asyncio-0.10.0.tar.gz", hash = "sha256:9fac5100fd716cbecf6ef89233e8590a4ad61d729d1732e0a96b84182df1daaf"},

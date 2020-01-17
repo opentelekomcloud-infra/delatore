@@ -1,21 +1,15 @@
 import asyncio
 from datetime import datetime
-from random import choice
 
 import pytest
 
 from delatore.emoji import Emoji
-from delatore.sources.awx_api import AWXApiClient, TIMESTAMP_FORMAT, TemplateStatus, single_template_filter
-from tests.helpers import random_string, random_with_length
+from delatore.sources.awx_api import AWXApiClient, TIMESTAMP_FORMAT, single_template_filter
+from tests.helpers import random_awx_data, random_influx_data, random_template_data
 
 
 def _now():
     return datetime.now().strftime(TIMESTAMP_FORMAT)
-
-
-@pytest.fixture
-def template_status_obj():
-    return TemplateStatus('Scn 3.5', _now(), 'b', 'playbooks/test.yaml')
 
 
 @pytest.fixture
@@ -40,20 +34,7 @@ async def patched_awx_client(template_status_obj, service, stop_event):
 
 @pytest.fixture
 def awx_data():
-    message = {
-        'From': 'Ansible Tower',
-        'test_job_id': random_with_length(3),
-        'test_name': f'Test Send Message {random_string(4)}',
-        'status': 'failed',
-        'test_url': f'https://{random_string()}.{random_string(3)}',
-        'test_dict': {
-            'test': {
-                'failed': choice([True, False]),
-                'changed': random_with_length(1),
-                'ok': random_with_length(2),
-            }
-        }
-    }
+    message = random_awx_data()
 
     ideal_message = ('** From Ansible Tower **\n'
                      f'Test Job Id :    `{message["test_job_id"]}`\n'
@@ -70,14 +51,7 @@ def awx_data():
 
 @pytest.fixture
 def influx_data():
-    message = {
-        'From': 'InfluxDB',
-        'LB_LOAD': 'OK',
-        'LB_DOWN': 'FAIL',
-        'SCSI_HDD_TEST': 'NO_DATA',
-        'RDS_TEST': 'OK'
-    }
-
+    message = random_influx_data()
     ideal_message = ('** From InfluxDB **\n'
                      f'`LB_LOAD` :    {Emoji.SUCCESS} `{message["LB_LOAD"]}`\n'
                      f'`LB_DOWN` :    {Emoji.FAILED} `{message["LB_DOWN"]}`\n'
@@ -87,10 +61,10 @@ def influx_data():
 
 
 @pytest.fixture
-def template_status():
-    obj = TemplateStatus(name='Scenario 1',
-                         last_run_timestamp='2019-12-12T11:04:55.33Z',
-                         last_status='failed',
-                         playbook='playbook')
-    message = rf'❌   —   `{obj.name}`  \(`12.12.19 11:04`\)'
-    return obj, message
+def template_status_obj():
+    return random_template_data()
+
+
+@pytest.fixture
+def template_status_msg(template_status_obj):
+    return rf'❌   —   `{template_status_obj.name}`  \(`12.12.19 11:04`\)'

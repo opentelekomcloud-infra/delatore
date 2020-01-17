@@ -42,14 +42,12 @@ class BotRunner:
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot in current event loop. Create bot.')
             self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
+            self._dispatcher = Dispatcher(self.bot)
+            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
         return self._bot
 
     @property
     def dispatcher(self):
-        if _not_in_current_loop(self._dispatcher):
-            LOGGER.warning('No dispatcher in current event loop. Create dispatcher.')
-            self._dispatcher = Dispatcher(self.bot)
-            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
         return self._dispatcher
 
     async def handle_status(self, message: Message):
@@ -76,7 +74,7 @@ class BotRunner:
         await asyncio.wait([
             self.client.subscribe(topic) for topic in IN_TOPICS
         ])
-        await self.alert('__Bot started__')
+        await self.silent('__Bot started__')
         async for message in self.client.get_iter():
             await self.alert(message)
             if self.stop_event.is_set():
@@ -86,7 +84,7 @@ class BotRunner:
         self.dispatcher.stop_polling()
         await self.dispatcher.storage.close()
         await self.dispatcher.storage.wait_closed()
-        await self.dispatcher.bot.close()
+        await self.bot.close()
 
     async def _start_polling(self):
         self.dispatcher.stop_polling()

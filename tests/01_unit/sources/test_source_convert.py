@@ -13,7 +13,6 @@ def test_influx_source(influx_data):
     assert message == expected
 
 
-def test_convert_template_status(template_status):
-    obj, message_e = template_status
-    message = str(obj)
-    assert message == message_e
+def test_convert_template_status(template_status_obj, template_status_msg):
+    message = str(template_status_obj)
+    assert message == template_status_msg

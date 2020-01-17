@@ -1,6 +1,5 @@
 import asyncio
 import os
-import socket
 
 import pytest
 from apubsub import Service
@@ -10,14 +9,6 @@ from apubsub import Service
 def service():
     _service = Service()
     _service.start()
-
-    _socket = socket.socket()
-    _socket.settimeout(5)
-    try:
-        _socket.connect(('localhost', _service.port))
-    finally:
-        _socket.close()
-
     yield _service
     _service.stop()
 
