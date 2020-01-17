@@ -3,7 +3,6 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, ParseMode
-from aiogram.utils import executor
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
@@ -32,13 +31,7 @@ class BotRunner:
 
     def __init__(self, msg_service: Service, stop_event: asyncio.Event):
         self.client = msg_service.get_client()
-        self.client.start_consuming()
-
         self.stop_event = stop_event
-
-        for topic in IN_TOPICS:
-            self.client.subscribe(topic)
-
         self.chat_id = CSM_CHAT
         self._bot = None
         self._dispatcher = None
@@ -62,9 +55,9 @@ class BotRunner:
     async def handle_status(self, message: Message):
         try:
             source, template_name, count = parse_command(message.text)
+            await self.client.publish(AWXApiClient.TOPIC_IN, template_name)
         except CommandParsingError:
-            return await message.answer('Invalid command. Please check command syntax')
-        await self.client.publish(AWXApiClient.TOPIC_IN, template_name)
+            await message.answer('Invalid command. Please check command syntax')
 
     async def alert(self, message):
         """Send message to chat alerting users"""
@@ -79,13 +72,29 @@ class BotRunner:
         return await self.bot.delete_message(self.chat_id, message_id)
 
     async def _start_posting(self):
+        await self.client.start_consuming()
+        await asyncio.wait([
+            self.client.subscribe(topic) for topic in IN_TOPICS
+        ])
+        await self.alert('__Bot started__')
         async for message in self.client.get_iter():
             await self.alert(message)
             if self.stop_event.is_set():
                 self.client.stop_getting()
 
+    async def _shutdown(self):
+        self.dispatcher.stop_polling()
+        await self.dispatcher.storage.close()
+        await self.dispatcher.storage.wait_closed()
+        await self.dispatcher.bot.close()
+
     async def _start_polling(self):
-        executor.start_polling(self.dispatcher)
+        self.dispatcher.stop_polling()
+        try:
+            LOGGER.info('Start polling...')
+            await self.dispatcher.start_polling()
+        finally:
+            await self._shutdown()
 
     async def start(self):
         """Start bot activities"""

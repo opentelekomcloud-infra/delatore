@@ -1,3 +1,4 @@
+import os
 import string
 from random import choice, randint
 
@@ -11,3 +12,14 @@ def random_with_length(length):
 def random_string(length=10):
     letters = string.ascii_lowercase
     return ''.join(choice(letters) for _ in range(length))
+
+
+def generate_config(token, chat_id, influx_password, awx_auth_token, tmp_dir):
+    file_path = os.path.abspath(f'{tmp_dir}/cfg.ini')
+    with open(file_path, 'w+') as cfg:
+        cfg.write('[DEFAULT]\n'
+                  f'token = {token}\n'
+                  f'chat_id = {chat_id}\n'
+                  f'influx_password = {influx_password}\n'
+                  f'awx_auth_token = {awx_auth_token}')
+    return file_path
