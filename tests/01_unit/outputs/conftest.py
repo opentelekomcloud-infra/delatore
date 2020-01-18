@@ -1,4 +1,5 @@
 import asyncio
+import socket
 from asyncio import Queue
 
 import pytest
@@ -23,19 +24,20 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
     bot = BotRunner(service, stop_event)
 
     async def _alert(a):
-        await bot_alert_queue.put(a)
+        await asyncio.wait_for(bot_alert_queue.put(a), .1)
 
     async def _silent(a):
-        await bot_silent_queue.put(a)
+        await asyncio.wait_for(bot_silent_queue.put(a), .1)
 
     bot.alert = _alert
     bot.silent = _silent
-    loop = asyncio.get_running_loop()
-    loop.create_task(bot.start())
-    await asyncio.sleep(.2)
+    asyncio.create_task(bot.start())
+    # wait for bot consumer to start
+    await asyncio.sleep(.1)
+    await asyncio.wait_for(asyncio.open_connection('localhost', bot.client.port), 5)
     yield bot
     bot.stop_event.set()
-    while not bot_alert_queue.empty():
-        bot_alert_queue.get_nowait()
-        bot_alert_queue.task_done()
-    await bot_alert_queue.join()
+    for queue in [bot_alert_queue, bot_silent_queue]:
+        while not queue.empty():
+            queue.get_nowait()
+            queue.task_done()

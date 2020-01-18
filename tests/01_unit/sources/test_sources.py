@@ -3,8 +3,9 @@ from apubsub.client import Client
 
 
 @pytest.mark.asyncio
-async def test_produce_messages(patched_awx_client, sub: Client, pub, template_status_obj, service):
+async def test_produce_awx_messages(patched_awx_client, sub: Client, pub, service, awx_client_data):
+    data, message = awx_client_data
     await sub.subscribe(patched_awx_client.TOPIC)
-    await pub.publish(patched_awx_client.TOPIC_IN, 'any')
+    await pub.publish(patched_awx_client.TOPIC_IN, data[0]['name'])
     message = await sub.get(.5)
-    assert message == str(template_status_obj)
+    assert message == message

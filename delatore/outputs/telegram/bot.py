@@ -7,7 +7,7 @@ from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
 from ...configuration import BOT_CONFIG, CSM_CHAT
-from ...sources import AWXApiClient, AWXListenerSource, InfluxSource
+from ...sources import AWXApiSource, AWXWebHookSource, InfluxSource
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -17,8 +17,8 @@ STOP_EVENT = asyncio.Event()
 STATUS = 'status'
 IN_TOPICS = [
     InfluxSource.TOPIC,  # pylint: disable=no-member
-    AWXApiClient.TOPIC,  # pylint: disable=no-member
-    AWXListenerSource.TOPIC,  # pylint: disable=no-member
+    AWXApiSource.TOPIC,  # pylint: disable=no-member
+    AWXWebHookSource.TOPIC,  # pylint: disable=no-member
 ]
 
 
@@ -53,7 +53,7 @@ class BotRunner:
     async def handle_status(self, message: Message):
         try:
             source, template_name, count = parse_command(message.text)
-            await self.client.publish(AWXApiClient.TOPIC_IN, template_name)
+            await self.client.publish(AWXApiSource.TOPIC_IN, template_name)
         except CommandParsingError:
             await message.answer('Invalid command. Please check command syntax')
 

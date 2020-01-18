@@ -3,6 +3,8 @@
 branch = True
 source =
     delatore
+omit =
+    delatore/__main__.py
 
 [report]
 # Regexes for lines to exclude from consideration

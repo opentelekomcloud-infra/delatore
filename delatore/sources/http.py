@@ -48,9 +48,9 @@ AWX_LISTENER_EMOJI_MAP = {
 }
 
 
-class AWXListenerSource(HttpListenerSource):
+class AWXWebHookSource(HttpListenerSource):
     PORT = 23834
-    TOPIC = 'AWX_LISTENER'
+    TOPIC = 'AWX_WEB_HOOK'
 
     @classmethod
     def convert(cls, data: dict) -> str:

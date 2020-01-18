@@ -47,7 +47,7 @@ def get_session():
     return ClientSession(headers={'Authorization': f'Bearer {BOT_CONFIG.awx_auth_token}'})
 
 
-class AWXApiClient(Source):
+class AWXApiSource(Source):
     """AWX API Client"""
 
     async def get_update(self):

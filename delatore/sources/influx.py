@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
-class AsyncInfluxClient(InfluxDBClient):
+class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
 
     def __init__(self, *args, **kwargs):
