@@ -1,8 +1,11 @@
 import asyncio
 import logging
+import threading
+from threading import Thread
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, ParseMode
+from aiogram.utils import executor
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
@@ -32,7 +35,7 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event):
+    def __init__(self, msg_service: Service, stop_event: threading.Event):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.chat_id = BOT_CONFIG.chat_id
@@ -72,7 +75,8 @@ class BotRunner:
         """Remove message from chat"""
         return await self.bot.delete_message(self.chat_id, message_id)
 
-    async def _start_posting(self):
+    async def start_posting(self):
+        """Start posting updates to channel"""
         await self.client.start_consuming()
         await asyncio.wait([
             self.client.subscribe(topic) for topic in IN_TOPICS
@@ -83,28 +87,13 @@ class BotRunner:
             if self.stop_event.is_set():
                 self.client.stop_getting()
 
-    async def _shutdown(self):
-        self.dispatcher.stop_polling()
-        await self.dispatcher.storage.close()
-        await self.dispatcher.storage.wait_closed()
-        await self.bot.close()
-
-    async def _start_polling(self):
-        self.dispatcher.stop_polling()
-        try:
-            LOGGER.info('Start polling...')
-            await self.dispatcher.start_polling()
-        finally:
-            await self._shutdown()
-
     async def start(self):
-        """Start bot activities"""
-        await asyncio.wait([
-            self._start_polling(),
-            self._start_posting(),
-        ])
+        """Start bot"""
 
+        def _start_polling():
+            loop = asyncio.new_event_loop()
+            executor.start_polling(self.dispatcher, loop=loop)
 
-async def start_bot(message_service: Service, stop_event: asyncio.Event):
-    """Start bot polling"""
-    await BotRunner(message_service, stop_event).start()
+        thr = Thread(target=_start_polling)
+        thr.start()
+        await self.start_posting()

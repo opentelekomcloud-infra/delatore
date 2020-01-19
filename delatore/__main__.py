@@ -1,6 +1,7 @@
 """Run bot as python module"""
 import asyncio
 import os
+import threading
 from argparse import ArgumentParser
 
 from apubsub import Service
@@ -40,7 +41,7 @@ def _main():
         from delatore.sources import start_sources
 
         # all other services are running concurrently
-        stop_event = asyncio.Event()
+        stop_event = threading.Event()
 
         asyncio.run(asyncio.wait([
             start_sources(service, stop_event),

@@ -1,13 +1,13 @@
 """All delatore outputs"""
 import asyncio
-from asyncio import Event
+from threading import Event
 
 from apubsub import Service
 
-from .telegram import start_bot
+from .telegram import BotRunner
 
 
 async def start_outputs(service: Service, stop_event: Event):
     await asyncio.wait([
-        start_bot(service, stop_event),
+        BotRunner(service, stop_event).start(),
     ])
