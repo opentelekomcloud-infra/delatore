@@ -27,14 +27,15 @@ def _not_in_current_loop(smth):
 
 
 class BotRunner:
-    """Bot runner"""
+    """Bot runner wrapper"""
+
+    _bot: Bot = None
+    _dispatcher: Dispatcher = None
 
     def __init__(self, msg_service: Service, stop_event: asyncio.Event):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.chat_id = CSM_CHAT
-        self._bot = None
-        self._dispatcher = None
 
     @property
     def bot(self):
@@ -42,12 +43,14 @@ class BotRunner:
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot in current event loop. Create bot.')
             self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
-            self._dispatcher = Dispatcher(self.bot)
-            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
         return self._bot
 
     @property
     def dispatcher(self):
+        if _not_in_current_loop(self._dispatcher):
+            LOGGER.warning('No dispatcher in current event loop. Create bot.')
+            self._dispatcher = Dispatcher(self.bot)
+            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
         return self._dispatcher
 
     async def handle_status(self, message: Message):
