@@ -42,22 +42,23 @@ class BotRunner:
     def bot(self):
         """Return bot instance"""
         if _not_in_current_loop(self._bot):
-            LOGGER.warning('No bot in current event loop. Create bot.')
-            self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2)
+            LOGGER.warning('No bot exist. Create bot.')
+            self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2, proxy=BOT_CONFIG.proxy)
         return self._bot
 
     @property
     def dispatcher(self):
         if _not_in_current_loop(self._dispatcher):
-            LOGGER.warning('No dispatcher in current event loop. Create bot.')
+            LOGGER.warning('No dispatcher exist. Create dispatcher.')
             self._dispatcher = Dispatcher(self.bot)
             self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
         return self._dispatcher
 
     async def handle_status(self, message: Message):
         try:
+            LOGGER.debug(f'Message received: {message.text} in chat {message.chat}')
             source, template_name, count = parse_command(message.text)
-            await self.client.publish(AWXApiSource.TOPIC_IN, template_name)
+            await self.client.publish(AWXApiSource.TOPIC_IN, template_name or '')
         except CommandParsingError:
             await message.answer('Invalid command. Please check command syntax')
 
@@ -88,11 +89,7 @@ class BotRunner:
     async def start(self):
         """Start bot"""
 
-        def _start_polling():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            executor.start_polling(self.dispatcher, loop=loop)
-
-        thr = Thread(target=_start_polling, daemon=True)
-        thr.start()
-        await self.start_posting()
+        await asyncio.wait([
+            self.start_posting(),
+            self.dispatcher.start_polling(timeout=1, error_sleep=0),
+        ])

@@ -26,5 +26,4 @@ def parse_command(message):
         raise CommandParsingError(f'Invalid depth value: {depth}')
     if args:
         raise CommandParsingError(f'Command {cmd} got unexpected arguments: {args}')
-    LOGGER.debug('Getting AWX status')
     return target, detailed, depth

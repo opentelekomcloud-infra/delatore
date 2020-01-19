@@ -73,6 +73,7 @@ class AWXApiSource(Source):
     def __init__(self, client: Client):
         super().__init__(client)
         self.polling_interval = .1
+        self.request_timeout = 5
         self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
 
     async def start(self, stop_event: asyncio.Event, no_duplicates=True):
@@ -102,9 +103,11 @@ class AWXApiSource(Source):
                 return await response.json()
 
 
-def single_template_filter(template_name):
+def single_template_filter(template_name: str):
     """Filter by exact template name"""
-    return {'name__iexact': template_name}
+    if template_name:
+        return {'name__iexact': template_name}
+    return None
 
 
 def _status_json(json_data) -> List[TemplateStatus]:

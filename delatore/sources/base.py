@@ -17,9 +17,10 @@ class Source(ABC):
     client: Client
     TOPIC: str
 
-    def __init__(self, client: Client, polling_interval=10.0):
+    def __init__(self, client: Client, polling_interval=10.0, request_timeout=10.0):
         self.client = client
         self.polling_interval = polling_interval
+        self.request_timeout = request_timeout
         if not hasattr(self, 'TOPIC'):
             raise NotImplementedError(f'Source has no topic')
 
@@ -41,7 +42,7 @@ class Source(ABC):
         last = None
         while not stop_event.is_set():
             try:
-                new = await asyncio.wait_for(self.get_update(), self.polling_interval)
+                new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if new in [last, None] and no_duplicates:
