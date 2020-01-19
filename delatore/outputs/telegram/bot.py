@@ -15,8 +15,6 @@ from ...sources import AWXApiSource, AWXWebHookSource, InfluxSource
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-SOURCE_POLLING_INTERVAL = 2
-STOP_EVENT = asyncio.Event()
 STATUS = 'status'
 IN_TOPICS = [
     InfluxSource.TOPIC,  # pylint: disable=no-member
@@ -92,6 +90,7 @@ class BotRunner:
 
         def _start_polling():
             loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             executor.start_polling(self.dispatcher, loop=loop)
 
         thr = Thread(target=_start_polling)
