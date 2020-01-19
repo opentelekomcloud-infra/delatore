@@ -93,6 +93,6 @@ class BotRunner:
             asyncio.set_event_loop(loop)
             executor.start_polling(self.dispatcher, loop=loop)
 
-        thr = Thread(target=_start_polling)
+        thr = Thread(target=_start_polling, daemon=True)
         thr.start()
         await self.start_posting()
