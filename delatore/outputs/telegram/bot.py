@@ -6,7 +6,7 @@ from aiogram.types import Message, ParseMode
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
-from ...configuration import BOT_CONFIG, CSM_CHAT
+from ...configuration import BOT_CONFIG
 from ...sources import AWXApiSource, AWXWebHookSource, InfluxSource
 
 LOGGER = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class BotRunner:
     def __init__(self, msg_service: Service, stop_event: asyncio.Event):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
-        self.chat_id = CSM_CHAT
+        self.chat_id = BOT_CONFIG.chat_id
 
     @property
     def bot(self):

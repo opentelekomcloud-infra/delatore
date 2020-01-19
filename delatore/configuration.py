@@ -41,5 +41,3 @@ def read_config(config_file=RESOURCES['config.ini']):
 
 
 BOT_CONFIG = read_config()
-
-CSM_CHAT = BOT_CONFIG.chat_id
