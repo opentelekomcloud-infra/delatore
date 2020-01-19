@@ -61,7 +61,7 @@ description = "Message service implementing publisher/subscriber pattern"
 name = "apubsub"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.2.1"
+version = "0.2.2"
 
 [package.dependencies]
 uvloop = ">=0.14.0,<0.15.0"
@@ -572,7 +572,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "53f86a5898f353860d9a83344e688cbceb371e1df08dcd2b05859d6ab7f91220"
+content-hash = "b0b42b79e52168a92d7853811fc4ed5a87ccd2b9c643849977a601e831856e60"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -602,8 +602,8 @@ ansi2html = [
     {file = "ansi2html-1.5.2.tar.gz", hash = "sha256:96ae85ae7b26b7da674d87de2870ba4d1964bca733ae4614587080b6358c3ba9"},
 ]
 apubsub = [
-    {file = "apubsub-0.2.1-py3-none-any.whl", hash = "sha256:90479e805783d3ab6c8207e1fd565c1a1aac38117317448bfe030509b59a9415"},
-    {file = "apubsub-0.2.1.tar.gz", hash = "sha256:50af3f283b87d0770e131de0e12951f61387a876f5a5deb75a367911de75f52d"},
+    {file = "apubsub-0.2.2-py3-none-any.whl", hash = "sha256:b5a84daf41d1456f6fa3fc3868e71f8ea60096ecf3ece805f82d51e8f90d3b41"},
+    {file = "apubsub-0.2.2.tar.gz", hash = "sha256:216ebfd6660f60305847255605787480073fcea33452aad544a1458f9b9710ae"},
 ]
 astroid = [
     {file = "astroid-2.3.3-py3-none-any.whl", hash = "sha256:840947ebfa8b58f318d42301cf8c0a20fd794a33b61cc4638e28e9e61ba32f42"},
