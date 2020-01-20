@@ -70,7 +70,7 @@ def awx_client_data():
         'playbook': f'templates/{random_string(5)}.yaml'
     }]
     cur_date = current_timestamp('%d.%m.%y %H:%M')
-    expected_message = '*AWX scenarios status:*\n' + rf'✅   —   `{data[0]["name"]}`  \(`{cur_date}`\)'
+    expected_message = '* AWX scenarios status: *\n' + rf'✅   —   `{data[0]["name"]}`  \(`{cur_date}`\)'
     return data, expected_message
 
 
