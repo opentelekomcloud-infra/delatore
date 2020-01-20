@@ -52,7 +52,7 @@ class AWXApiSource(Source):
     """AWX API Client"""
 
     async def get_update(self):
-        template_name = await self.client.get(None)
+        template_name = await self.client.get(self.polling_interval)
         if template_name is None:
             raise NoUpdates
 
@@ -92,12 +92,6 @@ class AWXApiSource(Source):
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise
-
-    async def get_api_endpoints(self):
-        """Returns list of all awx api endpoints """
-        async with get_session() as session:
-            async with session.get(self.url) as response:
-                return await response.json()
 
 
 def single_template_filter(template_name: str):
