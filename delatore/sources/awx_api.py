@@ -57,10 +57,8 @@ class AWXApiSource(Source):
             raise NoUpdates
 
         _filter = single_template_filter(template_name)
-        try:
-            return await self.get_templates(_filter)
-        except KeyError:
-            return [f'No template with name {template_name} found']
+        data = await self.get_templates(_filter) or [f'No template with name \'{template_name}\' found']
+        return data
 
     @classmethod
     def convert(cls, data: list) -> str:

@@ -6,6 +6,7 @@ from apubsub.client import Client
 
 from delatore.emoji import Emoji
 from delatore.sources.awx_api import single_template_filter
+from tests.helpers import random_string
 
 TEMPLATE_NAME = 'Scenario 1.5'
 __RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
@@ -32,8 +33,24 @@ async def test_get_all_scenarios(awx_client):
     assert single[0] in multiple
 
 
+async def test_get_not_existing_scenario(awx_client):
+    _filter = single_template_filter(random_string())
+    single = await awx_client.get_templates(_filter)
+    assert single == []
+
+
 async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPIC)
     await asyncio.sleep(.05)
     await pub.publish(awx_client.TOPIC_IN, TEMPLATE_NAME)
-    await sub.get(5)
+    response = await sub.get(5)
+    assert response is not None
+
+
+async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
+    await sub.subscribe(awx_client.TOPIC)
+    await asyncio.sleep(.05)
+    template_name = random_string()
+    await pub.publish(awx_client.TOPIC_IN, template_name)
+    response = await sub.get(5)
+    assert response == f'* AWX scenarios status: *\n`No template with name \'{template_name}\' found`'
