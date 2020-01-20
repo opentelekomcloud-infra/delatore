@@ -65,6 +65,7 @@ class AWXApiSource(Source):
     def convert(cls, data: list) -> str:
         template_data = _status_json(data)
         message = '\n'.join(str(i) for i in template_data)
+        message = f'* AWX scenarios status: *\n{message}'
         return message
 
     TOPIC_IN = 'AWX_CLIENT_IN'

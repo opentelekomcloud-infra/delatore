@@ -56,7 +56,7 @@ class AWXWebHookSource(HttpListenerSource):
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data).strip()
-        text = '** From Ansible Tower **\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
+        text = '* From Ansible Tower *\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
         return text
 
     def __init__(self, client):

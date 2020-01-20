@@ -1,11 +1,9 @@
 import asyncio
 import logging
 import threading
-from threading import Thread
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, ParseMode
-from aiogram.utils import executor
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command

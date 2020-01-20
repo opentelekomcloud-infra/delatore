@@ -53,7 +53,7 @@ def influx_source_data():
         'SCSI_HDD_TEST': 'NO_DATA',
         'RDS_TEST': 'OK'
     }
-    expected_message = ('** From InfluxDB **\n'
+    expected_message = ('*From InfluxDB*\n'
                         f'`LB_LOAD` :    {Emoji.SUCCESS} `{data["LB_LOAD"]}`\n'
                         f'`LB_DOWN` :    {Emoji.FAILED} `{data["LB_DOWN"]}`\n'
                         f'`SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{data["SCSI_HDD_TEST"]}`\n'
@@ -70,7 +70,7 @@ def awx_client_data():
         'playbook': f'templates/{random_string(5)}.yaml'
     }]
     cur_date = current_timestamp('%d.%m.%y %H:%M')
-    expected_message = rf'✅   —   `{data[0]["name"]}`  \(`{cur_date}`\)'
+    expected_message = '*AWX scenarios status:*\n' + rf'✅   —   `{data[0]["name"]}`  \(`{cur_date}`\)'
     return data, expected_message
 
 
@@ -91,7 +91,7 @@ def awx_hook_data():
         }
     }
 
-    expected_message = ('** From Ansible Tower **\n'
+    expected_message = ('* From Ansible Tower *\n'
                         f'Test Job Id :    `{data["test_job_id"]}`\n'
                         f'Test Name :    `{data["test_name"]}`\n'
                         f'Status :    ❌ `{data["status"]}`\n'

@@ -154,7 +154,7 @@ class InfluxSource(Source):
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data)
-        text = '** From InfluxDB **\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
+        text = '*From InfluxDB*\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
         return text.strip()
 
     async def get_update(self) -> Optional[Json]:
