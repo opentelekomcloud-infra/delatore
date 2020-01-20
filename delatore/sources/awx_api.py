@@ -9,6 +9,7 @@ from apubsub.client import Client
 from .base import NoUpdates, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
+from ..json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -34,12 +35,12 @@ class TemplateStatus(NamedTuple):
     last_status: str
     playbook: str
 
-    def __str__(self):
+    def __md__(self):
         status = replace_emoji(self.last_status, AWX_EMOJI_MAP, '%e')
         timestamp = self.last_run_timestamp
         if timestamp is not None:
             timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, TIMESTAMP_FORMAT))
-        return rf'{status}   —   `{self.name}`  \(`{timestamp}`\)'
+        return rf'{status}   —   `{self.name}`  (`{timestamp}`)'
 
 
 def get_session():
@@ -63,10 +64,7 @@ class AWXApiSource(Source):
 
     @classmethod
     def convert(cls, data: list) -> str:
-        template_data = _status_json(data)
-        message = '\n'.join(str(i) for i in template_data)
-        message = f'* AWX scenarios status: *\n{message}'
-        return message
+        return f'* AWX scenarios status: *\n{convert(data)}'
 
     TOPIC_IN = 'AWX_CLIENT_IN'
     TOPIC = 'AWX_CLIENT_OUT'
@@ -92,7 +90,7 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            return response_data['results']
+            return _status_json(response_data['results'])
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise

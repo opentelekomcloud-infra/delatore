@@ -7,6 +7,7 @@ from apubsub import Service
 
 from delatore.emoji import Emoji
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
+from delatore.sources.awx_api import TemplateStatus
 from tests.helpers import current_timestamp, random_string, random_with_length
 
 
@@ -63,14 +64,14 @@ def influx_source_data():
 
 @pytest.fixture
 def awx_client_data():
-    data = [{
-        'name': f'{random_string(10)} 1',
-        'last_job_run': current_timestamp(),
-        'status': 'successful',
-        'playbook': f'templates/{random_string(5)}.yaml'
-    }]
+    data = [TemplateStatus(
+        name=f'{random_string(10)} 1',
+        last_run_timestamp=current_timestamp(),
+        last_status='successful',
+        playbook=f'templates/{random_string(5)}.yaml'
+    )]
     cur_date = current_timestamp('%d.%m.%y %H:%M')
-    expected_message = '* AWX scenarios status: *\n' + rf'✅   —   `{data[0]["name"]}`  \(`{cur_date}`\)'
+    expected_message = '* AWX scenarios status: *\n' + rf'✅   —   `{data[0].name}`  \(`{cur_date}`\)'
     return data, expected_message
 
 

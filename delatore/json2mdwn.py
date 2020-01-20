@@ -23,10 +23,15 @@ def backtick_values(data):
 
 
 __MARKS = re.compile(r'[{}",\[\]]')
+__BRACKETS = re.compile(r'([()])')
 
 
 def convert(data):
     """Convert dict or list to nice-looking telegram markdown"""
-    formatted = __MARKS.sub('', json.dumps(backtick_values(data), separators=('', ':    '), indent=4))
+    formatted = __MARKS.sub('', json.dumps(backtick_values(data),
+                                           separators=('', ':    '),
+                                           indent=4,
+                                           ensure_ascii=False))
+    formatted = __BRACKETS.sub(r'\\\1', formatted)  # MarkdownV2 brackets are special
     formatted = '\n'.join(line[4:].rstrip() for line in formatted.split('\n') if line.rstrip() != '')
     return formatted
