@@ -2,6 +2,7 @@ import asyncio
 import re
 
 import pytest
+from apubsub.client import Client
 
 from delatore.emoji import Emoji
 from delatore.sources.awx_api import single_template_filter
@@ -11,8 +12,9 @@ __RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
 __RE_AWX_EMOJI = r''.join([Emoji.NO_DATA, Emoji.SUCCESS, Emoji.FAILED])
 RE_STATUS = re.compile(r'[%s]\s+—\s+`[\w\s\d.]+`\s+\\\(`%s`\\\)' % (__RE_AWX_EMOJI, __RE_DATE_TIME))
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_get_data(awx_client):
     _filter = single_template_filter(TEMPLATE_NAME)
     single = await awx_client.get_templates(_filter)
@@ -21,7 +23,6 @@ async def test_get_data(awx_client):
     assert RE_STATUS.findall(message), message
 
 
-@pytest.mark.asyncio
 async def test_get_all_scenarios(awx_client):
     _filter = single_template_filter(TEMPLATE_NAME)
     single, multiple = await asyncio.gather(
@@ -29,3 +30,10 @@ async def test_get_all_scenarios(awx_client):
         awx_client.get_templates(),
     )
     assert single[0] in multiple
+
+
+async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
+    await sub.subscribe(awx_client.TOPIC)
+    await asyncio.sleep(.05)
+    await pub.publish(awx_client.TOPIC_IN, TEMPLATE_NAME)
+    await sub.get(5)
