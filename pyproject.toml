@@ -14,6 +14,7 @@ ocomone = "^0.4.3"
 apubsub = "^0.2.1"
 aiogram = "^2.5.3"
 aiohttp = "^3.6.2"
+aiohttp-socks = "^0.3.4"
 aiodns = "^2.0.0"
 influxdb = "^5.2.3"
 

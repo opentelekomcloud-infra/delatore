@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 import aiohttp
 from aiohttp import BasicAuth
+from aiohttp_socks import ProxyConnector
 from apubsub.client import Client
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
@@ -99,11 +100,17 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
             data=data,
             headers=headers,
             verify_ssl=self._verify_ssl,
-            timeout=self._timeout
+            timeout=self._timeout,
         )
         if self._username is not None:
             kwargs.update(auth=BasicAuth(self._username, self._password or ''))
-        async with aiohttp.ClientSession(headers=self._session.headers) as session:
+
+        if BOT_CONFIG.proxy:
+            connector = ProxyConnector.from_url(BOT_CONFIG.proxy)
+        else:
+            connector = None
+
+        async with aiohttp.ClientSession(connector=connector, headers=self._session.headers) as session:
             async with session.request(**kwargs) as response:
                 data = await response.json()
         # if there's not an error, there must have been a successful response
