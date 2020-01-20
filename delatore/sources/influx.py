@@ -25,6 +25,8 @@ LOGGER.setLevel(logging.DEBUG)
 class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
 
+    # pylint: disable=too-many-arguments
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

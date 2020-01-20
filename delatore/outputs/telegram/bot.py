@@ -38,7 +38,7 @@ class BotRunner:
 
     @property
     def bot(self):
-        """Return bot instance"""
+        """Return bot instance, create new if missing"""
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot exist. Create bot.')
             self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2, proxy=BOT_CONFIG.proxy)
@@ -46,6 +46,7 @@ class BotRunner:
 
     @property
     def dispatcher(self):
+        """Return dispatcher instance, create new if missing"""
         if _not_in_current_loop(self._dispatcher):
             LOGGER.warning('No dispatcher exist. Create dispatcher.')
             self._dispatcher = Dispatcher(self.bot)
@@ -53,9 +54,10 @@ class BotRunner:
         return self._dispatcher
 
     async def handle_status(self, message: Message):
+        """Handler for /status command"""
         try:
-            LOGGER.debug(f'Message received: {message.text} in chat {message.chat}')
-            source, template_name, count = parse_command(message.text)
+            LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
+            source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
             await self.client.publish(AWXApiSource.TOPIC_IN, template_name or '')
         except CommandParsingError:
             await message.answer('Invalid command. Please check command syntax')

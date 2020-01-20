@@ -1,8 +1,11 @@
+"""Conversion of source data to markdown v2"""
+
 import json
 import re
 
 
 def normalize_key(src: str):
+    """Normalize dictionary key format"""
     if src.isupper():
         return f'`{src}`'
     return src.replace('_', ' ').title()

@@ -15,6 +15,7 @@ LOGGER.setLevel(logging.DEBUG)
 
 
 async def ok(_: Request):
+    """Send `OK` response"""
     return web.Response(text='OK')
 
 
@@ -49,6 +50,8 @@ AWX_LISTENER_EMOJI_MAP = {
 
 
 class AWXWebHookSource(HttpListenerSource):
+    """HTTP listener for AWX web hooks"""
+
     PORT = 23834
     TOPIC = 'AWX_WEB_HOOK'
 

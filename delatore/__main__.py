@@ -6,6 +6,8 @@ from argparse import ArgumentParser
 from apubsub import Service
 
 
+# pylint:disable=import-outside-toplevel
+
 def _config():
     from delatore import configuration as cfg
     arg_p = ArgumentParser(description='Bot for reporting CSM monitoring status to telegram channel')

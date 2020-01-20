@@ -20,13 +20,9 @@ AWX_EMOJI_MAP = {
     'never updated': Emoji.NO_DATA,
 }
 
-
-class NoSuchTemplate(Exception):
-    """Template not found"""
-
-
 TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
-"""Timestamp format with milliseconds"""
+
+NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
 
 
 class TemplateStatus(NamedTuple):
@@ -57,7 +53,7 @@ class AWXApiSource(Source):
             raise NoUpdates
 
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter) or [f'No template with name \'{template_name}\' found']
+        data = await self.get_templates(_filter) or [NO_TEMPLATE_PATTERN.format(template_name)]
         return data
 
     @classmethod
@@ -81,7 +77,8 @@ class AWXApiSource(Source):
     async def get_templates(self, filters: dict = None) -> Optional[list]:
         """Returns list of all job templates for csm organization
 
-        This methods support Ansible tower filtering https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
+        This methods support Ansible tower filtering
+        https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         async with get_session() as session:
             async with session.get(self.url + '/job_templates', params=filters) as response:

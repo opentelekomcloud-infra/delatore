@@ -5,7 +5,7 @@ import pytest
 from apubsub.client import Client
 
 from delatore.emoji import Emoji
-from delatore.sources.awx_api import single_template_filter
+from delatore.sources.awx_api import single_template_filter, NO_TEMPLATE_PATTERN
 from tests.helpers import random_string
 
 TEMPLATE_NAME = 'Scenario 1.5'
@@ -53,4 +53,5 @@ async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     template_name = random_string()
     await pub.publish(awx_client.TOPIC_IN, template_name)
     response = await sub.get(5)
-    assert response == f'* AWX scenarios status: *\n`No template with name \'{template_name}\' found`'
+    no_template = NO_TEMPLATE_PATTERN.format(template_name)
+    assert response == f'* AWX scenarios status: *\n`{no_template}`'
