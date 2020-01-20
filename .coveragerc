@@ -20,7 +20,7 @@ exclude_lines =
     raise AssertionError
     raise NotImplementedError
 
-fail_under = 70
+fail_under = 80
 
 [html]
 directory = coverage_html_report

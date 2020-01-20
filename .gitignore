@@ -11,3 +11,8 @@ crash.log
 
 config/config.ini
 __pycache__
+
+.pytest_cache/
+logs/
+coverage_html_report/
+*.log
