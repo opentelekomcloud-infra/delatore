@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import threading
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, ParseMode
@@ -31,7 +30,7 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: threading.Event):
+    def __init__(self, msg_service: Service, stop_event: asyncio.Event):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.chat_id = BOT_CONFIG.chat_id
@@ -86,10 +85,21 @@ class BotRunner:
             if self.stop_event.is_set():
                 self.client.stop_getting()
 
+    async def _stopper(self):
+        while not self.stop_event.is_set():
+            await asyncio.sleep(.01)
+        self.client.stop_getting()
+        self.dispatcher.stop_polling()
+        await self.dispatcher.storage.close()
+        await self.dispatcher.storage.wait_closed()
+        await self.dispatcher.bot.close()
+        await self.dispatcher.wait_closed()
+
     async def start(self):
         """Start bot"""
 
         await asyncio.wait([
             self.start_posting(),
-            self.dispatcher.start_polling(timeout=1, error_sleep=0),
+            self.dispatcher.start_polling(),
+            self._stopper(),
         ])

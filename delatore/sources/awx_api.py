@@ -64,15 +64,15 @@ class AWXApiSource(Source):
     TOPIC = 'AWX_CLIENT_OUT'
 
     def __init__(self, client: Client):
-        super().__init__(client)
-        self.polling_interval = .1
-        self.request_timeout = 5
+        # polling here - polling of input requests
+        # request timeout - timeout for API request
+        super().__init__(client, polling_interval=.05, request_timeout=10, ignore_duplicates=False)
         self.url = 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
 
-    async def start(self, stop_event: asyncio.Event, no_duplicates=True):
+    async def start(self, stop_event: asyncio.Event):
         await self.client.start_consuming()
         await self.client.subscribe(self.TOPIC_IN)
-        await super().start(stop_event, no_duplicates)
+        await super().start(stop_event)
 
     async def get_templates(self, filters: dict = None) -> Optional[list]:
         """Returns list of all job templates for csm organization

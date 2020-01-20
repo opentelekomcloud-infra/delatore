@@ -19,10 +19,11 @@ class Source(ABC):
     client: Client
     TOPIC: str
 
-    def __init__(self, client: Client, polling_interval=10.0, request_timeout=10.0):
+    def __init__(self, client: Client, polling_interval=10.0, request_timeout=10.0, ignore_duplicates=True):
         self.client = client
         self.polling_interval = polling_interval
         self.request_timeout = request_timeout
+        self.ignore_duplicates = ignore_duplicates
         if not hasattr(self, 'TOPIC'):
             raise NotImplementedError(f'Source has no topic')
 
@@ -39,7 +40,7 @@ class Source(ABC):
         :return: Markdown string
         """
 
-    async def start(self, stop_event: asyncio.Event, no_duplicates=True):
+    async def start(self, stop_event: asyncio.Event):
         """Start processing updates"""
         last = None
         while not stop_event.is_set():
@@ -47,7 +48,7 @@ class Source(ABC):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if new in [last, None] and no_duplicates:
+            if new in [last, None] and self.ignore_duplicates:
                 continue
             md_message = self.convert(new)
             await self.client.publish(self.TOPIC, md_message)

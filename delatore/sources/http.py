@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from abc import ABC
 from asyncio import Queue
@@ -24,21 +25,26 @@ class HttpListenerSource(Source, ABC):
 
     # pylint: disable=abstract-method
 
-    def __init__(self, port, client: Client):
-        super().__init__(client, .1)
+    def __init__(self, port, client: Client, polling_interval=10, request_timeout=10.0):
+        super().__init__(client, ignore_duplicates=True, polling_interval=polling_interval,
+                         request_timeout=request_timeout)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
         self.app = app
         self.port = port
+        self.runner = web.AppRunner(self.app)
+        self.site = None
 
-    async def start(self, stop_event, no_duplicates=True):
+    async def start(self, stop_event):
         """Start server coroutine"""
-        runner = web.AppRunner(self.app)
-        await runner.setup()
-        site = web.TCPSite(runner, port=self.port)
-        await site.start()
-        await super().start(stop_event, no_duplicates)
-        await runner.cleanup()
+        await self.runner.setup()
+        self.site = web.TCPSite(self.runner, port=self.port)
+        await self.site.start()
+        await super().start(stop_event)
+        await self.runner.cleanup()
+
+    async def stop(self):
+        await self.site.stop()
 
 
 AWX_LISTENER_EMOJI_MAP = {
@@ -63,9 +69,9 @@ class AWXWebHookSource(HttpListenerSource):
         return text
 
     def __init__(self, client):
-        super().__init__(self.PORT, client)
+        super().__init__(self.PORT, client, polling_interval=10, request_timeout=.1)
         self.app.add_routes([
-            web.get('/notifications', self.notifications)
+            web.post('/notifications', self.notifications)
         ])
         self.updates = Queue()
 
@@ -74,6 +80,4 @@ class AWXWebHookSource(HttpListenerSource):
         return web.Response(text='OK')
 
     async def get_update(self):
-        if self.updates.empty():
-            raise NoUpdates
         return await self.updates.get()

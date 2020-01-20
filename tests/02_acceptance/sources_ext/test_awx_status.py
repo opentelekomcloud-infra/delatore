@@ -41,7 +41,7 @@ async def test_get_not_existing_scenario(awx_client):
 
 async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPIC)
-    await asyncio.sleep(.05)
+    await asyncio.sleep(.1)
     await pub.publish(awx_client.TOPIC_IN, TEMPLATE_NAME)
     response = await sub.get(5)
     assert response is not None
@@ -49,7 +49,7 @@ async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
 
 async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPIC)
-    await asyncio.sleep(.05)
+    await asyncio.sleep(.1)
     template_name = random_string()
     await pub.publish(awx_client.TOPIC_IN, template_name)
     response = await sub.get(5)

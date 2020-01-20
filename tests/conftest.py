@@ -11,7 +11,7 @@ from delatore.sources.awx_api import TemplateStatus
 from tests.helpers import current_timestamp, random_string, random_with_length
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def service():
     _service = Service()
     _service.start()
