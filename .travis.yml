@@ -20,6 +20,7 @@ install:
 - pip3 install poetry
 - poetry install
 jobs:
+  fast_finish: true
   include:
   - stage: test
     script:
