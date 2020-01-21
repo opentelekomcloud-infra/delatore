@@ -138,6 +138,14 @@ version = "2.8.0"
 pytz = ">=2015.7"
 
 [[package]]
+category = "dev"
+description = "efficient arrays of booleans -- C extension"
+name = "bitarray"
+optional = false
+python-versions = "*"
+version = "1.2.1"
+
+[[package]]
 category = "main"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
@@ -368,6 +376,17 @@ mccabe = ">=0.6,<0.7"
 
 [[package]]
 category = "dev"
+description = "Exit code handler for pylint command line utility."
+name = "pylint-exit"
+optional = false
+python-versions = "*"
+version = "1.1.0"
+
+[package.dependencies]
+bitarray = "*"
+
+[[package]]
+category = "dev"
 description = "Quote consistency checker for PyLint.."
 name = "pylint-quotes"
 optional = false
@@ -584,7 +603,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "7487636551a4742c13c93ff2716b8a8fe1521fd1cfa142f58926e26f082ab25b"
+content-hash = "add94e8a668a217a4cc791a379f56d3c0173a3aaad5ece8a5f2e4df564b2a767"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -640,6 +659,9 @@ attrs = [
 babel = [
     {file = "Babel-2.8.0-py2.py3-none-any.whl", hash = "sha256:d670ea0b10f8b723672d3a6abeb87b565b244da220d76b4dba1b66269ec152d4"},
     {file = "Babel-2.8.0.tar.gz", hash = "sha256:1aac2ae2d0d8ea368fa90906567f5c08463d98ade155c0c4bfedd6a0f7160e38"},
+]
+bitarray = [
+    {file = "bitarray-1.2.1.tar.gz", hash = "sha256:2ed675f460bb0d3d66fd8042a6f1f0d36cf213e52e72a745283ddb245da7b9cf"},
 ]
 certifi = [
     {file = "certifi-2019.11.28-py2.py3-none-any.whl", hash = "sha256:017c25db2a153ce562900032d5bc68e9f191e44e9a0f762f373977de9df1fbb3"},
@@ -843,6 +865,10 @@ pycparser = [
 pylint = [
     {file = "pylint-2.4.4-py3-none-any.whl", hash = "sha256:886e6afc935ea2590b462664b161ca9a5e40168ea99e5300935f6591ad467df4"},
     {file = "pylint-2.4.4.tar.gz", hash = "sha256:3db5468ad013380e987410a8d6956226963aed94ecb5f9d3a28acca6d9ac36cd"},
+]
+pylint-exit = [
+    {file = "pylint-exit-1.1.0.zip", hash = "sha256:a1a49845941a8d3d48505c9eb9a85c87ef6aeb1f43506ee4b2976e8e1abc6101"},
+    {file = "pylint_exit-1.1.0-py2.py3-none-any.whl", hash = "sha256:15cdf5414ecec410e364bf31b4b98ed7557a1ce44d75a0faa6684200e60d5259"},
 ]
 pylint-quotes = [
     {file = "pylint-quotes-0.2.1.tar.gz", hash = "sha256:c53d2a63b4cd16c9fa426d243de6396910ff04c65001efdbea37427d401fce72"},
