@@ -3,15 +3,17 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 import aiohttp
 from aiohttp import BasicAuth
+from aiohttp_socks import ProxyConnector
+from apubsub.client import Client
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
-from .base import Source
+from .base import Json, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
@@ -20,8 +22,10 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
-class AsyncInfluxClient(InfluxDBClient):
+class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
+
+    # pylint: disable=too-many-arguments
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,7 +77,6 @@ class AsyncInfluxClient(InfluxDBClient):
             in data.get('results', [])
         ]
 
-        # TODO(aviau): Always return a list. (This would be a breaking change)
         if len(results) == 1:
             return results[0]
 
@@ -92,9 +95,6 @@ class AsyncInfluxClient(InfluxDBClient):
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
 
-        # Try to send the request more than once by default (see #103)
-        retry = True
-        _try = 0
         kwargs = dict(
             method=method,
             url=url,
@@ -102,59 +102,64 @@ class AsyncInfluxClient(InfluxDBClient):
             data=data,
             headers=headers,
             verify_ssl=self._verify_ssl,
-            timeout=self._timeout
+            timeout=self._timeout,
         )
         if self._username is not None:
             kwargs.update(auth=BasicAuth(self._username, self._password or ''))
-        async with aiohttp.ClientSession(headers=self._session.headers) as session:
+
+        if BOT_CONFIG.proxy:
+            connector = ProxyConnector.from_url(BOT_CONFIG.proxy)
+        else:
+            connector = None
+
+        async with aiohttp.ClientSession(connector=connector, headers=self._session.headers) as session:
             async with session.request(**kwargs) as response:
                 data = await response.json()
         # if there's not an error, there must have been a successful response
         if 500 <= response.status < 600:
             raise InfluxDBServerError(data)
-        elif response.status == expected_response_code:
+        if response.status == expected_response_code:
             return data
-        else:
-            raise InfluxDBClientError(data, response.status)
+        raise InfluxDBClientError(data, response.status)
+
+
+INFLUX_POLLING_INTERVAL = 60
+INFLUX_EMOJI_MAP = {
+    '`OK`': Emoji.SUCCESS,
+    '`FAIL`': Emoji.FAILED,
+    '`NO_DATA`': Emoji.NO_DATA,
+}
 
 
 class InfluxSource(Source):
-    def __init__(self):
-        self.client = AsyncInfluxClient(
-            host='influx1.eco.tsi-dev.otc-service.com',
-            port=8086,
-            username='csm',
-            password=BOT_CONFIG.influx_password,
-            database='csm',
-            ssl=True,
-            verify_ssl=True)
+    TOPIC = 'INFLUX'
 
-    INFLUX_POLLING_INTERVAL = 60
+    def __init__(self, client: Client):
+        super().__init__(client, polling_interval=INFLUX_POLLING_INTERVAL)
+        self._influx_client = None
 
-    EMOJI_MAP = {
-        '`OK`': Emoji.SUCCESS,
-        '`FAIL`': Emoji.FAILED,
-        '`NO_DATA`': Emoji.NO_DATA,
-    }
+    @property
+    def influx_client(self):
+        """Return new instance of influx client"""
+        if self._influx_client is None:
+            self._influx_client = AsyncInfluxClient(
+                host='influx1.eco.tsi-dev.otc-service.com',
+                port=8086,
+                username='csm',
+                password=BOT_CONFIG.influx_password,
+                database='csm',
+                ssl=True,
+                verify_ssl=True)
+        return self._influx_client
 
     @classmethod
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data)
-        text = '** From InfluxDB **\n' + replace_emoji(text, cls.EMOJI_MAP)
+        text = '*From InfluxDB*\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
         return text.strip()
 
-    # noinspection PyBroadException
-    async def start(self, stop_event):
-        """Start InfluxDB polling"""
-        while not stop_event.is_set():
-            try:
-                self.updates = convert(await self.get_influx_statuses())
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception('Failed to get influx status')
-            await asyncio.sleep(self.INFLUX_POLLING_INTERVAL)
-
-    async def get_influx_statuses(self):
+    async def get_update(self) -> Optional[Json]:
         results = await asyncio.gather(
             self._get_status('lb_timing'),
             self._get_status('lb_down_test'),
@@ -170,10 +175,11 @@ class InfluxSource(Source):
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
         try:
-            last_record = await self.client.query(query)
+            last_record = await self.influx_client.query(query)
             last_time = last_record.raw['series'][0]['values'][0][0]
             last_time_ms = _convert_time(last_time)
-            if (datetime.utcnow() - last_time_ms).total_seconds() < 300:
+            now = datetime.utcnow().timestamp()
+            if now - last_time_ms < 300:
                 return 'OK'
             return 'FAIL'
         except KeyError:
@@ -184,9 +190,14 @@ class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
 
 
-def _convert_time(timestamp):
-    time_groups = re.match(r'(.+)\.(\d+)(Z)', timestamp)
-    if time_groups is None:
+_RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
+
+
+def _convert_time(timestamp) -> float:
+    match_ts = _RE_TIME_GROUPS.match(timestamp)
+    if match_ts is None:
         raise InfluxTimestampParseException
-    time_groups = time_groups.groups()
-    return datetime.strptime(f'{time_groups[0]}.{time_groups[1][:6]:<06}{time_groups[2]}', '%Y-%m-%dT%H:%M:%S.%fZ')
+    timestamp, nsec, timezone, *_ = match_ts.groups()
+    msec = nsec[:6]
+    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
+    return dtime.timestamp()

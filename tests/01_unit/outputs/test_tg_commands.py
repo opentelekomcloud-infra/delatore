@@ -1,10 +1,16 @@
 """Testing of parsing command arguments"""
+import asyncio
+from asyncio import Queue
+
 import pytest
+from apubsub.client import Client
 
-from delatore.bot.parsing import CommandParsingError, parse_command
+from delatore.outputs.telegram.bot import IN_TOPICS
+from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
+from tests.helpers import random_string
 
 
-@pytest.mark.parametrize(['quo'], "\'\"")
+@pytest.mark.parametrize(['quo'], '\'\"')
 def test_parse_quotted_message(quo):
     """Testing of parsing quotted message"""
     expected = ('awx', 'Scenario 1.5', 5)
@@ -35,3 +41,16 @@ def test_parse_err(message):
     """Testing of handling exceptions during parsing command arguments"""
     with pytest.raises(CommandParsingError):
         parse_command(message)
+
+
+@pytest.mark.parametrize('topic', IN_TOPICS)
+@pytest.mark.asyncio
+async def test_src_to_bot(topic, patched_bot, pub: Client, bot_alert_queue: Queue):
+    message = random_string()
+    await pub.publish(topic, message)
+    try:
+        received = await asyncio.wait_for(bot_alert_queue.get(), .1)
+        bot_alert_queue.task_done()
+    except asyncio.TimeoutError:
+        raise AssertionError
+    assert message == received

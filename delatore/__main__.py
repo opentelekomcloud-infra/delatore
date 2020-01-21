@@ -1,13 +1,15 @@
 """Run bot as python module"""
+import asyncio
 import os
 from argparse import ArgumentParser
 
-from aiogram import executor
+from apubsub import Service
 
-from delatore import configuration as cfg
 
+# pylint:disable=import-outside-toplevel
 
 def _config():
+    from delatore import configuration as cfg
     arg_p = ArgumentParser(description='Bot for reporting CSM monitoring status to telegram channel')
     arg_p.add_argument('--config', default=None, help='Configuration file to use')
     arg_p.add_argument('--chat', default=os.getenv('chat_id'), help='Chat for notifications')
@@ -30,9 +32,25 @@ def _config():
 
 
 def _main():
+    service = Service()
+    service.start()
+
     _config()
-    from delatore.bot import DISP
-    executor.start_polling(DISP)
+
+    try:
+        from delatore.outputs import start_outputs
+        from delatore.sources import start_sources
+
+        # all other services are running concurrently
+        stop_event = asyncio.Event()
+
+        asyncio.run(asyncio.wait([
+            start_sources(service, stop_event),
+            start_outputs(service, stop_event),
+        ]))
+    finally:
+        service.stop()
 
 
-_main()
+if __name__ == '__main__':
+    _main()

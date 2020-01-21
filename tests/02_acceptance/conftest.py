@@ -2,20 +2,13 @@ import asyncio
 
 import pytest
 
-from delatore.sources import AWXApiClient, InfluxSource
+from delatore.sources import InfluxSource
 
 
-@pytest.fixture(scope='session')
-def awx_client():
-    return AWXApiClient()
-
-
-@pytest.fixture(scope='session')
-def influxdb():
-    return InfluxSource()
-
-
-@pytest.fixture(scope='session')  # change default loop fixture
-def event_loop():
-    loop = asyncio.get_event_loop()
-    return loop
+@pytest.fixture
+async def influxdb(service):
+    src = InfluxSource(service.get_client())
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    return src
