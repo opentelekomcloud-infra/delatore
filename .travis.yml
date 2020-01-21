@@ -20,11 +20,13 @@ install:
 - pip3 install poetry
 - poetry install
 jobs:
+  fast_finish: true
   include:
   - stage: test
     script:
-    - poetry run pytest --cov-report xml --cov delatore
-    - poetry run codecov
+    - pylint delatore || pylint-exit $? -wfail -efail
+    - pytest --cov-report xml --cov delatore
+    - codecov
   - stage: pypi
     name: Deploy to PyPi
     script: poetry publish --build -u $PYPI_USERNAME -p $PYPI_PASSWORD
