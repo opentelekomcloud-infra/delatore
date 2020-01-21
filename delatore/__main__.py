@@ -1,34 +1,56 @@
 """Run bot as python module"""
+import asyncio
 import os
 from argparse import ArgumentParser
 
-from delatore import configuration
+from apubsub import Service
 
+
+# pylint:disable=import-outside-toplevel
 
 def _config():
-    arg_p = ArgumentParser(description="Bot for reporting CSM monitoring status to telegram channel")
-    arg_p.add_argument("--config", default=None, help="Configuration file to use")
-    arg_p.add_argument("--chat", default=os.getenv("chat_id"), help="Chat for notifications")
-    arg_p.add_argument("--token", default=os.getenv("token"), help="Telegram bot token")
-    arg_p.add_argument("--influx_password", default=os.getenv("INFLUX_PASSWORD"), help="Influx password")
-    arg_p.add_argument("--awx_auth_token", default=os.getenv("AWX_AUTH_TOKEN"), help="OAuth2 Token for Ansible Tower")
+    from delatore import configuration as cfg
+    arg_p = ArgumentParser(description='Bot for reporting CSM monitoring status to telegram channel')
+    arg_p.add_argument('--config', default=None, help='Configuration file to use')
+    arg_p.add_argument('--chat', default=os.getenv('chat_id'), help='Chat for notifications')
+    arg_p.add_argument('--token', default=os.getenv('token'), help='Telegram bot token')
+    arg_p.add_argument('--influx_password', default=os.getenv('INFLUX_PASSWORD'), help='Influx password')
+    arg_p.add_argument('--awx_auth_token', default=os.getenv('AWX_AUTH_TOKEN'), help='OAuth2 Token for Ansible Tower')
+
     args = arg_p.parse_args()
     config_file = args.config
-    token, chat_id, influx_password = args.token, args.chat, args.influx_password
-    if all([token, chat_id, influx_password]):
-        configuration.BOT_CONFIG = configuration.BotConfig(args.token, args.chat, args.influx_password, args.AWX_AUTH_TOKEN)
+    token, chat_id, influx_password, awx_auth_token = args.token, args.chat, args.influx_password, args.awx_auth_token
+
+    if all([token, chat_id, influx_password, awx_auth_token]):
+        cfg.BOT_CONFIG = cfg.BotConfig(token, chat_id, influx_password, awx_auth_token)
     elif config_file:
         if not os.path.isfile(config_file):
             raise FileNotFoundError
-        configuration.BOT_CONFIG = configuration.read_config(config_file)
+        cfg.BOT_CONFIG = cfg.read_config(config_file)
     else:
-        raise RuntimeError("Please provide chat ID and bot token or configuration file to use")
+        raise RuntimeError('Please provide chat ID and bot token or configuration file to use')
 
 
 def _main():
+    service = Service()
+    service.start()
+
     _config()
-    from delatore.bot import bot
-    bot.start()
+
+    try:
+        from delatore.outputs import start_outputs
+        from delatore.sources import start_sources
+
+        # all other services are running concurrently
+        stop_event = asyncio.Event()
+
+        asyncio.run(asyncio.wait([
+            start_sources(service, stop_event),
+            start_outputs(service, stop_event),
+        ]))
+    finally:
+        service.stop()
 
 
-_main()
+if __name__ == '__main__':
+    _main()

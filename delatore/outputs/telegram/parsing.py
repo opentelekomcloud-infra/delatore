@@ -17,8 +17,6 @@ def parse_command(message):
     LOGGER.debug('Got message: %s', message)
     cmd, target, *args = shlex.split(message)
     depth = None
-    if ('\'' not in message) and ('\"' not in message) and (len(args) > 1):
-        raise CommandParsingError(f'Invalid syntax command arguments: {message}')
     detailed = args.pop(0) if args else None
     try:
         depth = int(args.pop(0))
@@ -28,5 +26,4 @@ def parse_command(message):
         raise CommandParsingError(f'Invalid depth value: {depth}')
     if args:
         raise CommandParsingError(f'Command {cmd} got unexpected arguments: {args}')
-    LOGGER.debug('Getting AWX status')
     return target, detailed, depth

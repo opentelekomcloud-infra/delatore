@@ -1,8 +1,10 @@
 import logging
 from abc import ABC
-from threading import Thread
+from asyncio import Queue
 
-from flask import Flask, request
+from aiohttp import web
+from aiohttp.web_request import Request
+from apubsub.client import Client
 
 from .base import Source
 from ..emoji import Emoji, replace_emoji
@@ -12,42 +14,69 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
+async def ok(_: Request):
+    """Send `OK` response"""
+    return web.Response(text='OK')
+
+
 class HttpListenerSource(Source, ABC):
     """HTTP listener"""
 
-    def __init__(self, port):
-        app = Flask(__name__)
-        app.route('/')(lambda: 'OK')
+    # pylint: disable=abstract-method
+
+    def __init__(self, port, client: Client, polling_interval=10, request_timeout=10.0):
+        super().__init__(client, ignore_duplicates=True, polling_interval=polling_interval,
+                         request_timeout=request_timeout)
+        app = web.Application()
+        app.add_routes([web.get('/', ok)])
         self.app = app
         self.port = port
+        self.runner = web.AppRunner(self.app)
+        self.site = None
 
-    def start(self):
-        """Start server in dedicated thread"""
-        Thread(target=self.app.run, kwargs={'port': self.port}, daemon=True).start()
-        LOGGER.info(f"{type(self).__name__} source started")
+    async def start(self, stop_event):
+        """Start server coroutine"""
+        await self.runner.setup()
+        self.site = web.TCPSite(self.runner, port=self.port)
+        await self.site.start()
+        await super().start(stop_event)
+        await self.runner.cleanup()
+
+    async def stop(self):
+        await self.site.stop()
 
 
-class AWXListenerSource(HttpListenerSource):
-    EMOJI_MAP = {
-        '`failed`': Emoji.FAILED,
-        '`running`': Emoji.RUNNING,
-        '`success`': Emoji.SUCCESS,
-        '`cancelled`': Emoji.CANCELED
-    }
+AWX_LISTENER_EMOJI_MAP = {
+    '`failed`': Emoji.FAILED,
+    '`running`': Emoji.RUNNING,
+    '`success`': Emoji.SUCCESS,
+    '`cancelled`': Emoji.CANCELED
+}
+
+
+class AWXWebHookSource(HttpListenerSource):
+    """HTTP listener for AWX web hooks"""
+
+    PORT = 23834
+    TOPIC = 'AWX_WEB_HOOK'
 
     @classmethod
     def convert(cls, data: dict) -> str:
         data.pop('From', None)
         text = convert(data).strip()
-        text = '** From Ansible Tower **\n' + replace_emoji(text, cls.EMOJI_MAP)
+        text = '* From Ansible Tower *\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
         return text
 
-    PORT = 23834
+    def __init__(self, client):
+        super().__init__(self.PORT, client, polling_interval=10, request_timeout=.1)
+        self.app.add_routes([
+            web.post('/notifications', self.notifications)
+        ])
+        self.updates = Queue()
 
-    def __init__(self, port=PORT):
-        super(AWXListenerSource, self).__init__(port)
-        self.app.route('/notifications', methods=['POST'])(self.notifications)
+    async def notifications(self, request: web.Request):
+        await self.updates.put(await request.json())
+        return web.Response(text='OK')
 
-    def notifications(self):
-        self.updates = request.json
-        return 'OK'
+    async def get_update(self):
+        return await self.updates.get()
