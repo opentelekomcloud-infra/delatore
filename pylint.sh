@@ -11,6 +11,8 @@ ex_code=$?
 # 8 refactor message issued
 # 16 convention message issued
 
-if [[ ${ex_code} > 0 && ${ex_code} < 8 ]]; then  # warning+
+echo pylint exit code is ${ex_code}
+
+if (( ${ex_code} > 0 )) && (( ${ex_code} < 8 )); then  # warning+
     exit 1
 fi
