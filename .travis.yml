@@ -24,7 +24,6 @@ jobs:
   include:
   - stage: test
     script:
-    - poetry shell
     - pylint delatore || pylint-exit $? -wfail -efail
     - pytest --cov-report xml --cov delatore
     - codecov
