@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from abc import ABC
 from asyncio import Queue
@@ -7,7 +6,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
-from .base import NoUpdates, Source
+from .base import Source
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
