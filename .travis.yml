@@ -23,6 +23,7 @@ jobs:
   include:
   - stage: test
     script:
+    - poetry run ./pylint.sh
     - poetry run pytest --cov-report xml --cov delatore
     - poetry run codecov
   - stage: pypi

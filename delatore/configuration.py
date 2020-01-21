@@ -1,3 +1,5 @@
+"""Delatore configuration and settings"""
+
 import configparser
 import os
 from typing import NamedTuple, Optional
@@ -19,6 +21,7 @@ class BotConfig(NamedTuple):
 
     @property
     def url(self):
+        """Get telegram bot URL"""
         return f'{TG_URL}{self.token}/'
 
 
