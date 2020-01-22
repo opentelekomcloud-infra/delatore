@@ -52,7 +52,6 @@ class Source(ABC):
         while not stop_event.is_set():
             try:
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
-                LOGGER.debug('Data received from source: %s\ndata:\n%s', name, new)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if new in [last, None] and self.ignore_duplicates:
