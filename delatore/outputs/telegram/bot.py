@@ -78,10 +78,11 @@ class BotRunner:
     async def start_posting(self):
         """Start posting updates to channel"""
         await self.client.start_consuming()
+        topics = TG_CONFIG.subscriptions
         await asyncio.wait([
-            self.client.subscribe(topic) for topic in TG_CONFIG.subscriptions
+            self.client.subscribe(topic) for topic in topics
         ])
-        LOGGER.warning('Bot subscribed to topics: %s', IN_TOPICS)
+        LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
         while not self.stop_event.is_set():
             message = await self.client.get(.1)
