@@ -31,6 +31,21 @@ def _config():
         raise RuntimeError('Please provide chat ID and bot token or configuration file to use')
 
 
+async def _ordered_start(service):
+    from delatore.outputs import start_outputs
+    from delatore.sources import start_sources
+
+    stop_event = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    out_tsk = loop.create_task(start_outputs(service, stop_event))
+    await asyncio.sleep(.5)
+    src_tsk = loop.create_task(start_sources(service, stop_event))
+    await asyncio.wait([
+        src_tsk,
+        out_tsk,
+    ])
+
+
 def _main():
     service = Service()
     service.start()
@@ -38,16 +53,7 @@ def _main():
     _config()
 
     try:
-        from delatore.outputs import start_outputs
-        from delatore.sources import start_sources
-
-        # all other services are running concurrently
-        stop_event = asyncio.Event()
-
-        asyncio.run(asyncio.wait([
-            start_sources(service, stop_event),
-            start_outputs(service, stop_event),
-        ]))
+        asyncio.run(_ordered_start(service))
     finally:
         service.stop()
 

@@ -11,7 +11,8 @@ pytestmark = pytest.mark.asyncio
 
 async def test_http_server_listening(awx_web_hook_src: AWXWebHookSource):
     async with ClientSession() as session:
-        async with session.get(f'http://localhost:{awx_web_hook_src.port}/') as response:
+        async with session.get(f'http://localhost:{awx_web_hook_src.port}/',
+                               timeout=3) as response:
             data = await response.text()
     assert response.status == 200
     assert data == 'OK'

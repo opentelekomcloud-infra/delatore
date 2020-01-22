@@ -63,14 +63,17 @@ class BotRunner:
 
     async def alert(self, message):
         """Send message to chat alerting users"""
+        LOGGER.debug('Message (alert) sent to the chat %s:\n %s', self.chat_id, message)
         return await self.bot.send_message(self.chat_id, message, disable_notification=False)
 
     async def silent(self, message):
         """Send message to chat without user alerting"""
+        LOGGER.debug('Message (silent) sent to the chat %s:\n %s', self.chat_id, message)
         return await self.bot.send_message(self.chat_id, message, disable_notification=True)
 
     async def remove(self, message_id):
         """Remove message from chat"""
+        LOGGER.debug('Message %s removed from chat %s', message_id, self.chat_id)
         return await self.bot.delete_message(self.chat_id, message_id)
 
     async def start_posting(self):
@@ -79,15 +82,16 @@ class BotRunner:
         await asyncio.wait([
             self.client.subscribe(topic) for topic in IN_TOPICS
         ])
+        LOGGER.warning('Bot subscribed to topics: %s', IN_TOPICS)
         await self.silent('__Bot started__')
-        async for message in self.client.get_iter():
-            await self.alert(message)
-            if self.stop_event.is_set():
-                self.client.stop_getting()
+        while not self.stop_event.is_set():
+            message = await self.client.get(.1)
+            if message is not None:
+                await self.alert(message)
 
     async def _stopper(self):
         while not self.stop_event.is_set():
-            await asyncio.sleep(.01)
+            await asyncio.sleep(.1)
         self.client.stop_getting()
         self.dispatcher.stop_polling()
         await self.dispatcher.storage.close()
