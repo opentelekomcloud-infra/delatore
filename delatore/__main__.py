@@ -37,9 +37,9 @@ async def _ordered_start(service):
 
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
-    src_tsk = loop.create_task(start_sources(service, stop_event))
-    await asyncio.sleep(.5)
     out_tsk = loop.create_task(start_outputs(service, stop_event))
+    await asyncio.sleep(.5)
+    src_tsk = loop.create_task(start_sources(service, stop_event))
     await asyncio.wait([
         src_tsk,
         out_tsk,
