@@ -8,10 +8,9 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
-# FIXME: fix encoding in ocomone
 def setup_logger(logger: logging.Logger, log_name: str = None,
-                 log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                 log_dir="./logs"):
+                 log_format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                 log_dir='./logs'):
     """Setup logger with ``INFO`` level stream output + ``DEBUG`` level rotating file log
 
     :param logger: logger to be wrapped. Do not wrap same logger twice!
@@ -25,7 +24,7 @@ def setup_logger(logger: logging.Logger, log_name: str = None,
     try:
         # debug+ messages goes to log file
         os.makedirs(log_dir, exist_ok=True)
-        f_hdl = TimedRotatingFileHandler(f"{log_dir}/{log_name}.log", encoding='utf-8', backupCount=10, when="midnight",
+        f_hdl = TimedRotatingFileHandler(f'{log_dir}/{log_name}.log', encoding='utf-8', backupCount=10, when='midnight',
                                          utc=True)
         f_hdl.setLevel(logging.DEBUG)
         f_hdl.setFormatter(formatter)

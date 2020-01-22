@@ -82,11 +82,12 @@ class BotRunner:
         await asyncio.wait([
             self.client.subscribe(topic) for topic in IN_TOPICS
         ])
-        LOGGER.debug('Bot subscribed to topics: %s', IN_TOPICS)
+        LOGGER.warning('Bot subscribed to topics: %s', IN_TOPICS)
         await self.silent('__Bot started__')
         while not self.stop_event.is_set():
-            message = self.client.get(.1)
-            await self.alert(message)
+            message = await self.client.get(.1)
+            if message is not None:
+                await self.alert(message)
 
     async def _stopper(self):
         while not self.stop_event.is_set():

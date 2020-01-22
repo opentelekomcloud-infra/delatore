@@ -39,6 +39,7 @@ class HttpListenerSource(Source, ABC):
         await self.runner.setup()
         self.site = web.TCPSite(self.runner, port=self.port)
         await self.site.start()
+        LOGGER.debug('Web server started on port %s', self.port)
         await super().start(stop_event)
         await self.runner.cleanup()
 

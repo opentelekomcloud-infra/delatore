@@ -48,18 +48,18 @@ class Source(ABC):
         """Start processing updates"""
         last = None
         name = type(self).__name__
-        LOGGER.info("Source %s started", name)
+        LOGGER.info('Source %s started', name)
         while not stop_event.is_set():
             try:
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
-                LOGGER.debug("Data received from source: %s\ndata:\n%s", name, new)
+                LOGGER.debug('Data received from source: %s\ndata:\n%s', name, new)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if new in [last, None] and self.ignore_duplicates:
                 continue
-            LOGGER.debug("New data received from source: %s\ndata:\n%s", name, new)
+            LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             md_message = self.convert(new)
             await self.client.publish(self.TOPIC, md_message)
             last = new
-            LOGGER.debug("Wait for new data for %s", self.polling_interval)
+            LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
