@@ -38,4 +38,4 @@ def setup_logger(logger: logging.Logger, log_name: str = None,
     logger.addHandler(s_hdl)
 
 
-setup_logger(LOGGER, 'delatore', log_dir='~/.delatore/log')
+setup_logger(LOGGER, 'delatore', log_dir=os.path.expanduser('~/.delatore/log'))
