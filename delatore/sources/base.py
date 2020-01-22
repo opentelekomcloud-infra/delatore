@@ -28,8 +28,8 @@ class SourceMeta(ABCMeta):
     TOPIC: str
     config: SourceConfiguration
 
-    def __init__(cls, name, bases=(), dict={}):
-        super().__init__(name, bases, dict)
+    def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
+        super().__init__(name, bases, dct)
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
