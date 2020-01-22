@@ -2,22 +2,19 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, ParseMode
+from aiogram.types import Message
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
-from ...configuration import BOT_CONFIG
-from ...sources import AWXApiSource, AWXWebHookSource, InfluxSource
+from ...configuration import OUTPUTS_CFG
+from ...configuration.dynamic import BOT_CONFIG
+from ...sources import AWXApiSource
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 STATUS = 'status'
-IN_TOPICS = [
-    InfluxSource.TOPIC,  # pylint: disable=no-member
-    AWXApiSource.TOPIC,  # pylint: disable=no-member
-    AWXWebHookSource.TOPIC,  # pylint: disable=no-member
-]
+TG_CONFIG = OUTPUTS_CFG['telegram_bot']
 
 
 def _not_in_current_loop(smth):
@@ -40,7 +37,9 @@ class BotRunner:
         """Return bot instance, create new if missing"""
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot exist. Create bot.')
-            self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2, proxy=BOT_CONFIG.proxy)
+            self._bot = Bot(BOT_CONFIG.token,
+                            parse_mode=TG_CONFIG.params['parse_mode'],
+                            proxy=BOT_CONFIG.proxy)
         return self._bot
 
     @property
@@ -57,7 +56,7 @@ class BotRunner:
         try:
             LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
-            await self.client.publish(AWXApiSource.TOPIC_IN, template_name or '')
+            await self.client.publish(AWXApiSource.TOPIC, template_name or '')
         except CommandParsingError:
             await message.answer('Invalid command. Please check command syntax')
 
@@ -80,7 +79,7 @@ class BotRunner:
         """Start posting updates to channel"""
         await self.client.start_consuming()
         await asyncio.wait([
-            self.client.subscribe(topic) for topic in IN_TOPICS
+            self.client.subscribe(topic) for topic in TG_CONFIG.subscriptions
         ])
         LOGGER.warning('Bot subscribed to topics: %s', IN_TOPICS)
         await self.silent('__Bot started__')

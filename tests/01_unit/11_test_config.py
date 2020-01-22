@@ -1,4 +1,4 @@
-from delatore.configuration import BOT_CONFIG, BotConfig, read_config
+from delatore.configuration.dynamic import BotConfig, read_config, BOT_CONFIG
 
 
 def test_config_load(config_file, token, chat_id, influx_password, awx_auth_token):
