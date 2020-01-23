@@ -67,3 +67,26 @@ async def test_bot_status_awx(patched_bot, sub: Client, chat_id, target):
     await patched_bot.handle_status(Message(text=message_text, chat=Chat(id=chat_id)))
     data = await sub.get(.1)
     assert data == target
+
+
+def patched_message(text, chat_id):
+    resp_queue = Queue()
+    message = Message(text=text, chat=chat_id)
+
+    async def _answer(txt, *_, **__):
+        resp_queue.put_nowait(txt)
+
+    message.answer = _answer
+    return message, resp_queue
+
+
+@pytest.mark.parametrize('cmd', [
+    f'/status {random_string()}',
+    f'/status {random_string()} {random_string()}',
+    f'/status'])
+@pytest.mark.asyncio
+async def test_bot_invalid_cmd(patched_bot, chat_id, cmd):
+    message, answer_queue = patched_message(cmd, chat_id)
+    await patched_bot.handle_status(message)
+    response = answer_queue.get_nowait()
+    assert response

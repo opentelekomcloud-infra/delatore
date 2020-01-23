@@ -56,12 +56,14 @@ class BotRunner:
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
+        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
         try:
-            LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
-            await self.client.publish(STATUS_TOPICS[source], template_name or '')
         except CommandParsingError:
-            await message.answer('Invalid command. Please check command syntax')
+            return await message.answer('Invalid command. Please check command syntax')
+        if source in STATUS_TOPICS:
+            return await self.client.publish(STATUS_TOPICS[source], template_name or '')
+        return await message.answer(f'Invalid source: {source}')
 
     async def alert(self, message):
         """Send message to chat alerting users"""
