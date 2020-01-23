@@ -2,10 +2,14 @@
 
 import asyncio
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
+from inspect import isabstract
 from typing import Optional, Union
 
 from apubsub.client import Client
+
+from delatore.configuration import SOURCES_CFG
+from delatore.configuration.static import SourceConfiguration
 
 Json = Union[dict, list]
 
@@ -17,19 +21,37 @@ class NoUpdates(Exception):
     """Raised when source has no updates"""
 
 
-class Source(ABC):
+class SourceMeta(ABCMeta):
+    """Source class meta setting up data from configuration"""
+
+    CONFIG_ID: str
+    TOPIC: str
+    config: SourceConfiguration
+
+    def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
+        super().__init__(name, bases, dct)
+        if not isabstract(cls):  # skip configuration for abstracts
+            assert hasattr(cls, 'CONFIG_ID')
+            cls.config = SOURCES_CFG[cls.CONFIG_ID]
+            cls.TOPIC = cls.config.publishes
+
+
+class Source(ABC, metaclass=SourceMeta):
     """Source API posting updates to """
 
-    client: Client
-    TOPIC: str
+    CONFIG_ID: str = NotImplemented
 
-    def __init__(self, client: Client, polling_interval=10.0, request_timeout=10.0, ignore_duplicates=True):
+    client: Client
+    config: SourceConfiguration
+
+    def __init__(self, client: Client,
+                 polling_interval=10.0,
+                 request_timeout=10.0,
+                 ignore_duplicates=True):
         self.client = client
         self.polling_interval = polling_interval
         self.request_timeout = request_timeout
         self.ignore_duplicates = ignore_duplicates
-        if not hasattr(self, 'TOPIC'):
-            raise NotImplementedError(f'Source has no topic')
 
     @abstractmethod
     async def get_update(self) -> Optional[Json]:

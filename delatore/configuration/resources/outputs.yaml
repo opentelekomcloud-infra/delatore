@@ -1,0 +1,7 @@
+- name: telegram_bot
+  params:
+    parse_mode: 'MarkdownV2'
+  subscriptions:
+  - 'INFLUX'
+  - 'AWX_WEB_HOOK'
+  - 'AWX_CLIENT_OUT'

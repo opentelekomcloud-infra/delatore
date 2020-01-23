@@ -3,10 +3,9 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, NamedTuple, Optional
 
 import aiohttp
-from aiohttp import BasicAuth
 from aiohttp_socks import ProxyConnector
 from apubsub.client import Client
 from influxdb import InfluxDBClient
@@ -105,7 +104,7 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
             timeout=self._timeout,
         )
         if self._username is not None:
-            kwargs.update(auth=BasicAuth(self._username, self._password or ''))
+            kwargs.update(auth=aiohttp.BasicAuth(self._username, self._password or ''))
 
         if BOT_CONFIG.proxy:
             connector = ProxyConnector.from_url(BOT_CONFIG.proxy)
@@ -131,8 +130,26 @@ INFLUX_EMOJI_MAP = {
 }
 
 
+class InfluxParams(NamedTuple):
+    """Influx params storage"""
+    host: str
+    port: int
+    username: str
+    database: str
+    metrics: Dict[str, str]
+
+
 class InfluxSource(Source):
-    TOPIC = 'INFLUX'
+    """InfluxDB client"""
+
+    CONFIG_ID = 'influxdb'
+    _params: InfluxParams = None
+
+    @classmethod
+    def params(cls) -> InfluxParams:
+        if cls._params is None:
+            cls._params = InfluxParams(**cls.config.params)
+        return cls._params
 
     def __init__(self, client: Client):
         super().__init__(client, polling_interval=INFLUX_POLLING_INTERVAL)
@@ -142,12 +159,13 @@ class InfluxSource(Source):
     def influx_client(self):
         """Return new instance of influx client"""
         if self._influx_client is None:
+            params = self.params()
             self._influx_client = AsyncInfluxClient(
-                host='influx1.eco.tsi-dev.otc-service.com',
-                port=8086,
-                username='csm',
+                host=params.host,
+                port=params.port,
+                username=params.username,
                 password=BOT_CONFIG.influx_password,
-                database='csm',
+                database=params.database,
                 ssl=True,
                 verify_ssl=True)
         return self._influx_client
@@ -160,14 +178,12 @@ class InfluxSource(Source):
         return text.strip()
 
     async def get_update(self) -> Optional[Json]:
-        results = await asyncio.gather(
-            self._get_status('lb_timing'),
-            self._get_status('lb_down_test'),
-            self._get_status('iscsi_connection'),
-            self._get_status('ce_result'),
-        )
+        metrics = self.params().metrics
+        results = await asyncio.gather(*[
+            self._get_status(met) for met in metrics.values()
+        ])
         statuses: Dict[str, str] = dict(zip(
-            ['LB_LOAD', 'LB_DOWN', 'SCSI_HDD_TEST', 'RDS_TEST'],
+            metrics.keys(),
             results
         ))
         return statuses

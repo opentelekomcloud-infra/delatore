@@ -2,22 +2,23 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, ParseMode
+from aiogram.types import Message
+from aiogram.utils.markdown import escape_md
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
-from ...configuration import BOT_CONFIG
-from ...sources import AWXApiSource, AWXWebHookSource, InfluxSource
+from ...configuration import OUTPUTS_CFG
+from ...configuration.dynamic import BOT_CONFIG
+from ...sources import AWXApiSource
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 STATUS = 'status'
-IN_TOPICS = [
-    InfluxSource.TOPIC,  # pylint: disable=no-member
-    AWXApiSource.TOPIC,  # pylint: disable=no-member
-    AWXWebHookSource.TOPIC,  # pylint: disable=no-member
-]
+TG_CONFIG = OUTPUTS_CFG['telegram_bot']
+STATUS_TOPICS = {
+    'awx': AWXApiSource.params().topic_in,
+}
 
 
 def _not_in_current_loop(smth):
@@ -40,7 +41,9 @@ class BotRunner:
         """Return bot instance, create new if missing"""
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot exist. Create bot.')
-            self._bot = Bot(BOT_CONFIG.token, parse_mode=ParseMode.MARKDOWN_V2, proxy=BOT_CONFIG.proxy)
+            self._bot = Bot(BOT_CONFIG.token,
+                            parse_mode=TG_CONFIG.params['parse_mode'],
+                            proxy=BOT_CONFIG.proxy)
         return self._bot
 
     @property
@@ -54,12 +57,14 @@ class BotRunner:
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
+        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
         try:
-            LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
-            await self.client.publish(AWXApiSource.TOPIC_IN, template_name or '')
         except CommandParsingError:
-            await message.answer('Invalid command. Please check command syntax')
+            return await message.answer(escape_md('Invalid command. Please check command syntax'))
+        if source in STATUS_TOPICS:
+            return await self.client.publish(STATUS_TOPICS[source], template_name or '')
+        return await message.answer(rf'Invalid source: `{escape_md(source)}`')
 
     async def alert(self, message):
         """Send message to chat alerting users"""
@@ -79,10 +84,11 @@ class BotRunner:
     async def start_posting(self):
         """Start posting updates to channel"""
         await self.client.start_consuming()
+        topics = TG_CONFIG.subscriptions
         await asyncio.wait([
-            self.client.subscribe(topic) for topic in IN_TOPICS
+            self.client.subscribe(topic) for topic in topics
         ])
-        LOGGER.warning('Bot subscribed to topics: %s', IN_TOPICS)
+        LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
         while not self.stop_event.is_set():
             message = await self.client.get(.1)
@@ -101,7 +107,6 @@ class BotRunner:
 
     async def start(self):
         """Start bot"""
-
         await asyncio.wait([
             self.start_posting(),
             self.dispatcher.start_polling(),

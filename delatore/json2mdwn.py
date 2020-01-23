@@ -26,7 +26,12 @@ def backtick_values(data):
 
 
 __MARKS = re.compile(r'[{}",\[\]]')
-__BRACKETS = re.compile(r'([()])')
+__MD2_SPECIAL = re.compile(r'([()])')
+
+
+def telegram_escape(text):
+    """Escape telegram message text"""
+    return __MD2_SPECIAL.sub(r'\\\1', text)  # MarkdownV2 chars are escaped
 
 
 def convert(data):
@@ -35,6 +40,6 @@ def convert(data):
                                            separators=('', ':    '),
                                            indent=4,
                                            ensure_ascii=False))
-    formatted = __BRACKETS.sub(r'\\\1', formatted)  # MarkdownV2 brackets are special
+    formatted = telegram_escape(formatted)
     formatted = '\n'.join(line[4:].rstrip() for line in formatted.split('\n') if line.rstrip() != '')
     return formatted

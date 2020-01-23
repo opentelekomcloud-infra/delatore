@@ -1,0 +1,21 @@
+- name: influxdb
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      LB_LOAD: lb_timing
+      LB_DOWN: lb_down_test
+      SCSI_HDD_TEST: iscsi_connection
+      RDS_TEST: ce_result
+  publishes: 'INFLUX'
+- name: awx_api
+  params:
+    host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
+    topic_in: 'AWX_CLIENT_IN'
+  publishes: 'AWX_CLIENT_OUT'
+- name: awx_web_hook
+  params:
+    port: 23834
+  publishes: 'AWX_WEB_HOOK'

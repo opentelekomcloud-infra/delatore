@@ -24,13 +24,15 @@ class HttpListenerSource(Source, ABC):
 
     # pylint: disable=abstract-method
 
-    def __init__(self, port, client: Client, polling_interval=10, request_timeout=10.0):
-        super().__init__(client, ignore_duplicates=True, polling_interval=polling_interval,
+    def __init__(self, client: Client, polling_interval=10, request_timeout=10.0):
+        super().__init__(client,
+                         ignore_duplicates=True,
+                         polling_interval=polling_interval,
                          request_timeout=request_timeout)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
         self.app = app
-        self.port = port
+        self.port = self.config.params['port']
         self.runner = web.AppRunner(self.app)
         self.site = None
 
@@ -58,8 +60,7 @@ AWX_LISTENER_EMOJI_MAP = {
 class AWXWebHookSource(HttpListenerSource):
     """HTTP listener for AWX web hooks"""
 
-    PORT = 23834
-    TOPIC = 'AWX_WEB_HOOK'
+    CONFIG_ID = 'awx_web_hook'
 
     @classmethod
     def convert(cls, data: dict) -> str:
@@ -69,7 +70,9 @@ class AWXWebHookSource(HttpListenerSource):
         return text
 
     def __init__(self, client):
-        super().__init__(self.PORT, client, polling_interval=10, request_timeout=.1)
+        super().__init__(client,
+                         polling_interval=10,  # checking input queue interval
+                         request_timeout=.1)  # checking input queue timeout
         self.app.add_routes([
             web.post('/notifications', self.notifications)
         ])

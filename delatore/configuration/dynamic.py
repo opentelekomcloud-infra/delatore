@@ -1,5 +1,4 @@
-"""Delatore configuration and settings"""
-
+"""Configuration loaded from external source"""
 import configparser
 import os
 from typing import NamedTuple, Optional
@@ -7,8 +6,6 @@ from typing import NamedTuple, Optional
 from ocomone import Resources
 
 RESOURCES = Resources('.', './config')
-
-TG_URL = 'https://api.telegram.org/bot'
 
 
 class BotConfig(NamedTuple):
@@ -18,11 +15,6 @@ class BotConfig(NamedTuple):
     influx_password: str
     awx_auth_token: str
     proxy: Optional[str] = None
-
-    @property
-    def url(self):
-        """Get telegram bot URL"""
-        return f'{TG_URL}{self.token}/'
 
 
 def read_config(config_file=RESOURCES['config.ini']):

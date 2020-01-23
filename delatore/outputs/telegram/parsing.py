@@ -15,13 +15,16 @@ class CommandParsingError(Exception):
 def parse_command(message):
     """Parsing command arguments to arguments list"""
     LOGGER.debug('Got message: %s', message)
-    cmd, target, *args = shlex.split(message)
+    try:
+        cmd, target, *args = shlex.split(message)
+    except ValueError:
+        raise CommandParsingError("No target provided for `/status` command")
     depth = None
     detailed = args.pop(0) if args else None
     try:
         depth = int(args.pop(0))
     except IndexError:
-        depth = None if detailed is None else 1
+        depth = 1
     except ValueError:
         raise CommandParsingError(f'Invalid depth value: {depth}')
     if args:
