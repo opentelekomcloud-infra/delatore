@@ -3,6 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
+from aiogram.utils.markdown import escape_md
 from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
@@ -60,10 +61,10 @@ class BotRunner:
         try:
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
         except CommandParsingError:
-            return await message.answer('Invalid command. Please check command syntax')
+            return await message.answer(escape_md('Invalid command. Please check command syntax'))
         if source in STATUS_TOPICS:
             return await self.client.publish(STATUS_TOPICS[source], template_name or '')
-        return await message.answer(f'Invalid source: {source}')
+        return await message.answer(rf'Invalid source: `{escape_md(source)}`')
 
     async def alert(self, message):
         """Send message to chat alerting users"""
