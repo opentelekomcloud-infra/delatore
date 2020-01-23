@@ -12,11 +12,6 @@ def token():
 
 
 @pytest.fixture
-def chat_id():
-    return f'{randrange(-0xffffffff, 0xffffffff)}'
-
-
-@pytest.fixture
 def influx_password():
     return random_string(30)
 

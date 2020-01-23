@@ -143,17 +143,23 @@ class InfluxSource(Source):
     """InfluxDB client"""
 
     CONFIG_ID = 'influxdb'
+    _params: InfluxParams = None
+
+    @classmethod
+    def params(cls) -> InfluxParams:
+        if cls._params is None:
+            cls._params = InfluxParams(**cls.config.params)
+        return cls._params
 
     def __init__(self, client: Client):
         super().__init__(client, polling_interval=INFLUX_POLLING_INTERVAL)
         self._influx_client = None
-        self.params = InfluxParams(**self.config.params)
 
     @property
     def influx_client(self):
         """Return new instance of influx client"""
         if self._influx_client is None:
-            params = self.params
+            params = self.params()
             self._influx_client = AsyncInfluxClient(
                 host=params.host,
                 port=params.port,
@@ -172,11 +178,12 @@ class InfluxSource(Source):
         return text.strip()
 
     async def get_update(self) -> Optional[Json]:
+        metrics = self.params().metrics
         results = await asyncio.gather(*[
-            self._get_status(met) for met in self.params.metrics.values()
+            self._get_status(met) for met in metrics.values()
         ])
         statuses: Dict[str, str] = dict(zip(
-            self.params.metrics.keys(),
+            metrics.keys(),
             results
         ))
         return statuses

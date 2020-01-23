@@ -70,7 +70,9 @@ class AWXWebHookSource(HttpListenerSource):
         return text
 
     def __init__(self, client):
-        super().__init__(client, polling_interval=10, request_timeout=.1)
+        super().__init__(client,
+                         polling_interval=10,  # checking input queue interval
+                         request_timeout=.1)  # checking input queue timeout
         self.app.add_routes([
             web.post('/notifications', self.notifications)
         ])

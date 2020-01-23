@@ -21,7 +21,7 @@ def parse_command(message):
     try:
         depth = int(args.pop(0))
     except IndexError:
-        depth = None if detailed is None else 1
+        depth = 1
     except ValueError:
         raise CommandParsingError(f'Invalid depth value: {depth}')
     if args:

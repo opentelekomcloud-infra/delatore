@@ -54,6 +54,7 @@ class AWXApiSource(Source):
     """AWX API Client"""
 
     CONFIG_ID = 'awx_api'
+    _params: Optional[AWXParams] = None
 
     async def get_update(self):
         template_name = await self.client.get(self.polling_interval)
@@ -68,17 +69,23 @@ class AWXApiSource(Source):
     def convert(cls, data: list) -> str:
         return f'* AWX scenarios status: *\n{convert(data)}'
 
+    @classmethod
+    def params(cls) -> AWXParams:
+        if cls._params is None:
+            cls._params = AWXParams(**cls.config.params)
+        return cls._params
+
     def __init__(self, client: Client):
         # polling here - polling of input requests
         # request timeout - timeout for API request
-        super().__init__(client, polling_interval=.05,
+        super().__init__(client,
+                         polling_interval=.1,  # polling for command inputs
                          request_timeout=10,
                          ignore_duplicates=False)
-        self.params = AWXParams(**self.config.params)
 
     async def start(self, stop_event: asyncio.Event):
         await self.client.start_consuming()
-        await self.client.subscribe(self.params.topic_in)
+        await self.client.subscribe(self.params().topic_in)
         await super().start(stop_event)
 
     async def get_templates(self, filters: dict = None) -> Optional[list]:
@@ -88,7 +95,7 @@ class AWXApiSource(Source):
         https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         async with get_session() as session:
-            async with session.get(self.params.host + '/job_templates', params=filters) as response:
+            async with session.get(self.params().host + '/job_templates', params=filters, timeout=5) as response:
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:

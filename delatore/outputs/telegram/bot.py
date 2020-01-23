@@ -15,6 +15,9 @@ LOGGER.setLevel(logging.DEBUG)
 
 STATUS = 'status'
 TG_CONFIG = OUTPUTS_CFG['telegram_bot']
+STATUS_TOPICS = {
+    'awx': AWXApiSource.params().topic_in,
+}
 
 
 def _not_in_current_loop(smth):
@@ -56,7 +59,7 @@ class BotRunner:
         try:
             LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
-            await self.client.publish(AWXApiSource.TOPIC, template_name or '')
+            await self.client.publish(STATUS_TOPICS[source], template_name or '')
         except CommandParsingError:
             await message.answer('Invalid command. Please check command syntax')
 
@@ -101,7 +104,6 @@ class BotRunner:
 
     async def start(self):
         """Start bot"""
-
         await asyncio.wait([
             self.start_posting(),
             self.dispatcher.start_polling(),

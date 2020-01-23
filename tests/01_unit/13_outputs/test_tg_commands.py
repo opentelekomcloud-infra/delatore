@@ -3,10 +3,12 @@ import asyncio
 from asyncio import Queue
 
 import pytest
+from aiogram.types import Chat, Message
 from apubsub.client import Client
 
 from delatore.outputs.telegram.bot import TG_CONFIG
 from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
+from delatore.sources import AWXApiSource
 from tests.helpers import random_string
 
 
@@ -22,7 +24,7 @@ def test_parse_quotted_message(quo):
 @pytest.mark.parametrize(('message', 'expected'),
                          [
                              ('/status awx \'Scenario 1.5\' 5', ('awx', 'Scenario 1.5', 5)),
-                             ('/status awx', ('awx', None, None)),
+                             ('/status awx', ('awx', None, 1)),
                              ('/status awx  "Destroy 1" ', ('awx', 'Destroy 1', 1))
                          ])
 def test_parse_command(message, expected):
@@ -54,3 +56,14 @@ async def test_src_to_bot(topic, patched_bot, pub: Client, bot_alert_queue: Queu
     except asyncio.TimeoutError:
         raise AssertionError
     assert message == received
+
+
+@pytest.mark.parametrize('target', ['', random_string()])
+@pytest.mark.asyncio
+async def test_bot_status_awx(patched_bot, sub: Client, chat_id, target):
+    await sub.subscribe(AWXApiSource.params().topic_in)
+    await asyncio.sleep(.05)
+    message_text = f'/status awx {target}'
+    await patched_bot.handle_status(Message(text=message_text, chat=Chat(id=chat_id)))
+    data = await sub.get(.1)
+    assert data == target

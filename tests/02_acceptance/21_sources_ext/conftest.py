@@ -2,16 +2,7 @@ import asyncio
 
 import pytest
 
-from delatore.sources import AWXApiSource, AWXWebHookSource
-
-
-@pytest.fixture
-async def awx_client(service):
-    src = AWXApiSource(service.get_client())
-    stop_ev = asyncio.Event()
-    asyncio.create_task(src.start(stop_ev))
-    yield src
-    stop_ev.set()
+from delatore.sources import AWXWebHookSource
 
 
 @pytest.fixture
