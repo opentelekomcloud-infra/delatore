@@ -13,7 +13,7 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
 from .base import Json, Source
-from ..configuration.dynamic import BOT_CONFIG
+from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
 from ..json2mdwn import convert
 
