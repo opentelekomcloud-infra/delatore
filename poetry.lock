@@ -140,6 +140,7 @@ pytz = ">=2015.7"
 [[package]]
 category = "dev"
 description = "efficient arrays of booleans -- C extension"
+marker = "sys_platform == \"linux\""
 name = "bitarray"
 optional = false
 python-versions = "*"
@@ -377,6 +378,7 @@ mccabe = ">=0.6,<0.7"
 [[package]]
 category = "dev"
 description = "Exit code handler for pylint command line utility."
+marker = "sys_platform == \"linux\""
 name = "pylint-exit"
 optional = false
 python-versions = "*"
@@ -611,7 +613,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "12f78768b98deef5cfbb2a28da4b4a2dd352f87a4613e44dc9c004f91eefad35"
+content-hash = "a2dc6cf60122337490eb0a0562943077bdc43417ec6f5b37e3f0146d6373bc94"
 python-versions = "^3.7"
 
 [metadata.files]

@@ -45,12 +45,10 @@ class Source(ABC, metaclass=SourceMeta):
     config: SourceConfiguration
 
     def __init__(self, client: Client,
-                 polling_interval=10.0,
-                 request_timeout=10.0,
                  ignore_duplicates=True):
         self.client = client
-        self.polling_interval = polling_interval
-        self.request_timeout = request_timeout
+        self.polling_interval = self.config.timings.polling_interval
+        self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
 
     @abstractmethod

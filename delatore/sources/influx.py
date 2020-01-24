@@ -152,7 +152,7 @@ class InfluxSource(Source):
         return cls._params
 
     def __init__(self, client: Client):
-        super().__init__(client, polling_interval=INFLUX_POLLING_INTERVAL)
+        super().__init__(client)
         self._influx_client = None
 
     @property
