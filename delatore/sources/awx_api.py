@@ -78,10 +78,7 @@ class AWXApiSource(Source):
     def __init__(self, client: Client):
         # polling here - polling of input requests
         # request timeout - timeout for API request
-        super().__init__(client,
-                         polling_interval=.1,  # polling for command inputs
-                         request_timeout=10,
-                         ignore_duplicates=False)
+        super().__init__(client, ignore_duplicates=False)
 
     async def start(self, stop_event: asyncio.Event):
         await self.client.start_consuming()

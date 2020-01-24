@@ -24,11 +24,9 @@ class HttpListenerSource(Source, ABC):
 
     # pylint: disable=abstract-method
 
-    def __init__(self, client: Client, polling_interval=10, request_timeout=10.0):
+    def __init__(self, client: Client):
         super().__init__(client,
-                         ignore_duplicates=True,
-                         polling_interval=polling_interval,
-                         request_timeout=request_timeout)
+                         ignore_duplicates=True)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
         self.app = app
@@ -70,9 +68,7 @@ class AWXWebHookSource(HttpListenerSource):
         return text
 
     def __init__(self, client):
-        super().__init__(client,
-                         polling_interval=10,  # checking input queue interval
-                         request_timeout=.1)  # checking input queue timeout
+        super().__init__(client)
         self.app.add_routes([
             web.post('/notifications', self.notifications)
         ])

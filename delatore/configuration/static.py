@@ -1,6 +1,6 @@
 """Configurations fixed for library"""
 from dataclasses import dataclass
-from typing import Dict, List, Type, TypeVar
+from typing import Dict, List, Type
 
 import yaml
 from ocomone import Resources
@@ -12,6 +12,10 @@ class Configuration:
     name: str
     params: dict
 
+    @classmethod
+    def from_yaml(cls, src):
+        return cls(**src)
+
 
 @dataclass(frozen=True)
 class OutputConfiguration(Configuration):
@@ -20,22 +24,32 @@ class OutputConfiguration(Configuration):
 
 
 @dataclass(frozen=True)
+class Timings:
+    polling_interval: float
+    request_timeout: float
+
+
+@dataclass(frozen=True)
 class SourceConfiguration(Configuration):
     """Single source service configuration"""
     publishes: str
+    timings: Timings
+
+    @classmethod
+    def from_yaml(cls, src: dict):
+        src['timings'] = Timings(**src['timings'])
+        return super().from_yaml(src)
 
 
 _CONFIGS = Resources(__file__)
 _SOURCES_CFG_FILE = _CONFIGS['sources.yaml']
 _OUTPUTS_CFG_FILE = _CONFIGS['outputs.yaml']
 
-T = TypeVar('T', SourceConfiguration, OutputConfiguration)
 
-
-def _load_configuration(cfg_file: str, cfg_class: Type[T]) -> Dict[str, T]:
+def _load_configuration(cfg_file: str, cfg_class: Type[Configuration]) -> Dict[str, Configuration]:
     with open(cfg_file, 'r') as src_cfg:
         configs = yaml.safe_load(src_cfg)
-    result = {cfg['name']: cfg_class(**cfg) for cfg in configs}
+    result = {cfg['name']: cfg_class.from_yaml(cfg) for cfg in configs}
     return result
 
 
