@@ -1,6 +1,7 @@
 """Base Source implementation"""
 
 import asyncio
+import json
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from inspect import isabstract
@@ -57,11 +58,11 @@ class Source(ABC, metaclass=SourceMeta):
 
     @classmethod
     @abstractmethod
-    def convert(cls, data: Json) -> str:
+    def convert(cls, data: Json) -> dict:
         """Converts json-like object to Telegram supported Markdown
 
         :param data: JSON dictionary or list
-        :return: Markdown string
+        :return: unified JSON
         """
 
     async def start(self, stop_event: asyncio.Event):
@@ -77,7 +78,7 @@ class Source(ABC, metaclass=SourceMeta):
             if new in [last, None] and self.ignore_duplicates:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
-            md_message = self.convert(new)
+            md_message = json.dumps(self.convert(new))
             await self.client.publish(self.TOPIC, md_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)

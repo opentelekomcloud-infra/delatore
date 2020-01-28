@@ -3,7 +3,8 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict, NamedTuple, Optional
+from enum import Enum
+from typing import Dict, NamedTuple, Optional, List
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -171,9 +172,15 @@ class InfluxSource(Source):
         return self._influx_client
 
     @classmethod
-    def convert(cls, data: dict) -> str:
+    def convert(cls, data: dict) -> dict:
         data.pop('From', None)
         text = convert(data)
+
+        influxReformatter = {
+            'From': 'InfluxDB',
+
+        }
+
         text = '*From InfluxDB*\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
         return text.strip()
 
@@ -195,11 +202,14 @@ class InfluxSource(Source):
             last_time = last_record.raw['series'][0]['values'][0][0]
             last_time_ms = _convert_time(last_time)
             now = datetime.utcnow().timestamp()
+
+            #TODO: if entity == LB DOWN = 30
+
             if now - last_time_ms < 300:
-                return 'OK'
-            return 'FAIL'
+                return generate_message(entity, 'OK')
+            return generate_message(entity, 'FAIL')
         except KeyError:
-            return 'NO_DATA'
+            return generate_message(entity, 'NO_DATA').
 
 
 class InfluxTimestampParseException(Exception):
@@ -217,3 +227,33 @@ def _convert_time(timestamp) -> float:
     msec = nsec[:6]
     dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
     return dtime.timestamp()
+
+
+class Status(Enum):
+    ok = 'OK'
+    fail = 'FAIL'
+    no_data = 'NO_DATA'
+    running = 'RUNNING'
+
+
+def generate_err(source: str, message: str) -> str:
+    data = {}
+    return data
+
+
+def generate_status(name: str,
+                    status: Status,
+                    timestamp: Optional[float] = None,
+                    details_url: Optional[str] = None) -> dict:
+    ...
+
+
+def generate_message(source: str, status_list: List[dict]) -> str:
+    data = {}
+    return data
+
+
+a = generate_status("a", Status.ok)
+b = generate_status("b", Status.fail)
+error = generate_err("")
+generate_message("src", [a, b])
