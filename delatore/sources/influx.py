@@ -3,7 +3,6 @@ import json
 import logging
 import re
 from datetime import datetime
-from enum import Enum
 from typing import Dict, NamedTuple, Optional, List
 
 import aiohttp
@@ -13,6 +12,7 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
+from delatore.sources.unified_json import generate_message, generate_err, generate_status, Status
 from .base import Json, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
@@ -173,27 +173,14 @@ class InfluxSource(Source):
 
     @classmethod
     def convert(cls, data: dict) -> dict:
-        data.pop('From', None)
-        text = convert(data)
+        return generate_message('InfluxDB', data)
 
-        influxReformatter = {
-            'From': 'InfluxDB',
-
-        }
-
-        text = '*From InfluxDB*\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
-        return text.strip()
-
-    async def get_update(self) -> Optional[Json]:
+    async def get_update(self) -> List[Dict]:
         metrics = self.params().metrics
         results = await asyncio.gather(*[
             self._get_status(met) for met in metrics.values()
         ])
-        statuses: Dict[str, str] = dict(zip(
-            metrics.keys(),
-            results
-        ))
-        return statuses
+        return results
 
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
@@ -203,13 +190,13 @@ class InfluxSource(Source):
             last_time_ms = _convert_time(last_time)
             now = datetime.utcnow().timestamp()
 
-            #TODO: if entity == LB DOWN = 30
+            # TODO: if entity == LB DOWN = 30
 
             if now - last_time_ms < 300:
-                return generate_message(entity, 'OK')
-            return generate_message(entity, 'FAIL')
+                return generate_status(entity, 'OK')
+            return generate_status(entity, 'FAIL')
         except KeyError:
-            return generate_message(entity, 'NO_DATA').
+            return generate_status(entity, 'NO_DATA')
 
 
 class InfluxTimestampParseException(Exception):
@@ -229,31 +216,10 @@ def _convert_time(timestamp) -> float:
     return dtime.timestamp()
 
 
-class Status(Enum):
-    ok = 'OK'
-    fail = 'FAIL'
-    no_data = 'NO_DATA'
-    running = 'RUNNING'
-
-
-def generate_err(source: str, message: str) -> str:
-    data = {}
-    return data
-
-
-def generate_status(name: str,
-                    status: Status,
-                    timestamp: Optional[float] = None,
-                    details_url: Optional[str] = None) -> dict:
-    ...
-
-
-def generate_message(source: str, status_list: List[dict]) -> str:
-    data = {}
-    return data
-
-
-a = generate_status("a", Status.ok)
-b = generate_status("b", Status.fail)
-error = generate_err("")
-generate_message("src", [a, b])
+def switch_status(argument) -> Status:
+    status = {
+        'OK': Status.OK,
+        'FAIL': Status.FAIL,
+        'NO_DATA': Status.NO_DATA
+    }
+    return status.get(argument, 'Invalid status')
