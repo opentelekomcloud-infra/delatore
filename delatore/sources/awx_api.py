@@ -6,20 +6,12 @@ from typing import List, NamedTuple, Optional, Dict
 from aiohttp import ClientSession
 from apubsub.client import Client
 
-from delatore.sources.unified_json import Status, generate_status, generate_message
 from .base import NoUpdates, Source
+from .unified_json import Status, generate_status, generate_message
 from ..configuration import BOT_CONFIG
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
-
-AWX_EMOJI_MAP = {
-    'successful': Emoji.SUCCESS,
-    'failed': Emoji.FAILED,
-    'never updated': Emoji.NO_DATA,
-}
 
 
 def switch_status(argument) -> Status:
@@ -34,20 +26,6 @@ def switch_status(argument) -> Status:
 TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
-
-
-# class TemplateStatus(NamedTuple):
-#     name: str
-#     last_run_timestamp: str
-#     last_status: str
-#     playbook: str
-#
-#     def __md__(self):
-#         status = replace_emoji(self.last_status, AWX_EMOJI_MAP, '%e')
-#         timestamp = self.last_run_timestamp
-#         if timestamp is not None:
-#             timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, TIMESTAMP_FORMAT))
-#         return rf'{status}   —   `{self.name}`  (`{timestamp}`)'
 
 
 def get_session():

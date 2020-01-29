@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict, NamedTuple, Optional, List
+from typing import Dict, NamedTuple, List
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -12,11 +12,9 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
-from delatore.sources.unified_json import generate_message, generate_error, generate_status, Status
-from .base import Json, Source
+from .base import Source
+from .unified_json import generate_message, generate_status, Status
 from ..configuration import BOT_CONFIG
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -124,11 +122,6 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 
 
 INFLUX_POLLING_INTERVAL = 60
-INFLUX_EMOJI_MAP = {
-    '`OK`': Emoji.SUCCESS,
-    '`FAIL`': Emoji.FAILED,
-    '`NO_DATA`': Emoji.NO_DATA,
-}
 
 
 class InfluxParams(NamedTuple):

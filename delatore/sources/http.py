@@ -9,9 +9,8 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
-from delatore.sources.unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
 from .base import Source
-from ..emoji import Emoji
+from .unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -48,14 +47,6 @@ class HttpListenerSource(Source, ABC):
 
     async def stop(self):
         await self.site.stop()
-
-
-AWX_LISTENER_EMOJI_MAP = {
-    '`failed`': Emoji.FAILED,
-    '`running`': Emoji.RUNNING,
-    '`success`': Emoji.SUCCESS,
-    '`cancelled`': Emoji.CANCELED
-}
 
 
 def switch_status(argument) -> Status:
