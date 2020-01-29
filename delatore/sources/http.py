@@ -1,14 +1,17 @@
+import calendar
 import logging
+import time
 from abc import ABC
 from asyncio import Queue
+from traceback import format_exc
 
 from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
+from delatore.sources.unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
 from .base import Source
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
+from ..emoji import Emoji
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -55,17 +58,33 @@ AWX_LISTENER_EMOJI_MAP = {
 }
 
 
+def switch_status(argument) -> Status:
+    status = {
+        'running': Status.RUNNING,
+        'failed': Status.FAIL,
+        'canceled': Status.CANCELED,
+        'success': Status.SUCCESS
+    }
+    return status.get(argument, 'Invalid status')
+
+
 class AWXWebHookSource(HttpListenerSource):
     """HTTP listener for AWX web hooks"""
 
     CONFIG_ID = 'awx_web_hook'
 
     @classmethod
-    def convert(cls, data: dict) -> str:
-        data.pop('From', None)
-        text = convert(data).strip()
-        text = '* From Ansible Tower *\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
-        return text
+    def convert(cls, data: dict) -> dict:
+        try:
+            status = generate_status(
+                name=data['Name'],
+                status=data['Status'],
+                timestamp=convert_awx_timestamp(data['Finished']),
+                details_url=data['Url'],
+            )
+        except KeyError:
+            return generate_error(cls.CONFIG_ID, format_exc(limit=10))
+        return generate_message(cls.CONFIG_ID, [status])
 
     def __init__(self, client):
         super().__init__(client)
@@ -80,3 +99,8 @@ class AWXWebHookSource(HttpListenerSource):
 
     async def get_update(self):
         return await self.updates.get()
+
+
+def convert_awx_timestamp(timestamp: str):
+    timestamp, *_ = timestamp.split('.')
+    return calendar.timegm(time.strptime(timestamp, U_TIMESTAMP_FORMAT))

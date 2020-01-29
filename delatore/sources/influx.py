@@ -12,7 +12,7 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
-from delatore.sources.unified_json import generate_message, generate_err, generate_status, Status
+from delatore.sources.unified_json import generate_message, generate_error, generate_status, Status
 from .base import Json, Source
 from ..configuration import BOT_CONFIG
 from ..emoji import Emoji, replace_emoji
@@ -173,7 +173,7 @@ class InfluxSource(Source):
 
     @classmethod
     def convert(cls, data: dict) -> dict:
-        return generate_message('InfluxDB', data)
+        return generate_message(cls.CONFIG_ID, data)
 
     async def get_update(self) -> List[Dict]:
         metrics = self.params().metrics
