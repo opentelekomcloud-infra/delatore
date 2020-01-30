@@ -1,14 +1,13 @@
 import asyncio
 import logging
-import time
 from typing import List, NamedTuple, Optional, Dict
 
 from aiohttp import ClientSession
 from apubsub.client import Client
 
 from .base import NoUpdates, Source
-from delatore.unified_json import Status, generate_status, generate_message
 from ..configuration import BOT_CONFIG
+from ..unified_json import Status, generate_status, generate_message, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -22,8 +21,6 @@ def switch_status(argument) -> Status:
     }
     return status.get(argument, 'Invalid status')
 
-
-TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
 
@@ -57,12 +54,12 @@ class AWXApiSource(Source):
     @classmethod
     def convert(cls, data: List[Dict]) -> Dict:
         status_list = []
-        for template_data in data:
+        for record in data:
             status_list.append(
                 generate_status(
-                    name=template_data['name'],
-                    status=switch_status(template_data['status']),
-                    timestamp=convert_last_run_time(template_data['last_job_run']),
+                    name=record['name'],
+                    status=switch_status(record['status']),
+                    timestamp=convert_timestamp(record['last_job_run']),
                 )
             )
         return generate_message(cls.CONFIG_ID, status_list)
@@ -105,10 +102,3 @@ def single_template_filter(template_name: str):
     if template_name:
         return {'name__iexact': template_name}
     return None
-
-
-def convert_last_run_time(last_run_timestamp: str):
-    timestamp = last_run_timestamp
-    if timestamp is not None:
-        timestamp = time.strftime('%d.%m.%y %H:%M:%S', time.strptime(timestamp, TIMESTAMP_FORMAT))
-    return timestamp

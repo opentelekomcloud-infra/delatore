@@ -13,7 +13,7 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
 from .base import Source
-from delatore.unified_json import generate_message, generate_status, Status
+from ..unified_json import generate_message, generate_status, Status, convert_timestamp
 from ..configuration import BOT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
@@ -188,8 +188,8 @@ class InfluxSource(Source):
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms < 300:
-            return generate_status(entity, Status.OK, last_time_ms)
-        return generate_status(entity, Status.Fail, last_time_ms)
+            return generate_status(entity, Status.OK, convert_timestamp(last_time))
+        return generate_status(entity, Status.Fail, convert_timestamp(last_time))
 
 
 class InfluxTimestampParseException(Exception):
@@ -211,8 +211,8 @@ def _convert_time(timestamp) -> float:
 
 def switch_status(argument) -> Status:
     status = {
-        'OK': Status.OK,
-        'FAIL': Status.FAIL,
-        'NO_DATA': Status.NO_DATA
+        'ok': Status.OK,
+        'fail': Status.FAIL,
+        'no_data': Status.NO_DATA
     }
     return status.get(argument, 'Invalid status')

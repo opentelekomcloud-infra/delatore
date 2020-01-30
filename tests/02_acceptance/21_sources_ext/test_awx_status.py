@@ -10,10 +10,6 @@ from delatore.unified_json import Status
 from tests.helpers import random_string
 
 TEMPLATE_NAME = 'Scenario 1.5'
-__RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
-__RE_AWX_EMOJI = r''.join([EMOJI[Status.NO_DATA], EMOJI[Status.OK], EMOJI[Status.FAIL]])
-RE_STATUS = re.compile(r'[%s]\s+—\s+`[\w\s\d.]+`\s+\\\(`%s`\\\)' % (__RE_AWX_EMOJI, __RE_DATE_TIME))
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -22,7 +18,10 @@ async def test_get_data(awx_client):
     single = await awx_client.get_templates(_filter)
     assert len(single) == 1
     message = awx_client.convert(single)
-    assert RE_STATUS.findall(message), message
+    assert message['source'] == awx_client.CONFIG_ID
+    assert len(message['status_list']) == 1
+    status = message['status_list'][0]
+    assert all(key in status for key in ['name', 'status', 'last_timestamp', 'details_url'])  # FIXME: WUT!?
 
 
 async def test_get_all_scenarios(awx_client):

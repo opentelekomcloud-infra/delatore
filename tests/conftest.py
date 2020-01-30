@@ -1,15 +1,13 @@
 import asyncio
 import os
 from asyncio.queues import Queue
-from random import choice, randrange
+from random import randrange
 
 import pytest
 from apubsub import Service
 
 from delatore.outputs import BotRunner
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
-
-from tests.helpers import current_timestamp, random_string, random_with_length
 
 
 @pytest.fixture(scope='module')
@@ -51,21 +49,21 @@ def influx_source_data():
     data = [
         {
             'name': 'TEST1_INFLUX',
-            'status': 'OK',
+            'status': 'ok',
             'last_timestamp': '12345678.123',
-            'details': None
+            'details_url': None
         },
         {
             'name': 'TEST2_INFLUX',
-            'status': 'FAIL',
+            'status': 'fail',
             'last_timestamp': '12345678.123',
-            'details': None
+            'details_url': None
         },
         {
             'name': 'TEST3_INFLUX',
-            'status': 'NO_DATA',
+            'status': 'no_data',
             'last_timestamp': '12345678.123',
-            'details': None
+            'details_url': None
         }]
     expected_message = {
         'source': 'influxdb',
@@ -76,15 +74,25 @@ def influx_source_data():
 
 @pytest.fixture
 def awx_client_data():
-    data = {
-        'name': 'TEST1_AWX_API',
-        'status': 'OK',
-        'last_timestamp': '12345678.123',
-        'details': None
-    }
+    data = [
+        {
+            'name': 'TEST1_AWX_API',
+            'status': 'never updated',
+            'last_job_run': '2005-08-09T18:31:42.20114253Z',
+            'details_url': None
+        }
+    ]
     expected_message = {
         'source': 'awx_api',
-        'status_list': [data]
+        'status_list':
+            [
+                {
+                    'name': 'TEST1_AWX_API',
+                    'status': 'no_data',
+                    'last_timestamp': '2005-08-09T18:31:42',
+                    'details_url': None
+                }
+            ]
     }
     return data, expected_message
 
@@ -93,14 +101,23 @@ def awx_client_data():
 def awx_hook_data():
     data = [{
         'name': 'TEST1_AWX_WEB_HOOK',
-        'status': 'OK',
-        'last_timestamp': '12345678.123',
-        'details': None
+        'status': 'running',
+        'last_timestamp': '2005-08-09T18:31:42.2011425Z',
+        'details_url': None
     }]
 
     expected_message = {
         'source': 'awx_web_hook',
-        'status_list': data
+        'status_list':
+            [
+                {
+                    'name': 'TEST1_AWX_WEB_HOOK',
+                    'status': 'running',
+                    'last_timestamp': '2005-08-09T18:31:42',
+                    'details_url': None
+                }
+            ]
+
     }
     return data, expected_message
 

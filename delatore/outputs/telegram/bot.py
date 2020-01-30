@@ -95,7 +95,7 @@ class BotRunner:
             message = await self.client.get(.1)
             if message is not None:
                 #TODO: json2mdwn
-                await self.alert(message)
+                await self.alert(message)  # check if TG response was 200
 
     async def _stopper(self):
         while not self.stop_event.is_set():

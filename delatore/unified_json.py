@@ -6,11 +6,11 @@ U_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 class Status(Enum):
-    OK = 'OK'
-    NO_DATA = 'NO_DATA'
-    FAIL = 'FAIL'
-    RUNNING = 'RUNNING'
-    CANCELED = 'CANCELED'
+    OK = 'ok'
+    NO_DATA = 'no_data'
+    FAIL = 'fail'
+    RUNNING = 'running'
+    CANCELED = 'canceled'
 
 
 def generate_message(source: str, status_list: List[dict]) -> dict:
@@ -29,11 +29,16 @@ def generate_error(source: str, message: str) -> dict:
 
 def generate_status(name: str,
                     status: Status,
-                    timestamp: Optional[float] = None,
+                    timestamp: Optional[str] = None,
                     details_url: Optional[str] = None) -> dict:
     return {
         'name': name,
         'status': status.value,
         'last_timestamp': timestamp,
-        'details': details_url
+        'details_url': details_url
     }
+
+
+def convert_timestamp(timestamp: str):
+    timestamp, *_ = timestamp.split('.')
+    return timestamp

@@ -11,7 +11,7 @@ from aiohttp.web_request import Request
 from apubsub.client import Client
 
 from .base import Source
-from delatore.unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
+from ..unified_json import Status, generate_status, generate_message, generate_error, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -72,8 +72,8 @@ class AWXWebHookSource(HttpListenerSource):
             status = generate_status(
                 name=data['name'],
                 status=switch_status(data['status']),
-                timestamp=convert_awx_timestamp(data['last_timestamp']),
-                details_url=data['details'],
+                timestamp=convert_timestamp(data['finished']),
+                details_url=data['url'],
             )
         except KeyError:
             return generate_error(cls.CONFIG_ID, format_exc(limit=10))
@@ -92,8 +92,3 @@ class AWXWebHookSource(HttpListenerSource):
 
     async def get_update(self):
         return await self.updates.get()
-
-
-def convert_awx_timestamp(timestamp: str):
-    timestamp, *_ = timestamp.split('.')
-    return calendar.timegm(time.strptime(timestamp, U_TIMESTAMP_FORMAT))
