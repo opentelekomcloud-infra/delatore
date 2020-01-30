@@ -6,7 +6,6 @@ from random import choice, randrange
 import pytest
 from apubsub import Service
 
-from delatore.emoji import Emoji
 from delatore.outputs import BotRunner
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 
@@ -49,56 +48,60 @@ def tmp_dir():
 
 @pytest.fixture
 def influx_source_data():
-    data = {
-        'From': 'InfluxDB',
-        'LB_LOAD': 'OK',
-        'LB_DOWN': 'FAIL',
-        'SCSI_HDD_TEST': 'NO_DATA',
-        'RDS_TEST': 'OK'
+    data = [
+        {
+            'name': 'TEST1_INFLUX',
+            'status': 'OK',
+            'last_timestamp': '12345678.123',
+            'details': None
+        },
+        {
+            'name': 'TEST2_INFLUX',
+            'status': 'FAIL',
+            'last_timestamp': '12345678.123',
+            'details': None
+        },
+        {
+            'name': 'TEST3_INFLUX',
+            'status': 'NO_DATA',
+            'last_timestamp': '12345678.123',
+            'details': None
+        }]
+    expected_message = {
+        'source': 'influxdb',
+        'status_list': data
     }
-    expected_message = ('*From InfluxDB*\n'
-                        f'`LB_LOAD` :    {Emoji.SUCCESS} `{data["LB_LOAD"]}`\n'
-                        f'`LB_DOWN` :    {Emoji.FAILED} `{data["LB_DOWN"]}`\n'
-                        f'`SCSI_HDD_TEST` :    {Emoji.NO_DATA} `{data["SCSI_HDD_TEST"]}`\n'
-                        f'`RDS_TEST` :    {Emoji.SUCCESS} `{data["RDS_TEST"]}`')
     return data, expected_message
 
 
 @pytest.fixture
 def awx_client_data():
-    data = []
-    cur_date = current_timestamp('%d.%m.%y %H:%M')
-    expected_message = '* AWX scenarios status: *\n' + rf'✅   —   `{data[0].name}`  \(`{cur_date}`\)'
+    data = {
+        'name': 'TEST1_AWX_API',
+        'status': 'OK',
+        'last_timestamp': '12345678.123',
+        'details': None
+    }
+    expected_message = {
+        'source': 'awx_api',
+        'status_list': [data]
+    }
     return data, expected_message
 
 
 @pytest.fixture
 def awx_hook_data():
-    data = {
-        'From': 'Ansible Tower',
-        'test_job_id': random_with_length(3),
-        'test_name': f'Test Send Message {random_string(4)}',
-        'status': 'failed',
-        'test_url': f'https://{random_string()}.{random_string(3)}',
-        'test_dict': {
-            'test': {
-                'failed': choice([True, False]),
-                'changed': random_with_length(1),
-                'ok': random_with_length(2),
-            }
-        }
-    }
+    data = [{
+        'name': 'TEST1_AWX_WEB_HOOK',
+        'status': 'OK',
+        'last_timestamp': '12345678.123',
+        'details': None
+    }]
 
-    expected_message = ('* From Ansible Tower *\n'
-                        f'Test Job Id :    `{data["test_job_id"]}`\n'
-                        f'Test Name :    `{data["test_name"]}`\n'
-                        f'Status :    ❌ `{data["status"]}`\n'
-                        f'Test Url :    `{data["test_url"]}`\n'
-                        'Test Dict :\n'
-                        '    Test :\n'
-                        f'        Failed :    `{data["test_dict"]["test"]["failed"]}`\n'
-                        f'        Changed :    `{data["test_dict"]["test"]["changed"]}`\n'
-                        f'        Ok :    `{data["test_dict"]["test"]["ok"]}`')
+    expected_message = {
+        'source': 'awx_web_hook',
+        'status_list': data
+    }
     return data, expected_message
 
 

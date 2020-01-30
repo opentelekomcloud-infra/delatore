@@ -91,8 +91,10 @@ class BotRunner:
         LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
         while not self.stop_event.is_set():
+            # message consumed
             message = await self.client.get(.1)
             if message is not None:
+                #TODO: json2mdwn
                 await self.alert(message)
 
     async def _stopper(self):

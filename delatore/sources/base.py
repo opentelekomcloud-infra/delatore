@@ -5,7 +5,7 @@ import json
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from inspect import isabstract
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from apubsub.client import Client
 
@@ -58,7 +58,7 @@ class Source(ABC, metaclass=SourceMeta):
 
     @classmethod
     @abstractmethod
-    def convert(cls, data: Json) -> dict:
+    def convert(cls, data: List[dict]) -> dict:
         """Converts json-like object to Telegram supported Markdown
 
         :param data: JSON dictionary or list

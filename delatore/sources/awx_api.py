@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from apubsub.client import Client
 
 from .base import NoUpdates, Source
-from .unified_json import Status, generate_status, generate_message
+from delatore.unified_json import Status, generate_status, generate_message
 from ..configuration import BOT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
@@ -16,9 +16,9 @@ LOGGER.setLevel(logging.INFO)
 
 def switch_status(argument) -> Status:
     status = {
-        'successful': Status.SUCCESS,
+        'successful': Status.OK,
         'failed': Status.FAIL,
-        'never updated': Status.NEVER_UPDATED
+        'never updated': Status.NO_DATA
     }
     return status.get(argument, 'Invalid status')
 
@@ -56,7 +56,16 @@ class AWXApiSource(Source):
 
     @classmethod
     def convert(cls, data: List[Dict]) -> Dict:
-        return generate_message(cls.CONFIG_ID, data)
+        status_list = []
+        for template_data in data:
+            status_list.append(
+                generate_status(
+                    name=template_data['name'],
+                    status=switch_status(template_data['status']),
+                    timestamp=convert_last_run_time(template_data['last_job_run']),
+                )
+            )
+        return generate_message(cls.CONFIG_ID, status_list)
 
     @classmethod
     def params(cls) -> AWXParams:
@@ -85,7 +94,7 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            return _status_json(response_data['results'])
+            return response_data['results']
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise
@@ -98,22 +107,8 @@ def single_template_filter(template_name: str):
     return None
 
 
-def _status_json(json_data) -> List[Dict]:
-    """Get status for all templates or for concrete template"""
-    data = []
-    for template_data in json_data:
-        data.append(
-            generate_status(name=template_data['name'],
-                            status=template_data['status'],
-                            timestamp=convert_last_run_time(template_data['last_job_run']),
-                            )
-        )
-    return data
-
-
 def convert_last_run_time(last_run_timestamp: str):
     timestamp = last_run_timestamp
     if timestamp is not None:
-        timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, TIMESTAMP_FORMAT))
+        timestamp = time.strftime('%d.%m.%y %H:%M:%S', time.strptime(timestamp, TIMESTAMP_FORMAT))
     return timestamp
-# TODO: try catch

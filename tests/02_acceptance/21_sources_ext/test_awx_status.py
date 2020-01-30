@@ -4,13 +4,14 @@ import re
 import pytest
 from apubsub.client import Client
 
-from delatore.emoji import Emoji
+from delatore.outputs.telegram.emoji import EMOJI
 from delatore.sources.awx_api import NO_TEMPLATE_PATTERN, single_template_filter
+from delatore.unified_json import Status
 from tests.helpers import random_string
 
 TEMPLATE_NAME = 'Scenario 1.5'
 __RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
-__RE_AWX_EMOJI = r''.join([Emoji.NO_DATA, Emoji.SUCCESS, Emoji.FAILED])
+__RE_AWX_EMOJI = r''.join([EMOJI[Status.NO_DATA], EMOJI[Status.OK], EMOJI[Status.FAIL]])
 RE_STATUS = re.compile(r'[%s]\s+—\s+`[\w\s\d.]+`\s+\\\(`%s`\\\)' % (__RE_AWX_EMOJI, __RE_DATE_TIME))
 
 pytestmark = pytest.mark.asyncio

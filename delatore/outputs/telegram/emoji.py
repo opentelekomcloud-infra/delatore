@@ -1,13 +1,16 @@
 import re
-from typing import Dict, NamedTuple
+from typing import Dict
 
+from ...unified_json import Status
 
-class Emoji(NamedTuple):
-    FAILED = '❌'
-    RUNNING = '🏃'
-    SUCCESS = '✅'
-    CANCELED = '⛔'
-    NO_DATA = '❔'
+# TODO: emoji
+EMOJI = {
+    Status.FAIL: '❌',
+    Status.RUNNING: '🏃',
+    Status.OK: '✅',
+    Status.CANCELED: '⛔',
+    Status.NO_DATA: '❔',
+}
 
 
 def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
@@ -25,5 +28,6 @@ def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
             replace('%e', alias_map[alias]). \
             replace('%a', alias)
         return rep_pattern
+
     text = pattern.sub(_replace_re, source)
     return text

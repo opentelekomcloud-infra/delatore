@@ -13,7 +13,7 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
 from .base import Source
-from .unified_json import generate_message, generate_status, Status
+from delatore.unified_json import generate_message, generate_status, Status
 from ..configuration import BOT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
@@ -165,7 +165,7 @@ class InfluxSource(Source):
         return self._influx_client
 
     @classmethod
-    def convert(cls, data: dict) -> dict:
+    def convert(cls, data: List[dict]) -> dict:
         return generate_message(cls.CONFIG_ID, data)
 
     async def get_update(self) -> List[Dict]:
@@ -177,19 +177,19 @@ class InfluxSource(Source):
 
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
+        last_record = await self.influx_client.query(query)
         try:
-            last_record = await self.influx_client.query(query)
             last_time = last_record.raw['series'][0]['values'][0][0]
-            last_time_ms = _convert_time(last_time)
-            now = datetime.utcnow().timestamp()
-
-            # TODO: if entity == LB DOWN = 30
-
-            if now - last_time_ms < 300:
-                return generate_status(entity, 'OK')
-            return generate_status(entity, 'FAIL')
         except KeyError:
-            return generate_status(entity, 'NO_DATA')
+            return generate_status(entity, Status.NO_DATA, None)
+
+        # TODO: if entity == LB DOWN = 30
+
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms < 300:
+            return generate_status(entity, Status.OK, last_time_ms)
+        return generate_status(entity, Status.Fail, last_time_ms)
 
 
 class InfluxTimestampParseException(Exception):

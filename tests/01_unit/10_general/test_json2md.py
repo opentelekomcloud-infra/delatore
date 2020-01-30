@@ -1,5 +1,5 @@
-from delatore.emoji import Emoji, replace_emoji
-from delatore.json2mdwn import convert
+from delatore.outputs.telegram.emoji import Emoji, replace_emoji
+from delatore.outputs.telegram.json2mdwn import convert
 
 
 def test_emoji():

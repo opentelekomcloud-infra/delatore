@@ -4,13 +4,14 @@ import time
 from abc import ABC
 from asyncio import Queue
 from traceback import format_exc
+from typing import List
 
 from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
 from .base import Source
-from .unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
+from delatore.unified_json import Status, generate_status, generate_message, generate_error, U_TIMESTAMP_FORMAT
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -54,7 +55,7 @@ def switch_status(argument) -> Status:
         'running': Status.RUNNING,
         'failed': Status.FAIL,
         'canceled': Status.CANCELED,
-        'success': Status.SUCCESS
+        'successful': Status.OK
     }
     return status.get(argument, 'Invalid status')
 
@@ -65,13 +66,14 @@ class AWXWebHookSource(HttpListenerSource):
     CONFIG_ID = 'awx_web_hook'
 
     @classmethod
-    def convert(cls, data: dict) -> dict:
+    def convert(cls, data: List[dict]) -> dict:
+        data = data[0]
         try:
             status = generate_status(
-                name=data['Name'],
-                status=data['Status'],
-                timestamp=convert_awx_timestamp(data['Finished']),
-                details_url=data['Url'],
+                name=data['name'],
+                status=switch_status(data['status']),
+                timestamp=convert_awx_timestamp(data['last_timestamp']),
+                details_url=data['details'],
             )
         except KeyError:
             return generate_error(cls.CONFIG_ID, format_exc(limit=10))

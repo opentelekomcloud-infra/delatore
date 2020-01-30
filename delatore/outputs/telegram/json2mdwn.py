@@ -43,3 +43,8 @@ def convert(data):
     formatted = telegram_escape(formatted)
     formatted = '\n'.join(line[4:].rstrip() for line in formatted.split('\n') if line.rstrip() != '')
     return formatted
+
+
+def replace_emoji(message):
+
+    return
