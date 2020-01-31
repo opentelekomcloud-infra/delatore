@@ -7,7 +7,7 @@ from apubsub.client import Client
 
 from .base import NoUpdates, Source
 from ..configuration import BOT_CONFIG
-from ..unified_json import Status, generate_status, generate_message, convert_timestamp
+from ..unified_json import Status, generate_status, generate_message, convert_timestamp, generate_error
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -48,11 +48,14 @@ class AWXApiSource(Source):
             raise NoUpdates
 
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter) or [NO_TEMPLATE_PATTERN.format(template_name)]
+        data = await self.get_templates(_filter)
+        data = self.convert(data, template_name)
         return data
 
     @classmethod
-    def convert(cls, data: List[Dict]) -> Dict:
+    def convert(cls, data: List[Dict], template_name) -> Dict:
+        if not data:
+            return generate_error(cls.CONFIG_ID, NO_TEMPLATE_PATTERN.format(template_name))
         status_list = []
         for record in data:
             status_list.append(

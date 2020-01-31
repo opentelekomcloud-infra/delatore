@@ -1,6 +1,5 @@
 """Conversion of source data to markdown v2"""
-from aiogram.utils.markdown import escape_md
-from aiogram.utils.text_decorations import markdown_decoration
+from aiogram.utils.markdown import escape_md, link
 
 from delatore.outputs.telegram.emoji import EMOJI
 from delatore.unified_json import Status
@@ -16,15 +15,17 @@ def normalize_key(src: str):
 
 def _status_to_md_row(status_record):
     status_emoji = replace_emoji(status_record["status"])
-    name = normalize_key(status_record["name"])
-    timestamp = status_record["timestamp"]
+    name = escape_md(status_record["name"])
+    timestamp = escape_md(status_record["timestamp"])
     url = status_record["details_url"]
-    return rf'{status_emoji}\t—\t[{name} \({timestamp}\)]({url})'
+    details_url = link(rf'{name} \({timestamp}\)', url) if url else name
+    return rf'{status_emoji}  —  {details_url}'
 
 
 def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
-    src_row = f'*From {data["source"]}*'
+    source = escape_md(data['source'])
+    src_row = f'*From {source}*'
     status_list = '\n'.join(
         _status_to_md_row(status) for status in data['status_list']
     )

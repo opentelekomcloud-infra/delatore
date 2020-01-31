@@ -1,10 +1,7 @@
-import calendar
 import logging
-import time
 from abc import ABC
 from asyncio import Queue
 from traceback import format_exc
-from typing import List
 
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -65,20 +62,6 @@ class AWXWebHookSource(HttpListenerSource):
 
     CONFIG_ID = 'awx_web_hook'
 
-    @classmethod
-    def convert(cls, data: List[dict]) -> dict:
-        data = data[0]
-        try:
-            status = generate_status(
-                name=data['name'],
-                status=switch_status(data['status']),
-                timestamp=convert_timestamp(data['started']),
-                details_url=data['url'],
-            )
-        except KeyError:
-            return generate_error(cls.CONFIG_ID, format_exc(limit=10))
-        return generate_message(cls.CONFIG_ID, [status])
-
     def __init__(self, client):
         super().__init__(client)
         self.app.add_routes([
@@ -91,4 +74,15 @@ class AWXWebHookSource(HttpListenerSource):
         return web.Response(text='OK')
 
     async def get_update(self):
-        return await self.updates.get()
+        update = await self.updates.get()
+        data = update[0]
+        try:
+            status = generate_status(
+                name=data['name'],
+                status=switch_status(data['status']),
+                timestamp=convert_timestamp(data['started']),
+                details_url=data['url'],
+            )
+        except KeyError:
+            return generate_error(self.CONFIG_ID, format_exc(limit=10))
+        return generate_message(self.CONFIG_ID, [status])

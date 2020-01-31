@@ -13,8 +13,8 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
 from .base import Source
-from ..unified_json import generate_message, generate_status, Status, convert_timestamp
 from ..configuration import BOT_CONFIG
+from ..unified_json import generate_message, generate_status, Status, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -168,12 +168,12 @@ class InfluxSource(Source):
     def convert(cls, data: List[dict]) -> dict:
         return generate_message(cls.CONFIG_ID, data)
 
-    async def get_update(self) -> List[Dict]:
+    async def get_update(self) -> dict:
         metrics = self.params().metrics
         results = await asyncio.gather(*[
             self._get_status(met) for met in metrics.values()
         ])
-        return results
+        return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
@@ -186,7 +186,7 @@ class InfluxSource(Source):
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms < 300:
             return generate_status(entity, Status.OK, convert_timestamp(last_time))
-        return generate_status(entity, Status.Fail, convert_timestamp(last_time))
+        return generate_status(entity, Status.FAIL, convert_timestamp(last_time))
 
 
 class InfluxTimestampParseException(Exception):

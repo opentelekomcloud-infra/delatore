@@ -50,19 +50,19 @@ def influx_source_data():
         {
             'name': 'TEST1_INFLUX',
             'status': 'ok',
-            'last_timestamp': '12345678.123',
+            'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         },
         {
             'name': 'TEST2_INFLUX',
             'status': 'fail',
-            'last_timestamp': '12345678.123',
+            'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         },
         {
             'name': 'TEST3_INFLUX',
             'status': 'no_data',
-            'last_timestamp': '12345678.123',
+            'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         }]
     expected_message = {
@@ -89,7 +89,7 @@ def awx_client_data():
                 {
                     'name': 'TEST1_AWX_API',
                     'status': 'no_data',
-                    'last_timestamp': '2005-08-09T18:31:42',
+                    'timestamp': '2005-08-09T18:31:42',
                     'details_url': None
                 }
             ]
@@ -113,7 +113,7 @@ def awx_hook_data():
                 {
                     'name': 'TEST1_AWX_WEB_HOOK',
                     'status': 'running',
-                    'last_timestamp': '2005-08-09T18:31:42',
+                    'timestamp': '2005-08-09T18:31:42',
                     'details_url': None
                 }
             ]

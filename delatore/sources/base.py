@@ -53,17 +53,8 @@ class Source(ABC, metaclass=SourceMeta):
         self.ignore_duplicates = ignore_duplicates
 
     @abstractmethod
-    async def get_update(self) -> Optional[Json]:
+    async def get_update(self) -> Optional[dict]:
         """Get source update"""
-
-    @classmethod
-    @abstractmethod
-    def convert(cls, data: List[dict]) -> dict:
-        """Converts json-like object to Telegram supported Markdown
-
-        :param data: JSON dictionary or list
-        :return: unified JSON
-        """
 
     async def start(self, stop_event: asyncio.Event):
         """Start processing updates"""
@@ -78,8 +69,8 @@ class Source(ABC, metaclass=SourceMeta):
             if new in [last, None] and self.ignore_duplicates:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
-            md_message = json.dumps(self.convert(new))
-            await self.client.publish(self.TOPIC, md_message)
+            json_message = json.dumps(new)
+            await self.client.publish(self.TOPIC, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)

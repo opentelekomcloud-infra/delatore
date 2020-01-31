@@ -34,7 +34,7 @@ def generate_status(name: str,
     return {
         'name': name,
         'status': status.value,
-        'last_timestamp': timestamp,
+        'timestamp': convert_timestamp(timestamp),
         'details_url': details_url
     }
 

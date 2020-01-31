@@ -1,4 +1,7 @@
 import pytest
+from aiogram.utils.markdown import escape_md
+
+from delatore.outputs.telegram.json2mdwn import convert
 
 
 async def send_and_remove(_bot, text):
@@ -14,5 +17,6 @@ async def test_send_message(bot):
 
 
 async def test_source_message_sending(bot, source_data):
-    source, (_, message) = source_data
+    source, (_, data) = source_data
+    message = convert(data)
     await send_and_remove(bot, message)

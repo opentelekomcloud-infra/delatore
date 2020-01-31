@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 
 from aiogram import Bot, Dispatcher
@@ -95,7 +96,11 @@ class BotRunner:
             # message consumed
             message = await self.client.get(.1)
             if message is not None:
-                await self.alert(convert(message))  # check if TG response was 200
+                data = json.loads(message)
+                try:
+                    await self.alert(convert(data))  # check if TG response was 200
+                except Exception:
+                    LOGGER.exception("Failed to send message")
 
     async def _stopper(self):
         while not self.stop_event.is_set():
