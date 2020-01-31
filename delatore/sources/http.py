@@ -72,7 +72,7 @@ class AWXWebHookSource(HttpListenerSource):
             status = generate_status(
                 name=data['name'],
                 status=switch_status(data['status']),
-                timestamp=convert_timestamp(data['finished']),
+                timestamp=convert_timestamp(data['started']),
                 details_url=data['url'],
             )
         except KeyError:

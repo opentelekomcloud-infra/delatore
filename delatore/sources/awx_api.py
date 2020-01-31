@@ -17,7 +17,7 @@ def switch_status(argument) -> Status:
     status = {
         'successful': Status.OK,
         'failed': Status.FAIL,
-        'never updated': Status.NO_DATA
+        'never updated': Status.NO_DATA,
     }
     return status.get(argument, 'Invalid status')
 

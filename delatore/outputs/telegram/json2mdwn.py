@@ -1,50 +1,49 @@
 """Conversion of source data to markdown v2"""
+from aiogram.utils.markdown import escape_md
+from aiogram.utils.text_decorations import markdown_decoration
 
-import json
-import re
+from delatore.outputs.telegram.emoji import EMOJI
+from delatore.unified_json import Status
 
 
 def normalize_key(src: str):
     """Normalize dictionary key format"""
+    src = escape_md(src)
     if src.isupper():
         return f'`{src}`'
     return src.replace('_', ' ').title()
 
 
-def backtick_values(data):
-    """Escape json values with backticks
-
-    To define your behaviour, implement `__md__` method in your class
-    """
-    if hasattr(data, '__md__'):
-        return data.__md__()
-    if isinstance(data, dict):
-        return {f'{normalize_key(key)} ': backtick_values(data[key]) for key in data}
-    if isinstance(data, list):
-        return [backtick_values(item) for item in data]
-    return f'`{data}`'
+def _status_to_md_row(status_record):
+    status_emoji = replace_emoji(status_record["status"])
+    name = normalize_key(status_record["name"])
+    timestamp = status_record["timestamp"]
+    url = status_record["details_url"]
+    return rf'{status_emoji}\t—\t[{name} \({timestamp}\)]({url})'
 
 
-__MARKS = re.compile(r'[{}",\[\]]')
-__MD2_SPECIAL = re.compile(r'([()])')
-
-
-def telegram_escape(text):
-    """Escape telegram message text"""
-    return __MD2_SPECIAL.sub(r'\\\1', text)  # MarkdownV2 chars are escaped
-
-
-def convert(data):
+def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
-    formatted = __MARKS.sub('', json.dumps(backtick_values(data),
-                                           separators=('', ':    '),
-                                           indent=4,
-                                           ensure_ascii=False))
-    formatted = telegram_escape(formatted)
-    formatted = '\n'.join(line[4:].rstrip() for line in formatted.split('\n') if line.rstrip() != '')
-    return formatted
+    src_row = f'*From {data["source"]}*'
+    status_list = '\n'.join(
+        _status_to_md_row(status) for status in data['status_list']
+    )
+    # `status_emoji` — [Scenario 1  \(12.12.1991 00:12\)](https://awx...)
+    return f'{src_row}\n{status_list}'
 
 
-def replace_emoji(message):
+def replace_emoji(status):
+    return EMOJI[switch_status(status)]
 
-    return
+
+def switch_status(argument: str):
+    status = {
+        'ok': Status.OK,
+        'fail': Status.FAIL,
+        'no_data': Status.NO_DATA,
+        'running': Status.RUNNING,
+        'success': Status.OK,
+        'failed': Status.FAIL,
+        'canceled': Status.FAIL,
+    }
+    return status.get(argument, 'Invalid status')

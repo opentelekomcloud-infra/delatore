@@ -102,8 +102,8 @@ def awx_hook_data():
     data = [{
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'last_timestamp': '2005-08-09T18:31:42.2011425Z',
-        'details_url': None
+        'started': '2005-08-09T18:31:42.2011425Z',
+        'url': None
     }]
 
     expected_message = {
