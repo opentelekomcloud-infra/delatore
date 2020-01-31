@@ -9,7 +9,6 @@
       LB_DOWN: lb_down_test
       SCSI_HDD_TEST: iscsi_connection
       RDS_TEST: ce_result
-      AUTOSCALING: as_result
   publishes: 'INFLUX'
   timings:
     polling_interval: 60

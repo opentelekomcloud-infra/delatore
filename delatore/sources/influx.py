@@ -182,9 +182,6 @@ class InfluxSource(Source):
             last_time = last_record.raw['series'][0]['values'][0][0]
         except KeyError:
             return generate_status(entity, Status.NO_DATA, None)
-
-        # TODO: if entity == LB DOWN = 30
-
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms < 300:

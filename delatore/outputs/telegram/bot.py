@@ -6,6 +6,7 @@ from aiogram.types import Message
 from aiogram.utils.markdown import escape_md
 from apubsub import Service
 
+from delatore.outputs.telegram.json2mdwn import convert
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import BOT_CONFIG
@@ -94,8 +95,7 @@ class BotRunner:
             # message consumed
             message = await self.client.get(.1)
             if message is not None:
-                #TODO: json2mdwn
-                await self.alert(message)  # check if TG response was 200
+                await self.alert(convert(message))  # check if TG response was 200
 
     async def _stopper(self):
         while not self.stop_event.is_set():
