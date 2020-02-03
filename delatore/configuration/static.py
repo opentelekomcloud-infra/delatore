@@ -1,8 +1,8 @@
 """Configurations fixed for library"""
 from dataclasses import dataclass
-from typing import Dict, List, Type
+from typing import Dict, List
 
-import yaml
+import tyaml
 from ocomone import Resources
 
 
@@ -11,10 +11,6 @@ class Configuration:
     """Base configuration class"""
     name: str
     params: dict
-
-    @classmethod
-    def from_yaml(cls, src):
-        return cls(**src)
 
 
 @dataclass(frozen=True)
@@ -35,23 +31,16 @@ class SourceConfiguration(Configuration):
     publishes: str
     timings: Timings
 
-    @classmethod
-    def from_yaml(cls, src: dict):
-        src['timings'] = Timings(**src['timings'])
-        return super().from_yaml(src)
-
 
 _CONFIGS = Resources(__file__)
-_SOURCES_CFG_FILE = _CONFIGS['sources.yaml']
-_OUTPUTS_CFG_FILE = _CONFIGS['outputs.yaml']
 
 
-def _load_configuration(cfg_file: str, cfg_class: Type[Configuration]) -> Dict[str, Configuration]:
+def _cfg_load(cfg_file: str, cfg_class):
     with open(cfg_file, 'r') as src_cfg:
-        configs = yaml.safe_load(src_cfg)
-    result = {cfg['name']: cfg_class.from_yaml(cfg) for cfg in configs}
+        configs = tyaml.load(src_cfg, cfg_class)  # type: List[Configuration]
+    result = {cfg.name: cfg for cfg in configs}
     return result
 
 
-SOURCES_CFG = _load_configuration(_SOURCES_CFG_FILE, SourceConfiguration)
-OUTPUTS_CFG = _load_configuration(_OUTPUTS_CFG_FILE, OutputConfiguration)
+SOURCES_CFG: Dict[str, SourceConfiguration] = _cfg_load(_CONFIGS['sources.yaml'], List[SourceConfiguration])
+OUTPUTS_CFG: Dict[str, OutputConfiguration] = _cfg_load(_CONFIGS['outputs.yaml'], List[OutputConfiguration])
