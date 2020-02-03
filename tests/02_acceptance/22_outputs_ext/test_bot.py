@@ -1,5 +1,4 @@
 import pytest
-from aiogram.utils.markdown import escape_md
 
 from delatore.outputs.telegram.json2mdwn import convert
 

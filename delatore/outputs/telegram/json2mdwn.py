@@ -14,10 +14,10 @@ def normalize_key(src: str):
 
 
 def _status_to_md_row(status_record):
-    status_emoji = replace_emoji(status_record["status"])
-    name = escape_md(status_record["name"])
-    timestamp = escape_md(status_record["timestamp"])
-    url = status_record["details_url"]
+    status_emoji = replace_emoji(status_record['status'])
+    name = escape_md(status_record['name'])
+    timestamp = escape_md(status_record['timestamp'])
+    url = status_record['details_url']
     details_url = link(rf'{name} \({timestamp}\)', url) if url else name
     return rf'{status_emoji}  —  {details_url}'
 

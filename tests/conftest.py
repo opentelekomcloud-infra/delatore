@@ -1,12 +1,13 @@
 import asyncio
-import os
 from asyncio.queues import Queue
-from random import randrange
 
+import os
 import pytest
 from apubsub import Service
+from random import randrange
 
 from delatore.outputs import BotRunner
+from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 
 
@@ -117,7 +118,6 @@ def awx_hook_data():
                     'details_url': None
                 }
             ]
-
     }
     return data, expected_message
 
@@ -172,3 +172,22 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
 @pytest.fixture
 def chat_id():
     return f'{randrange(-0xffffffff, 0xffffffff)}'
+
+
+@pytest.fixture
+def json2mdwn_data():
+    message = {
+        'source': 'awx_web_hook',
+        'status_list':
+            [
+                {
+                    'name': 'TEST1_AWX_WEB_HOOK',
+                    'status': 'running',
+                    'timestamp': '2005-08-09T18:31:42',
+                    'details_url': None
+                }
+            ]
+    }
+    actual = convert(message)
+    expected = '*From awx\\_web\\_hook*\n🏃  —  TEST1\\_AWX\\_WEB\\_HOOK'
+    return actual, expected
