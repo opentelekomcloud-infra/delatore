@@ -26,9 +26,12 @@ def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
     source = escape_md(data['source'])
     src_row = f'*From {source}*'
-    status_list = '\n'.join(
-        _status_to_md_row(status) for status in data['status_list']
-    )
+    if 'status_list' in data:
+        status_list = '\n'.join(
+            _status_to_md_row(status) for status in data['status_list']
+        )
+    else:
+        status_list = data['error']
     # `status_emoji` — [Scenario 1  \(12.12.1991 00:12\)](https://awx...)
     return f'{src_row}\n{status_list}'
 

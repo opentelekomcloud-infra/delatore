@@ -50,5 +50,5 @@ async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     template_name = random_string()
     await pub.publish(awx_client.params().topic_in, template_name)
     response = await sub.get(500)
-    no_template = {"source": "awx_api", "error": NO_TEMPLATE_PATTERN.format(template_name)}
+    no_template = {'source': 'awx_api', 'error': NO_TEMPLATE_PATTERN.format(template_name)}
     assert response == no_template
