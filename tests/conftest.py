@@ -1,10 +1,10 @@
 import asyncio
-from asyncio.queues import Queue
-
 import os
+from asyncio.queues import Queue
+from random import randrange
+
 import pytest
 from apubsub import Service
-from random import randrange
 
 from delatore.outputs import BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
@@ -59,13 +59,8 @@ def influx_source_data():
             'status': 'fail',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
-        },
-        {
-            'name': 'TEST3_INFLUX',
-            'status': 'no_data',
-            'timestamp': '2005-08-09T18:31:42',
-            'details_url': None
-        }]
+        }
+    ]
     expected_message = {
         'source': 'influxdb',
         'status_list': data
@@ -103,7 +98,7 @@ def awx_hook_data():
     data = [{
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'started': '2005-08-09T18:31:42.2011425Z',
+        'started': '2005-08-09T18:31:42',
         'url': None
     }]
 
@@ -115,7 +110,7 @@ def awx_hook_data():
                     'name': 'TEST1_AWX_WEB_HOOK',
                     'status': 'running',
                     'timestamp': '2005-08-09T18:31:42',
-                    'details_url': None
+                    'url': None
                 }
             ]
     }

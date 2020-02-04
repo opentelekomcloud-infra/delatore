@@ -5,14 +5,6 @@ from delatore.outputs.telegram.emoji import EMOJI
 from delatore.unified_json import Status
 
 
-def normalize_key(src: str):
-    """Normalize dictionary key format"""
-    src = escape_md(src)
-    if src.isupper():
-        return f'`{src}`'
-    return src.replace('_', ' ').title()
-
-
 def _status_to_md_row(status_record):
     status_emoji = replace_emoji(status_record['status'])
     name = escape_md(status_record['name'])
@@ -31,8 +23,7 @@ def convert(data: dict):
             _status_to_md_row(status) for status in data['status_list']
         )
     else:
-        status_list = data['error']
-    # `status_emoji` — [Scenario 1  \(12.12.1991 00:12\)](https://awx...)
+        status_list = f'Error: {data["error"]}'
     return f'{src_row}\n{status_list}'
 
 
