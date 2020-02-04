@@ -184,5 +184,5 @@ def json2mdwn_data():
             ]
     }
     actual = convert(message)
-    expected = '*From awx\\_web\\_hook*\n🏃  —  TEST1\\_AWX\\_WEB\\_HOOK'
+    expected = '*From awx\\_web\\_hook*\n🏃  —  TEST1\\_AWX\\_WEB\\_HOOK \\(`2005\\-08\\-09T18:31:42`\\)'
     return actual, expected

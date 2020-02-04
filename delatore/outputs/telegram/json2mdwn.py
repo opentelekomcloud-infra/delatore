@@ -10,8 +10,12 @@ def _status_to_md_row(status_record):
     name = escape_md(status_record['name'])
     timestamp = escape_md(status_record['timestamp'])
     url = status_record['details_url']
-    details_url = link(rf'{name} \({timestamp}\)', url) if url else name
-    return rf'{status_emoji}  —  {details_url}'
+    if url:
+        timestamp = link(timestamp, url)
+    else:
+        timestamp = f'`{timestamp}`'
+    details = rf'{name} \({timestamp}\)'
+    return rf'{status_emoji}  —  {details}'
 
 
 def convert(data: dict):

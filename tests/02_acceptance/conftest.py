@@ -18,6 +18,7 @@ async def influxdb(service):
 @pytest.fixture
 async def awx_client(service):
     src = AWXApiSource(service.get_client())
+    src.ignore_duplicates = False
     stop_ev = asyncio.Event()
     asyncio.create_task(src.start(stop_ev))
     await asyncio.sleep(.1)
