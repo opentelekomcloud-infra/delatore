@@ -98,7 +98,7 @@ def awx_hook_data():
     data = [{
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'started': '2005-08-09T18:31:42',
+        'started': '2005-08-09T18:31:42.2011425Z',
         'url': None
     }]
 
@@ -110,7 +110,7 @@ def awx_hook_data():
                     'name': 'TEST1_AWX_WEB_HOOK',
                     'status': 'running',
                     'timestamp': '2005-08-09T18:31:42',
-                    'url': None
+                    'details_url': None
                 }
             ]
     }
