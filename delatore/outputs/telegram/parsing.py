@@ -18,7 +18,7 @@ def parse_command(message):
     try:
         cmd, target, *args = shlex.split(message)
     except ValueError:
-        raise CommandParsingError("No target provided for `/status` command")
+        raise CommandParsingError('No target provided for `/status` command')
     depth = None
     detailed = args.pop(0) if args else None
     try:

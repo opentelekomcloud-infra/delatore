@@ -7,10 +7,10 @@ from aiogram.types import Message
 from aiogram.utils.markdown import escape_md
 from apubsub import Service
 
-from delatore.outputs.telegram.json2mdwn import convert
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import BOT_CONFIG
+from ...outputs.telegram.json2mdwn import convert
 from ...sources import AWXApiSource
 
 LOGGER = logging.getLogger(__name__)
@@ -99,8 +99,8 @@ class BotRunner:
                 data = json.loads(message)
                 try:
                     await self.alert(convert(data))  # check if TG response was 200
-                except Exception:
-                    LOGGER.exception("Failed to send message")
+                except Exception:  # pylint:disable=broad-except
+                    LOGGER.exception('Failed to send message')
 
     async def _stopper(self):
         while not self.stop_event.is_set():
