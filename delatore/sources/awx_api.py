@@ -19,8 +19,8 @@ __awx_status_override = {
 }
 
 
-def switch_awx_status(input) -> Status:
-    status = __awx_status_override.get(input, input)
+def switch_awx_status(argument) -> Status:
+    status = __awx_status_override.get(argument, 'invalid status')
     return Status(status)
 
 
