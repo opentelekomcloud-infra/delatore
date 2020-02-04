@@ -32,17 +32,4 @@ def convert(data: dict):
 
 
 def replace_emoji(status):
-    return EMOJI[switch_status(status)]
-
-
-def switch_status(argument: str):
-    status = {
-        'ok': Status.OK,
-        'fail': Status.FAIL,
-        'no_data': Status.NO_DATA,
-        'running': Status.RUNNING,
-        'success': Status.OK,
-        'failed': Status.FAIL,
-        'canceled': Status.FAIL,
-    }
-    return status.get(argument, 'Invalid status')
+    return EMOJI.get(Status(status), '')

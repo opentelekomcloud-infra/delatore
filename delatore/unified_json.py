@@ -12,6 +12,12 @@ class Status(Enum):
     RUNNING = 'running'
     CANCELED = 'canceled'
 
+    _INVALID = 'invalid status'
+
+    @classmethod
+    def _missing_(cls, _):
+        return cls._INVALID
+
 
 def generate_message(source: str, status_list: List[dict]) -> dict:
     return {

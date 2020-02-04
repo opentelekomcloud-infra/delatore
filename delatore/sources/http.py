@@ -7,8 +7,9 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
+from .awx_api import switch_awx_status
 from .base import Source
-from ..unified_json import Status, generate_status, generate_message, generate_error, convert_timestamp
+from ..unified_json import generate_status, generate_message, generate_error, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -47,16 +48,6 @@ class HttpListenerSource(Source, ABC):
         await self.site.stop()
 
 
-def switch_status(argument) -> Status:
-    status = {
-        'running': Status.RUNNING,
-        'failed': Status.FAIL,
-        'canceled': Status.CANCELED,
-        'successful': Status.OK
-    }
-    return status.get(argument, 'Invalid status')
-
-
 class AWXWebHookSource(HttpListenerSource):
     """HTTP listener for AWX web hooks"""
 
@@ -79,7 +70,7 @@ class AWXWebHookSource(HttpListenerSource):
         try:
             status = generate_status(
                 name=data['name'],
-                status=switch_status(data['status']),
+                status=switch_awx_status(data['status']),
                 timestamp=convert_timestamp(data['started']),
                 details_url=data['url'],
             )

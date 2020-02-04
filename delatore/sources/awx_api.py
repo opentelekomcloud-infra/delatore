@@ -12,14 +12,16 @@ from ..unified_json import Status, generate_status, generate_message, convert_ti
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
+__awx_status_override = {
+    'failed': Status.FAIL,
+    'successful': Status.OK,
+    'canceled': Status.CANCELED
+}
 
-def switch_status(argument) -> Status:
-    status = {
-        'successful': Status.OK,
-        'failed': Status.FAIL,
-        'never updated': Status.NO_DATA,
-    }
-    return status.get(argument, 'Invalid status')
+
+def switch_awx_status(input) -> Status:
+    status = __awx_status_override.get(input, input)
+    return Status(status)
 
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
@@ -61,7 +63,7 @@ class AWXApiSource(Source):
             status_list.append(
                 generate_status(
                     name=record['name'],
-                    status=switch_status(record['status']),
+                    status=switch_awx_status(record['status']),
                     timestamp=convert_timestamp(record['last_job_run']),
                 )
             )
