@@ -204,12 +204,3 @@ def _convert_time(timestamp) -> float:
     msec = nsec[:6]
     dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
     return dtime.timestamp()
-
-
-def switch_status(argument) -> Status:
-    status = {
-        'ok': Status.OK,
-        'fail': Status.FAIL,
-        'no_data': Status.NO_DATA
-    }
-    return status.get(argument, 'Invalid status')
