@@ -1,5 +1,6 @@
 import asyncio
 
+import json
 import pytest
 from apubsub.client import Client
 
@@ -49,6 +50,6 @@ async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     await asyncio.sleep(.1)
     template_name = random_string()
     await pub.publish(awx_client.params().topic_in, template_name)
-    response = await sub.get(5)
-    no_template = {'source': 'awx_api', 'error': NO_TEMPLATE_PATTERN.format(template_name)}
-    assert response == no_template
+    response = await sub.get(500)
+    no_template = {'source': "awx_api", "error": NO_TEMPLATE_PATTERN.format(template_name)}
+    assert json.loads(response) == no_template
