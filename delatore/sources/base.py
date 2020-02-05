@@ -56,6 +56,13 @@ class Source(ABC, metaclass=SourceMeta):
     async def get_update(self) -> Optional[dict]:
         """Get source update"""
 
+    # async def publish_messages(self, json_message: dict):
+    #     all_data = json.dumps(json_message)
+    #
+    #     await asyncio.wait([
+    #         self.client.publish(f'{self.TOPIC}', all_data)
+    #     ])
+
     async def start(self, stop_event: asyncio.Event):
         """Start processing updates"""
         last = None

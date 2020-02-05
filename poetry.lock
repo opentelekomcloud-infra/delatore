@@ -550,7 +550,7 @@ description = "PyYAML dumper/loader using field descriptions in class comments"
 name = "pyyaml-typed"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.1.0"
+version = "0.1.1"
 
 [package.dependencies]
 pyyaml = ">=5.3,<6.0"
@@ -978,8 +978,8 @@ pyyaml = [
     {file = "PyYAML-5.3.tar.gz", hash = "sha256:e9f45bd5b92c7974e59bcd2dcc8631a6b6cc380a904725fce7bc08872e691615"},
 ]
 pyyaml-typed = [
-    {file = "pyyaml-typed-0.1.0.tar.gz", hash = "sha256:5dd8b634a61fae76f72b7eb8e69e1a2bd755b11e99d7d7a3217ef5b917311fb4"},
-    {file = "pyyaml_typed-0.1.0-py3-none-any.whl", hash = "sha256:7afae7a14fed142d679626ba43c9fa614997bb46e9da83fc501158c1963a9e2f"},
+    {file = "pyyaml-typed-0.1.1.tar.gz", hash = "sha256:5f621ca029713f4bd7280d04a3ca0a0708089a1606c04af8abaf4391dee31816"},
+    {file = "pyyaml_typed-0.1.1-py3-none-any.whl", hash = "sha256:596dd8e174686c7468917c6211eaad4fd959e4f636669289c4dfff20ec12204d"},
 ]
 requests = [
     {file = "requests-2.22.0-py2.py3-none-any.whl", hash = "sha256:9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31"},

@@ -1,5 +1,5 @@
 aiodns==2.0.0
-aiogram==2.5.3
+aiogram==2.6.1
 aiohttp==3.6.2
 aiohttp-socks==0.3.4
 apubsub==0.2.2
@@ -17,6 +17,8 @@ pycares==3.1.1
 pycparser==2.19
 python-dateutil==2.8.1
 pytz==2019.3
+pyyaml==5.3
+pyyaml-typed==0.1.1
 requests==2.22.0
 six==1.14.0
 urllib3==1.25.8
