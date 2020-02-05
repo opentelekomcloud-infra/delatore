@@ -1,6 +1,7 @@
 """Base Source implementation"""
 
 import asyncio
+import json
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from inspect import isabstract
@@ -52,17 +53,8 @@ class Source(ABC, metaclass=SourceMeta):
         self.ignore_duplicates = ignore_duplicates
 
     @abstractmethod
-    async def get_update(self) -> Optional[Json]:
+    async def get_update(self) -> Optional[dict]:
         """Get source update"""
-
-    @classmethod
-    @abstractmethod
-    def convert(cls, data: Json) -> str:
-        """Converts json-like object to Telegram supported Markdown
-
-        :param data: JSON dictionary or list
-        :return: Markdown string
-        """
 
     async def start(self, stop_event: asyncio.Event):
         """Start processing updates"""
@@ -74,11 +66,21 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if new in [last, None] and self.ignore_duplicates:
+            if _same_status(new, last) and self.ignore_duplicates:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
-            md_message = self.convert(new)
-            await self.client.publish(self.TOPIC, md_message)
+            json_message = json.dumps(new)
+            await self.client.publish(self.TOPIC, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
+
+
+def _same_status(new: dict, last: dict) -> bool:
+    if last is None:
+        return False
+    if new == last:
+        return True
+    this_statuses = {st['name']: st['status'] for st in new['status_list']}
+    another_statuses = {st['name']: st['status'] for st in last['status_list']}
+    return this_statuses == another_statuses

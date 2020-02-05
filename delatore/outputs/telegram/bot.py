@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 
 from aiogram import Bot, Dispatcher
@@ -9,6 +10,7 @@ from apubsub import Service
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import BOT_CONFIG
+from ...outputs.telegram.json2mdwn import convert
 from ...sources import AWXApiSource
 
 LOGGER = logging.getLogger(__name__)
@@ -91,9 +93,14 @@ class BotRunner:
         LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
         while not self.stop_event.is_set():
+            # message consumed
             message = await self.client.get(.1)
             if message is not None:
-                await self.alert(message)
+                data = json.loads(message)
+                try:
+                    await self.alert(convert(data))  # check if TG response was 200
+                except Exception:  # pylint:disable=broad-except
+                    LOGGER.exception('Failed to send message %s', data)
 
     async def _stopper(self):
         while not self.stop_event.is_set():

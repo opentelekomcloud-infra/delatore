@@ -1,18 +1,13 @@
 import asyncio
-import re
+import json
 
 import pytest
 from apubsub.client import Client
 
-from delatore.emoji import Emoji
 from delatore.sources.awx_api import NO_TEMPLATE_PATTERN, single_template_filter
 from tests.helpers import random_string
 
 TEMPLATE_NAME = 'Scenario 1.5'
-__RE_DATE_TIME = r'(\d{2}\.){2}\d{2}\s\d{2}:\d{2}'
-__RE_AWX_EMOJI = r''.join([Emoji.NO_DATA, Emoji.SUCCESS, Emoji.FAILED])
-RE_STATUS = re.compile(r'[%s]\s+—\s+`[\w\s\d.]+`\s+\\\(`%s`\\\)' % (__RE_AWX_EMOJI, __RE_DATE_TIME))
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -20,8 +15,11 @@ async def test_get_data(awx_client):
     _filter = single_template_filter(TEMPLATE_NAME)
     single = await awx_client.get_templates(_filter)
     assert len(single) == 1
-    message = awx_client.convert(single)
-    assert RE_STATUS.findall(message), message
+    message = awx_client.convert(single, TEMPLATE_NAME)
+    assert message['source'] == awx_client.CONFIG_ID
+    assert len(message['status_list']) == 1
+    status = message['status_list'][0]
+    assert all(key in status for key in ['name', 'status', 'timestamp', 'details_url'])  # FIXME: WUT!?
 
 
 async def test_get_all_scenarios(awx_client):
@@ -41,7 +39,7 @@ async def test_get_not_existing_scenario(awx_client):
 
 async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPIC)
-    await asyncio.sleep(.1)
+    await asyncio.sleep(.2)
     await pub.publish(awx_client.params().topic_in, TEMPLATE_NAME)
     response = await sub.get(5)
     assert response is not None
@@ -49,9 +47,9 @@ async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
 
 async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPIC)
-    await asyncio.sleep(.1)
+    await asyncio.sleep(.2)
     template_name = random_string()
     await pub.publish(awx_client.params().topic_in, template_name)
     response = await sub.get(5)
-    no_template = NO_TEMPLATE_PATTERN.format(template_name)
-    assert response == f'* AWX scenarios status: *\n`{no_template}`'
+    no_template = {'source': "awx_api", "error": NO_TEMPLATE_PATTERN.format(template_name)}
+    assert json.loads(response) == no_template

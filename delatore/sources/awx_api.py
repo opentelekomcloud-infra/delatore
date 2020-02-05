@@ -1,42 +1,30 @@
 import asyncio
 import logging
-import time
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Dict
 
 from aiohttp import ClientSession
 from apubsub.client import Client
 
 from .base import NoUpdates, Source
 from ..configuration import BOT_CONFIG
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
+from ..unified_json import Status, generate_status, generate_message, convert_timestamp, generate_error
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-AWX_EMOJI_MAP = {
-    'successful': Emoji.SUCCESS,
-    'failed': Emoji.FAILED,
-    'never updated': Emoji.NO_DATA,
+__awx_status_override = {
+    'failed': Status.FAIL,
+    'successful': Status.OK,
+    'canceled': Status.CANCELED
 }
 
-TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+def switch_awx_status(argument) -> Status:
+    status = __awx_status_override.get(argument, argument)
+    return Status(status)
+
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
-
-
-class TemplateStatus(NamedTuple):
-    name: str
-    last_run_timestamp: str
-    last_status: str
-    playbook: str
-
-    def __md__(self):
-        status = replace_emoji(self.last_status, AWX_EMOJI_MAP, '%e')
-        timestamp = self.last_run_timestamp
-        if timestamp is not None:
-            timestamp = time.strftime('%d.%m.%y %H:%M', time.strptime(timestamp, TIMESTAMP_FORMAT))
-        return rf'{status}   —   `{self.name}`  (`{timestamp}`)'
 
 
 def get_session():
@@ -62,12 +50,24 @@ class AWXApiSource(Source):
             raise NoUpdates
 
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter) or [NO_TEMPLATE_PATTERN.format(template_name)]
+        data = await self.get_templates(_filter)
+        data = self.convert(data, template_name)
         return data
 
     @classmethod
-    def convert(cls, data: list) -> str:
-        return f'* AWX scenarios status: *\n{convert(data)}'
+    def convert(cls, data: List[Dict], template_name) -> Dict:
+        if not data:
+            return generate_error(cls.CONFIG_ID, NO_TEMPLATE_PATTERN.format(template_name))
+        status_list = []
+        for record in data:
+            status_list.append(
+                generate_status(
+                    name=record['name'],
+                    status=switch_awx_status(record['status']),
+                    timestamp=convert_timestamp(record['last_job_run']),
+                )
+            )
+        return generate_message(cls.CONFIG_ID, status_list)
 
     @classmethod
     def params(cls) -> AWXParams:
@@ -96,7 +96,7 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            return _status_json(response_data['results'])
+            return response_data['results']
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise
@@ -107,15 +107,3 @@ def single_template_filter(template_name: str):
     if template_name:
         return {'name__iexact': template_name}
     return None
-
-
-def _status_json(json_data) -> List[TemplateStatus]:
-    """Get status for all templates or for concrete template"""
-    statuses = []
-    for template_data in json_data:
-        statuses.append(
-            TemplateStatus(name=template_data['name'],
-                           last_run_timestamp=template_data['last_job_run'],
-                           last_status=template_data['status'],
-                           playbook=template_data['playbook']))
-    return statuses

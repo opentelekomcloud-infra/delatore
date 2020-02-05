@@ -1,14 +1,15 @@
 import logging
 from abc import ABC
 from asyncio import Queue
+from traceback import format_exc
 
 from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
+from .awx_api import switch_awx_status
 from .base import Source
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
+from ..unified_json import generate_status, generate_message, generate_error, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -47,25 +48,10 @@ class HttpListenerSource(Source, ABC):
         await self.site.stop()
 
 
-AWX_LISTENER_EMOJI_MAP = {
-    '`failed`': Emoji.FAILED,
-    '`running`': Emoji.RUNNING,
-    '`success`': Emoji.SUCCESS,
-    '`cancelled`': Emoji.CANCELED
-}
-
-
 class AWXWebHookSource(HttpListenerSource):
     """HTTP listener for AWX web hooks"""
 
     CONFIG_ID = 'awx_web_hook'
-
-    @classmethod
-    def convert(cls, data: dict) -> str:
-        data.pop('From', None)
-        text = convert(data).strip()
-        text = '* From Ansible Tower *\n' + replace_emoji(text, AWX_LISTENER_EMOJI_MAP)
-        return text
 
     def __init__(self, client):
         super().__init__(client)
@@ -79,4 +65,15 @@ class AWXWebHookSource(HttpListenerSource):
         return web.Response(text='OK')
 
     async def get_update(self):
-        return await self.updates.get()
+        update = await self.updates.get()
+        data = update[0]
+        try:
+            status = generate_status(
+                name=data['name'],
+                status=switch_awx_status(data['status']),
+                timestamp=convert_timestamp(data['started']),
+                details_url=data['url'],
+            )
+        except KeyError:
+            return generate_error(self.CONFIG_ID, format_exc(limit=10))
+        return generate_message(self.CONFIG_ID, [status])

@@ -1,12 +1,12 @@
 """Testing of parsing command arguments"""
 import asyncio
+import json
 from asyncio import Queue
 
 import pytest
 from aiogram.types import Chat, Message
 from apubsub.client import Client
 
-from delatore.outputs.telegram.bot import TG_CONFIG
 from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
 from delatore.sources import AWXApiSource
 from tests.helpers import random_string
@@ -45,17 +45,16 @@ def test_parse_err(message):
         parse_command(message)
 
 
-@pytest.mark.parametrize('topic', TG_CONFIG.subscriptions)
 @pytest.mark.asyncio
-async def test_src_to_bot(topic, patched_bot, pub: Client, bot_alert_queue: Queue):
-    message = random_string()
-    await pub.publish(topic, message)
+async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, source_data):
+    source_cls, (_, message) = source_data
+    message = json.dumps(message)
+    await pub.publish(source_cls.TOPIC, message)
     try:
-        received = await asyncio.wait_for(bot_alert_queue.get(), .5)
+        await asyncio.wait_for(bot_alert_queue.get(), .5)
         bot_alert_queue.task_done()
     except asyncio.TimeoutError:
         raise AssertionError
-    assert message == received
 
 
 @pytest.mark.parametrize('target', ['', random_string()])

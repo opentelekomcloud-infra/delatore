@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, List
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -12,10 +12,9 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
-from .base import Json, Source
+from .base import Source
 from ..configuration import BOT_CONFIG
-from ..emoji import Emoji, replace_emoji
-from ..json2mdwn import convert
+from ..unified_json import generate_message, generate_status, Status, convert_timestamp
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -123,11 +122,6 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 
 
 INFLUX_POLLING_INTERVAL = 60
-INFLUX_EMOJI_MAP = {
-    '`OK`': Emoji.SUCCESS,
-    '`FAIL`': Emoji.FAILED,
-    '`NO_DATA`': Emoji.NO_DATA,
-}
 
 
 class InfluxParams(NamedTuple):
@@ -171,35 +165,28 @@ class InfluxSource(Source):
         return self._influx_client
 
     @classmethod
-    def convert(cls, data: dict) -> str:
-        data.pop('From', None)
-        text = convert(data)
-        text = '*From InfluxDB*\n' + replace_emoji(text, INFLUX_EMOJI_MAP)
-        return text.strip()
+    def convert(cls, data: List[dict]) -> dict:
+        return generate_message(cls.CONFIG_ID, data)
 
-    async def get_update(self) -> Optional[Json]:
+    async def get_update(self) -> dict:
         metrics = self.params().metrics
         results = await asyncio.gather(*[
             self._get_status(met) for met in metrics.values()
         ])
-        statuses: Dict[str, str] = dict(zip(
-            metrics.keys(),
-            results
-        ))
-        return statuses
+        return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, entity):
         query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
+        last_record = await self.influx_client.query(query)
         try:
-            last_record = await self.influx_client.query(query)
             last_time = last_record.raw['series'][0]['values'][0][0]
-            last_time_ms = _convert_time(last_time)
-            now = datetime.utcnow().timestamp()
-            if now - last_time_ms < 300:
-                return 'OK'
-            return 'FAIL'
         except KeyError:
-            return 'NO_DATA'
+            return generate_status(entity, Status.NO_DATA, None)
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms < 300:
+            return generate_status(entity, Status.OK, convert_timestamp(last_time))
+        return generate_status(entity, Status.FAIL, convert_timestamp(last_time))
 
 
 class InfluxTimestampParseException(Exception):

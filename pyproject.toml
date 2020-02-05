@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "delatore"
-version = "0.2.2"
+version = "0.2.3"
 description = "Telegram bot for CSM jobs notifications"
 authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
@@ -29,6 +29,7 @@ pytest-asyncio = "^0.10.0"
 ansi2html = "^1.5.2"
 pytest-html = "^2.0.1"
 pylint-exit = {version = "^1.1.0", platform = "linux"}
+jsonschema = "^3.2.0"
 
 [build-system]
 requires = ["poetry>=1.0"]
