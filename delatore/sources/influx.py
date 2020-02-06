@@ -198,8 +198,8 @@ class InfluxSource(Source):
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() < metric.timeout:
-            return generate_status(metric.name, Status.OK, last_time_ms.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
-        return generate_status(metric.name, Status.FAIL, last_time_ms.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
+            return generate_status(metric.name, Status.OK, last_time_ms.strftime(TIME_PATTERN))
+        return generate_status(metric.name, Status.FAIL, last_time_ms.strftime(TIME_PATTERN))
 
 
 class InfluxTimestampParseException(Exception):
@@ -208,6 +208,7 @@ class InfluxTimestampParseException(Exception):
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
 _RE_TIME_GROUPS_WITHOUT_MS = re.compile(r'(.+)(Z)')
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _convert_time(timestamp) -> datetime:
@@ -217,9 +218,9 @@ def _convert_time(timestamp) -> datetime:
         if match_ts is None:
             raise InfluxTimestampParseException
         timestamp, timezone = match_ts.groups()
-        dtime = datetime.strptime(f'{timestamp}.123456{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
+        dtime = datetime.strptime(f'{timestamp}.123456{timezone}', TIME_PATTERN)
         return dtime
     timestamp, nsec, timezone, *_ = match_ts.groups()
     msec = nsec[:6]
-    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
+    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', TIME_PATTERN)
     return dtime
