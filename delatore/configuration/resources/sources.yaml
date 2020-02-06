@@ -5,10 +5,30 @@
     username: 'csm'
     database: 'csm'
     metrics:
-      LB_LOAD: lb_timing
-      LB_DOWN: lb_down_test
-      SCSI_HDD_TEST: iscsi_connection
-      RDS_TEST: ce_result
+      - name: LB_LOAD
+        metric_id: lb_timing
+        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        timeout: 300
+      - name: LB_DOWN
+        metric_id: lb_down
+        query: 'SELECT LAST(requests) FROM {entity} LIMIT 1;'
+        timeout: 900
+      - name: SCSI_HDD_TEST
+        metric_id: iscsi_connection
+        query: 'SELECT LAST(state) FROM {entity} LIMIT 1;'
+        timeout: 300
+      - name: RDS_TEST
+        metric_id: ce_result
+        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        timeout: 300
+      - name: AUTOSCALING
+        metric_id: as_result
+        query: 'SELECT LAST(value) FROM {entity} LIMIT 1;'
+        timeout: 1800
+      - name: HDD_TEST
+        metric_id: diskio
+        query: "SELECT LAST(writes) FROM {entity} WHERE host='scn3-server' LIMIT 1;"
+        timeout: 300
   publishes: 'INFLUX'
   timings:
     polling_interval: 60

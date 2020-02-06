@@ -2,8 +2,9 @@ import asyncio
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, NamedTuple, List
+from typing import NamedTuple, List
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -14,7 +15,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import BOT_CONFIG
-from ..unified_json import generate_message, generate_status, Status, convert_timestamp
+from ..unified_json import generate_message, generate_status, Status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -124,13 +125,22 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 INFLUX_POLLING_INTERVAL = 60
 
 
+@dataclass(frozen=True)
+class Metric:
+    """Metric description"""
+    name: str
+    metric_id: str
+    timeout: int = 300
+    query: str = ''
+
+
 class InfluxParams(NamedTuple):
     """Influx params storage"""
     host: str
     port: int
     username: str
     database: str
-    metrics: Dict[str, str]
+    metrics: List[Metric]
 
 
 class InfluxSource(Source):
@@ -142,7 +152,10 @@ class InfluxSource(Source):
     @classmethod
     def params(cls) -> InfluxParams:
         if cls._params is None:
-            cls._params = InfluxParams(**cls.config.params)
+            params = cls.config.params
+            metrics = params.pop('metrics')
+            metrics = [Metric(**met) for met in metrics]
+            cls._params = InfluxParams(metrics=metrics, **params)
         return cls._params
 
     def __init__(self, client: Client):
@@ -171,22 +184,22 @@ class InfluxSource(Source):
     async def get_update(self) -> dict:
         metrics = self.params().metrics
         results = await asyncio.gather(*[
-            self._get_status(met) for met in metrics.values()
+            self._get_status(met) for met in metrics
         ])
         return generate_message(self.CONFIG_ID, results)
 
-    async def _get_status(self, entity):
-        query = f'SELECT LAST(*) FROM {entity} LIMIT 1;'
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
         except KeyError:
-            return generate_status(entity, Status.NO_DATA, None)
+            return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
-        if now - last_time_ms < 300:
-            return generate_status(entity, Status.OK, convert_timestamp(last_time))
-        return generate_status(entity, Status.FAIL, convert_timestamp(last_time))
+        if now - last_time_ms.timestamp() < metric.timeout:
+            return generate_status(metric.name, Status.OK, last_time_ms.strftime(TIME_PATTERN))
+        return generate_status(metric.name, Status.FAIL, last_time_ms.strftime(TIME_PATTERN))
 
 
 class InfluxTimestampParseException(Exception):
@@ -194,13 +207,20 @@ class InfluxTimestampParseException(Exception):
 
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
+_RE_TIME_GROUPS_WITHOUT_MS = re.compile(r'(.+)(Z)')
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
-def _convert_time(timestamp) -> float:
+def _convert_time(timestamp) -> datetime:
     match_ts = _RE_TIME_GROUPS.match(timestamp)
     if match_ts is None:
-        raise InfluxTimestampParseException
+        match_ts = _RE_TIME_GROUPS_WITHOUT_MS.match(timestamp)
+        if match_ts is None:
+            raise InfluxTimestampParseException
+        timestamp, timezone = match_ts.groups()
+        dtime = datetime.strptime(f'{timestamp}.123456{timezone}', TIME_PATTERN)
+        return dtime
     timestamp, nsec, timezone, *_ = match_ts.groups()
     msec = nsec[:6]
-    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', '%Y-%m-%dT%H:%M:%S.%fZ')
-    return dtime.timestamp()
+    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', TIME_PATTERN)
+    return dtime
