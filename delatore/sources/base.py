@@ -56,7 +56,6 @@ class Source(ABC, metaclass=SourceMeta):
     async def get_update(self) -> Optional[dict]:
         """Get source update"""
 
-        
     # TODO: New feature in next pr
     # async def publish_messages(self, json_message: dict):
     #     all_data = json.dumps(json_message)
