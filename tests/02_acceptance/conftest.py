@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from delatore.configuration import DEFAULT_INSTANCE_CONFIG
 from delatore.sources import AWXApiSource, InfluxSource
 
 
@@ -17,7 +18,7 @@ async def influxdb(service):
 
 @pytest.fixture
 async def awx_client(service):
-    src = AWXApiSource(service.get_client())
+    src = AWXApiSource(service.get_client(), DEFAULT_INSTANCE_CONFIG)
     src.ignore_duplicates = False
     stop_ev = asyncio.Event()
     asyncio.create_task(src.start(stop_ev))

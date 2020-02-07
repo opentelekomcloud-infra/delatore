@@ -9,7 +9,7 @@ from apubsub import Service
 
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
-from ...configuration.dynamic import BOT_CONFIG
+from ...configuration.dynamic import DEFAULT_INSTANCE_CONFIG, InstanceConfig
 from ...outputs.telegram.json2mdwn import convert
 from ...sources import AWXApiSource
 
@@ -33,19 +33,20 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event):
+    def __init__(self, msg_service: Service, stop_event: asyncio.Event, config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
-        self.chat_id = BOT_CONFIG.chat_id
+        self.config = config
+        self.chat_id = config.chat_id
 
     @property
     def bot(self):
         """Return bot instance, create new if missing"""
         if _not_in_current_loop(self._bot):
             LOGGER.warning('No bot exist. Create bot.')
-            self._bot = Bot(BOT_CONFIG.token,
+            self._bot = Bot(self.config.token,
                             parse_mode=TG_CONFIG.params['parse_mode'],
-                            proxy=BOT_CONFIG.proxy)
+                            proxy=self.config.proxy)
         return self._bot
 
     @property

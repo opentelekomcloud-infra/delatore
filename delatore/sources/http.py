@@ -9,7 +9,8 @@ from apubsub.client import Client
 
 from .awx_api import switch_awx_status
 from .base import Source
-from ..unified_json import generate_status, generate_message, generate_error, convert_timestamp
+from ..configuration import DEFAULT_INSTANCE_CONFIG
+from ..unified_json import convert_timestamp, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -25,9 +26,10 @@ class HttpListenerSource(Source, ABC):
 
     # pylint: disable=abstract-method
 
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client,
-                         ignore_duplicates=True)
+                         ignore_duplicates=True,
+                         instance_config=instance_config)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
         self.app = app
