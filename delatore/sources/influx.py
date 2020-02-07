@@ -14,7 +14,7 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 
 from .base import Source
-from ..configuration import BOT_CONFIG
+from ..configuration import DEFAULT_INSTANCE_CONFIG
 from ..unified_json import generate_message, generate_status, Status
 
 LOGGER = logging.getLogger(__name__)
@@ -26,7 +26,8 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 
     # pylint: disable=too-many-arguments
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, proxy="", **kwargs):
+        self.proxy: str = proxy
         super().__init__(*args, **kwargs)
 
     async def query(self,
@@ -106,8 +107,8 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
         if self._username is not None:
             kwargs.update(auth=aiohttp.BasicAuth(self._username, self._password or ''))
 
-        if BOT_CONFIG.proxy:
-            connector = ProxyConnector.from_url(BOT_CONFIG.proxy)
+        if self.proxy:
+            connector = ProxyConnector.from_url(self.proxy)
         else:
             connector = None
 
@@ -158,8 +159,8 @@ class InfluxSource(Source):
             cls._params = InfluxParams(metrics=metrics, **params)
         return cls._params
 
-    def __init__(self, client: Client):
-        super().__init__(client)
+    def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
+        super().__init__(client, instance_config=instance_config)
         self._influx_client = None
 
     @property
@@ -171,10 +172,12 @@ class InfluxSource(Source):
                 host=params.host,
                 port=params.port,
                 username=params.username,
-                password=BOT_CONFIG.influx_password,
+                password=self.instance_config.influx_password,
                 database=params.database,
                 ssl=True,
-                verify_ssl=True)
+                verify_ssl=True,
+                proxy=self.instance_config.proxy,
+            )
         return self._influx_client
 
     @classmethod

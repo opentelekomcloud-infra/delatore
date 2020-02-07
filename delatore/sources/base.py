@@ -9,8 +9,8 @@ from typing import Optional, Union
 
 from apubsub.client import Client
 
-from delatore.configuration import SOURCES_CFG
-from delatore.configuration.static import SourceConfiguration
+from ..configuration import DEFAULT_INSTANCE_CONFIG, InstanceConfig, SOURCES_CFG
+from ..configuration.static import SourceConfiguration
 
 Json = Union[dict, list]
 
@@ -44,13 +44,16 @@ class Source(ABC, metaclass=SourceMeta):
 
     client: Client
     config: SourceConfiguration
+    instance_config: InstanceConfig
 
     def __init__(self, client: Client,
-                 ignore_duplicates=True):
+                 ignore_duplicates=True,
+                 instance_config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = client
         self.polling_interval = self.config.timings.polling_interval
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
+        self.instance_config = instance_config
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:

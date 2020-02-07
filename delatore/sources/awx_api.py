@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from typing import List, NamedTuple, Optional, Dict
+from typing import Dict, List, NamedTuple, Optional
 
 from aiohttp import ClientSession
 from apubsub.client import Client
 
 from .base import NoUpdates, Source
-from ..configuration import BOT_CONFIG
-from ..unified_json import Status, generate_status, generate_message, convert_timestamp, generate_error
+from ..configuration import InstanceConfig
+from ..unified_json import Status, convert_timestamp, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -25,11 +25,6 @@ def switch_awx_status(argument) -> Status:
 
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
-
-
-def get_session():
-    """Get authorized session instance"""
-    return ClientSession(headers={'Authorization': f'Bearer {BOT_CONFIG.awx_auth_token}'})
 
 
 class AWXParams(NamedTuple):
@@ -75,10 +70,15 @@ class AWXApiSource(Source):
             cls._params = AWXParams(**cls.config.params)
         return cls._params
 
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, instance_config: InstanceConfig):
         # polling here - polling of input requests
         # request timeout - timeout for API request
         super().__init__(client, ignore_duplicates=False)
+        self.instance_config = instance_config
+
+    def get_session(self):
+        """Get authorized session instance"""
+        return ClientSession(headers={'Authorization': f'Bearer {self.instance_config.awx_auth_token}'})
 
     async def start(self, stop_event: asyncio.Event):
         await self.client.start_consuming()
@@ -91,7 +91,7 @@ class AWXApiSource(Source):
         This methods support Ansible tower filtering
         https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
-        async with get_session() as session:
+        async with self.get_session() as session:
             async with session.get(self.params().host + '/job_templates', params=filters, timeout=5) as response:
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'

@@ -22,24 +22,25 @@ def _config():
     token, chat_id, influx_password, awx_auth_token = args.token, args.chat, args.influx_password, args.awx_auth_token
 
     if all([token, chat_id, influx_password, awx_auth_token]):
-        cfg.BOT_CONFIG = cfg.BotConfig(token, chat_id, influx_password, awx_auth_token)
-    elif config_file:
+        return cfg.InstanceConfig(token, chat_id, influx_password, awx_auth_token)
+    if config_file:
         if not os.path.isfile(config_file):
             raise FileNotFoundError
-        cfg.BOT_CONFIG = cfg.read_config(config_file)
-    else:
-        raise RuntimeError('Please provide chat ID and bot token or configuration file to use')
+        return cfg.read_config(config_file)
+    raise RuntimeError('Please provide chat ID and bot token or configuration file to use')
 
 
 async def _ordered_start(service):
     from delatore.outputs import start_outputs
     from delatore.sources import start_sources
 
+    config = _config()
+
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
-    out_tsk = loop.create_task(start_outputs(service, stop_event))
+    out_tsk = loop.create_task(start_outputs(service, stop_event, config))
     await asyncio.sleep(.5)
-    src_tsk = loop.create_task(start_sources(service, stop_event))
+    src_tsk = loop.create_task(start_sources(service, stop_event, config))
     await asyncio.wait([
         src_tsk,
         out_tsk,
@@ -49,8 +50,6 @@ async def _ordered_start(service):
 def _main():
     service = Service()
     service.start()
-
-    _config()
 
     try:
         asyncio.run(_ordered_start(service))
