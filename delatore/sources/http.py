@@ -28,7 +28,7 @@ class HttpListenerSource(Source, ABC):
 
     def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client,
-                         ignore_duplicates=True,
+                         ignore_duplicates=False,
                          instance_config=instance_config)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
