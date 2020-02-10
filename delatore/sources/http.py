@@ -63,7 +63,9 @@ class AWXWebHookSource(HttpListenerSource):
         self.updates = Queue()
 
     async def notifications(self, request: web.Request):
-        await self.updates.put(await request.json())
+        data = await request.json()
+        LOGGER.debug('Data from AWX: %s', data)
+        await self.updates.put(data)
         return web.Response(text='OK')
 
     async def get_update(self):

@@ -2,6 +2,7 @@ import asyncio
 import os
 from asyncio.queues import Queue
 from random import randrange
+from uuid import uuid4
 
 import pytest
 from apubsub import Service
@@ -95,12 +96,13 @@ def awx_client_data():
 
 @pytest.fixture
 def awx_hook_data():
-    data = [{
+    data = {
+        'id': f'{uuid4()}',
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
         'started': '2005-08-09T18:31:42.2011425Z',
         'url': None
-    }]
+    }
 
     expected_message = {
         'source': 'awx_web_hook',
