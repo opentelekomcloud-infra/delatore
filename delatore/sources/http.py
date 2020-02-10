@@ -68,13 +68,12 @@ class AWXWebHookSource(HttpListenerSource):
 
     async def get_update(self):
         update = await self.updates.get()
-        data = update
         try:
             status = generate_status(
-                name=data['name'],
-                status=switch_awx_status(data['status']),
-                timestamp=convert_timestamp(data['started']),
-                details_url=data['url'],
+                name=update['name'],
+                status=switch_awx_status(update['status']),
+                timestamp=convert_timestamp(update['started']),
+                details_url=update['url'],
             )
         except KeyError:
             return generate_error(self.CONFIG_ID, format_exc(limit=10))
