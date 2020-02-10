@@ -28,7 +28,7 @@ class HttpListenerSource(Source, ABC):
 
     def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client,
-                         ignore_duplicates=True,
+                         ignore_duplicates=False,
                          instance_config=instance_config)
         app = web.Application()
         app.add_routes([web.get('/', ok)])
@@ -63,18 +63,19 @@ class AWXWebHookSource(HttpListenerSource):
         self.updates = Queue()
 
     async def notifications(self, request: web.Request):
-        await self.updates.put(await request.json())
+        data = await request.json()
+        LOGGER.debug('Data from AWX: %s', data)
+        await self.updates.put(data)
         return web.Response(text='OK')
 
     async def get_update(self):
         update = await self.updates.get()
-        data = update[0]
         try:
             status = generate_status(
-                name=data['name'],
-                status=switch_awx_status(data['status']),
-                timestamp=convert_timestamp(data['started']),
-                details_url=data['url'],
+                name=update['name'],
+                status=switch_awx_status(update['status']),
+                timestamp=convert_timestamp(update['started']),
+                details_url=update['url'],
             )
         except KeyError:
             return generate_error(self.CONFIG_ID, format_exc(limit=10))
