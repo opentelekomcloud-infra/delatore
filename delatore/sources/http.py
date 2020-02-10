@@ -68,7 +68,7 @@ class AWXWebHookSource(HttpListenerSource):
 
     async def get_update(self):
         update = await self.updates.get()
-        data = update[0]
+        data = update
         try:
             status = generate_status(
                 name=data['name'],
