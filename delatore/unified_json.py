@@ -11,6 +11,8 @@ LOGGER.setLevel(logging.DEBUG)
 
 
 class Status(Enum):
+    """Possible task statuses"""
+
     OK = 'ok'
     NO_DATA = 'no_data'
     FAIL = 'fail'
@@ -25,6 +27,7 @@ class Status(Enum):
 
 
 def generate_message(source: str, status_list: List[dict]) -> dict:
+    """Generate status message"""
     return {
         'source': source,
         'status_list': copy.deepcopy(status_list),
@@ -32,6 +35,7 @@ def generate_message(source: str, status_list: List[dict]) -> dict:
 
 
 def generate_error(source: str, message: str) -> dict:
+    """Generate error message"""
     return {
         'source': source,
         'error': message,
@@ -42,6 +46,7 @@ def generate_status(name: str,
                     status: Status,
                     timestamp: Optional[str] = None,
                     details_url: Optional[str] = None) -> dict:
+    """Generate single status line"""
     return {
         'name': name,
         'status': status.value,
@@ -51,6 +56,7 @@ def generate_status(name: str,
 
 
 def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
+    """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""
     try:
         datetime_object = datetime.strptime(timestamp, timestamp_fmt)
     except ValueError:
