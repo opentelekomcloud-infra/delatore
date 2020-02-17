@@ -1,8 +1,8 @@
 """Conversion of source data to markdown v2"""
 from aiogram.utils.markdown import escape_md, link
 
-from delatore.outputs.telegram.emoji import EMOJI
-from delatore.unified_json import Status
+from ...outputs.telegram.emoji import EMOJI
+from ...unified_json import Status
 
 
 def _status_to_md_row(status_record):

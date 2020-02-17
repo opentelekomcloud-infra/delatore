@@ -10,6 +10,7 @@ from apubsub import Service
 from delatore.outputs import BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
+from delatore.unified_json import convert_timestamp
 
 
 @pytest.fixture(scope='module')
@@ -64,7 +65,20 @@ def influx_source_data():
     ]
     expected_message = {
         'source': 'influxdb',
-        'status_list': data
+        'status_list': [
+            {
+                'name': 'TEST1_INFLUX',
+                'status': 'ok',
+                'timestamp': '09.08.2005 18:31',
+                'details_url': None
+            },
+            {
+                'name': 'TEST2_INFLUX',
+                'status': 'fail',
+                'timestamp': '09.08.2005 18:31',
+                'details_url': None
+            }
+        ]
     }
     return data, expected_message
 
@@ -75,7 +89,7 @@ def awx_client_data():
         {
             'name': 'TEST1_AWX_API',
             'status': 'never updated',
-            'last_job_run': '2005-08-09T18:31:42.20114253Z',
+            'last_job_run': '2005-08-09T18:31:42.20114Z',
             'details_url': None
         }
     ]
@@ -86,7 +100,7 @@ def awx_client_data():
                 {
                     'name': 'TEST1_AWX_API',
                     'status': 'no_data',
-                    'timestamp': '2005-08-09T18:31:42',
+                    'timestamp': '09.08.2005 18:31',
                     'details_url': None
                 }
             ]
@@ -100,7 +114,7 @@ def awx_hook_data():
         'id': f'{uuid4()}',
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'started': '2005-08-09T18:31:42.2011425Z',
+        'started': '2005-08-09T18:31:42.201142Z',
         'url': None
     }
 
@@ -111,7 +125,7 @@ def awx_hook_data():
                 {
                     'name': 'TEST1_AWX_WEB_HOOK',
                     'status': 'running',
-                    'timestamp': '2005-08-09T18:31:42',
+                    'timestamp': '09.08.2005 18:31',
                     'details_url': None
                 }
             ]
@@ -188,3 +202,11 @@ def json2mdwn_data():
     actual = convert(message)
     expected = '*From awx\\_web\\_hook*\n🏃  —  TEST1\\_AWX\\_WEB\\_HOOK \\(`2005\\-08\\-09T18:31:42`\\)'
     return actual, expected
+
+
+@pytest.fixture
+def time_data():
+    TIME_FORMAT_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
+    received_date = '2005-08-09T18:31:42.123456Z'
+    actual_date = convert_timestamp(received_date, TIME_FORMAT_PATTERN)
+    return actual_date, received_date

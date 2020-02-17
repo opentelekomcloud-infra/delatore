@@ -25,6 +25,7 @@ def switch_awx_status(argument) -> Status:
 
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
+AWX_TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class AWXParams(NamedTuple):
@@ -59,7 +60,7 @@ class AWXApiSource(Source):
                 generate_status(
                     name=record['name'],
                     status=switch_awx_status(record['status']),
-                    timestamp=convert_timestamp(record['last_job_run']),
+                    timestamp=convert_timestamp(record['last_job_run'], AWX_TIME_PATTERN),
                 )
             )
         return generate_message(cls.CONFIG_ID, status_list)

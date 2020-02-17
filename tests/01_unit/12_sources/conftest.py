@@ -6,11 +6,10 @@ import pytest
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
 from delatore.sources import AWXApiSource
 from delatore.sources.awx_api import single_template_filter
-from delatore.unified_json import U_TIMESTAMP_FORMAT
 
 
 def _now():
-    return datetime.now().strftime(U_TIMESTAMP_FORMAT)
+    return datetime.now()
 
 
 @pytest.fixture
