@@ -15,7 +15,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import Status, convert_timestamp, generate_message, generate_status
+from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -198,15 +198,9 @@ class InfluxSource(Source):
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() < metric.timeout:
             return generate_status(metric.name, Status.OK,
-                                   convert_timestamp(
-                                       last_time_ms.strftime(TIME_PATTERN),
-                                       TIME_PATTERN)
-                                   )
+                                   last_time_ms.strftime(UNIFIED_TIME_PATTERN))
         return generate_status(metric.name, Status.FAIL,
-                               convert_timestamp(
-                                   last_time_ms.strftime(TIME_PATTERN),
-                                   TIME_PATTERN)
-                               )
+                               last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
 
 class InfluxTimestampParseException(Exception):
