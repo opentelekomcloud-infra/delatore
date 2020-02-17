@@ -4,7 +4,8 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-U_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
+UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M'
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
@@ -44,18 +45,17 @@ def generate_status(name: str,
     return {
         'name': name,
         'status': status.value,
-        'timestamp': convert_timestamp(timestamp),
+        'timestamp': timestamp,
         'details_url': details_url
     }
 
 
-UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M'
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
-def convert_timestamp(timestamp: str) -> str:
-    timestamp, *_ = timestamp.split('.')
+def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
     try:
-        datetime_object = datetime.strptime(timestamp, U_TIMESTAMP_FORMAT)
+        datetime_object = datetime.strptime(timestamp, timestamp_fmt)
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''

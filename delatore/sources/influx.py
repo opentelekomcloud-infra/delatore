@@ -4,7 +4,7 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import NamedTuple, List
+from typing import List, NamedTuple
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -15,7 +15,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import generate_message, generate_status, Status
+from ..unified_json import Status, TIME_PATTERN, convert_timestamp, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -180,10 +180,6 @@ class InfluxSource(Source):
             )
         return self._influx_client
 
-    @classmethod
-    def convert(cls, data: List[dict]) -> dict:
-        return generate_message(cls.CONFIG_ID, data)
-
     async def get_update(self) -> dict:
         metrics = self.params().metrics
         results = await asyncio.gather(*[
@@ -201,8 +197,16 @@ class InfluxSource(Source):
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() < metric.timeout:
-            return generate_status(metric.name, Status.OK, last_time_ms.strftime(TIME_PATTERN))
-        return generate_status(metric.name, Status.FAIL, last_time_ms.strftime(TIME_PATTERN))
+            return generate_status(metric.name, Status.OK,
+                                   convert_timestamp(
+                                       last_time_ms.strftime(TIME_PATTERN),
+                                       TIME_PATTERN)
+                                   )
+        return generate_status(metric.name, Status.FAIL,
+                               convert_timestamp(
+                                   last_time_ms.strftime(TIME_PATTERN),
+                                   TIME_PATTERN)
+                               )
 
 
 class InfluxTimestampParseException(Exception):
@@ -211,7 +215,6 @@ class InfluxTimestampParseException(Exception):
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
 _RE_TIME_GROUPS_WITHOUT_MS = re.compile(r'(.+)(Z)')
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _convert_time(timestamp) -> datetime:

@@ -89,7 +89,7 @@ def awx_client_data():
         {
             'name': 'TEST1_AWX_API',
             'status': 'never updated',
-            'last_job_run': '2005-08-09T18:31:42.20114253Z',
+            'last_job_run': '2005-08-09T18:31:42.20114Z',
             'details_url': None
         }
     ]
@@ -114,7 +114,7 @@ def awx_hook_data():
         'id': f'{uuid4()}',
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'started': '2005-08-09T18:31:42.2011425Z',
+        'started': '2005-08-09T18:31:42.201142Z',
         'url': None
     }
 
@@ -206,6 +206,7 @@ def json2mdwn_data():
 
 @pytest.fixture
 def time_data():
-    received_date = '2005-08-09T18:31:42.1234Z'
-    actual_date = convert_timestamp(received_date)
-    return actual_date, received_date
+    TIME_FORMAT_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
+    received_date = '2005-08-09T18:31:42.123456Z'
+    actual_date = convert_timestamp(received_date, TIME_FORMAT_PATTERN)
+    return actual_date, received_date, TIME_FORMAT_PATTERN
