@@ -10,6 +10,7 @@ from apubsub import Service
 from delatore.outputs import BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
+from delatore.unified_json import convert_timestamp
 
 
 @pytest.fixture(scope='module')
@@ -201,3 +202,10 @@ def json2mdwn_data():
     actual = convert(message)
     expected = '*From awx\\_web\\_hook*\n🏃  —  TEST1\\_AWX\\_WEB\\_HOOK \\(`2005\\-08\\-09T18:31:42`\\)'
     return actual, expected
+
+
+@pytest.fixture
+def time_data():
+    received_date = '2005-08-09T18:31:42.1234Z'
+    actual_date = convert_timestamp(received_date)
+    return actual_date, received_date

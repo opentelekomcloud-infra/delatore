@@ -1,5 +1,5 @@
 from delatore.outputs.telegram.emoji import EMOJI, replace_emoji
-from delatore.unified_json import Status
+from delatore.unified_json import Status, convert_timestamp
 
 
 def test_emoji():
@@ -15,3 +15,10 @@ def test_emoji():
 def test_json2mdwn(json2mdwn_data):
     actual, expected = json2mdwn_data
     assert actual == expected
+
+
+def test_time_convert(time_data):
+    actual_date, received_date = time_data
+    converted_date = convert_timestamp(received_date)
+    assert converted_date != ''
+    assert converted_date == actual_date

@@ -49,14 +49,13 @@ def generate_status(name: str,
     }
 
 
-TIME_PATTERN_CONVERT = '%Y-%m-%dT%H:%M:%S'
 UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M'
 
 
 def convert_timestamp(timestamp: str) -> str:
     timestamp, *_ = timestamp.split('.')
     try:
-        datetime_object = datetime.strptime(timestamp, TIME_PATTERN_CONVERT)
+        datetime_object = datetime.strptime(timestamp, U_TIMESTAMP_FORMAT)
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''
