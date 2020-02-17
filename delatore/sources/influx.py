@@ -15,7 +15,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import Status, TIME_PATTERN, convert_timestamp, generate_message, generate_status
+from ..unified_json import Status, convert_timestamp, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -215,6 +215,7 @@ class InfluxTimestampParseException(Exception):
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
 _RE_TIME_GROUPS_WITHOUT_MS = re.compile(r'(.+)(Z)')
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _convert_time(timestamp) -> datetime:

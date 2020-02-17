@@ -10,11 +10,12 @@ from apubsub.client import Client
 from .awx_api import switch_awx_status
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import TIME_PATTERN, convert_timestamp, generate_error, generate_message, generate_status
+from ..unified_json import convert_timestamp, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 async def ok(_: Request):
     """Send `OK` response"""

@@ -7,7 +7,7 @@ from apubsub.client import Client
 
 from .base import NoUpdates, Source
 from ..configuration import InstanceConfig
-from ..unified_json import Status, TIME_PATTERN, convert_timestamp, generate_error, generate_message, generate_status
+from ..unified_json import Status, convert_timestamp, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -25,6 +25,7 @@ def switch_awx_status(argument) -> Status:
 
 
 NO_TEMPLATE_PATTERN = 'No template with name \'{}\' found'  # pylint:disable=invalid-string-quote
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class AWXParams(NamedTuple):

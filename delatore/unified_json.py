@@ -50,9 +50,6 @@ def generate_status(name: str,
     }
 
 
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
-
-
 def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
     try:
         datetime_object = datetime.strptime(timestamp, timestamp_fmt)
