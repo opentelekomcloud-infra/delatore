@@ -7,7 +7,7 @@ from apubsub.client import Client
 
 from .base import NoUpdates, Source
 from ..configuration import InstanceConfig
-from ..unified_json import Status, convert_timestamp, generate_error, generate_message, generate_status
+from ..unified_json import Status, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -59,7 +59,7 @@ class AWXApiSource(Source):
                 generate_status(
                     name=record['name'],
                     status=switch_awx_status(record['status']),
-                    timestamp=convert_timestamp(record['last_job_run']),
+                    timestamp=record['last_job_run'],
                 )
             )
         return generate_message(cls.CONFIG_ID, status_list)

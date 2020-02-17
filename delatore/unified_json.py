@@ -1,8 +1,12 @@
 import copy
+import logging
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
 U_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
 
 class Status(Enum):
@@ -45,6 +49,15 @@ def generate_status(name: str,
     }
 
 
-def convert_timestamp(timestamp: str):
+TIME_PATTERN_CONVERT = '%Y-%m-%dT%H:%M:%S'
+UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M'
+
+
+def convert_timestamp(timestamp: str) -> str:
     timestamp, *_ = timestamp.split('.')
-    return timestamp
+    try:
+        datetime_object = datetime.strptime(timestamp, TIME_PATTERN_CONVERT)
+    except ValueError:
+        LOGGER.exception('Failed to convert timestamp: %s', timestamp)
+        return ''
+    return datetime_object.strftime(UNIFIED_TIME_PATTERN)

@@ -10,7 +10,7 @@ from apubsub.client import Client
 from .awx_api import switch_awx_status
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import convert_timestamp, generate_error, generate_message, generate_status
+from ..unified_json import generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -74,7 +74,7 @@ class AWXWebHookSource(HttpListenerSource):
             status = generate_status(
                 name=update['name'],
                 status=switch_awx_status(update['status']),
-                timestamp=convert_timestamp(update['started']),
+                timestamp=update['started'],
                 details_url=update['url'],
             )
         except KeyError:
