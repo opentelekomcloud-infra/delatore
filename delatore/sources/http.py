@@ -7,7 +7,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
 
-from .awx_api import switch_awx_status
+from .awx_api import AWX_TIME_PATTERN, switch_awx_status
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
 from ..unified_json import convert_timestamp, generate_error, generate_message, generate_status
@@ -15,7 +15,6 @@ from ..unified_json import convert_timestamp, generate_error, generate_message, 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 async def ok(_: Request):
     """Send `OK` response"""
@@ -75,7 +74,7 @@ class AWXWebHookSource(HttpListenerSource):
             status = generate_status(
                 name=update['name'],
                 status=switch_awx_status(update['status']),
-                timestamp=convert_timestamp(update['started'], TIME_PATTERN),
+                timestamp=convert_timestamp(update['started'], AWX_TIME_PATTERN),
                 details_url=update['url'],
             )
         except KeyError:
