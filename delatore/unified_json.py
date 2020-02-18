@@ -59,7 +59,7 @@ RE_TIME_GROUPS = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z)?'
 TIME_PATTERN = '%Y-%m-%dT%H:%M:%S'
 
 
-def convert_timestamp(timestamp: str) -> str:
+def convert_timestamp(timestamp: str):
     """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""
     match_ts = RE_TIME_GROUPS.match(timestamp)
     try:
@@ -70,4 +70,4 @@ def convert_timestamp(timestamp: str) -> str:
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''
-    return datetime_object.strftime(UNIFIED_TIME_PATTERN)
+    return datetime_object

@@ -75,7 +75,7 @@ def influx_source_data():
             {
                 'name': 'TEST2_INFLUX',
                 'status': 'fail',
-                'timestamp': '09.08.2005 18:31',
+                'timestamp': '09.08.2005 18:31:42',
                 'details_url': None
             }
         ]
@@ -100,7 +100,7 @@ def awx_client_data():
                 {
                     'name': 'TEST1_AWX_API',
                     'status': 'no_data',
-                    'timestamp': '09.08.2005 18:31',
+                    'timestamp': '09.08.2005 18:31:42',
                     'details_url': None
                 }
             ]
@@ -125,7 +125,7 @@ def awx_hook_data():
                 {
                     'name': 'TEST1_AWX_WEB_HOOK',
                     'status': 'running',
-                    'timestamp': '09.08.2005 18:31',
+                    'timestamp': '09.08.2005 18:31:42',
                     'details_url': None
                 }
             ]
