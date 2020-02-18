@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, NamedTuple
@@ -15,7 +14,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, generate_status
+from ..unified_json import Status, convert_timestamp, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -195,33 +194,13 @@ class InfluxSource(Source):
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
-        last_time_ms = _convert_time(last_time)
+        last_time_ms = convert_timestamp(last_time)
         if now - last_time_ms.timestamp() < metric.timeout:
             return generate_status(metric.name, Status.OK,
-                                   last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+                                   last_time_ms)
         return generate_status(metric.name, Status.FAIL,
-                               last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+                               last_time_ms)
 
 
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
-
-
-_RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
-_RE_TIME_GROUPS_WITHOUT_MS = re.compile(r'(.+)(Z)')
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
-
-
-def _convert_time(timestamp) -> datetime:
-    match_ts = _RE_TIME_GROUPS.match(timestamp)
-    if match_ts is None:
-        match_ts = _RE_TIME_GROUPS_WITHOUT_MS.match(timestamp)
-        if match_ts is None:
-            raise InfluxTimestampParseException
-        timestamp, timezone = match_ts.groups()
-        dtime = datetime.strptime(f'{timestamp}.123456{timezone}', TIME_PATTERN)
-        return dtime
-    timestamp, nsec, timezone, *_ = match_ts.groups()
-    msec = nsec[:6]
-    dtime = datetime.strptime(f'{timestamp}.{msec}{timezone}', TIME_PATTERN)
-    return dtime

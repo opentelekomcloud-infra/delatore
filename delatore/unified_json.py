@@ -1,10 +1,11 @@
 import copy
 import logging
+import re
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M'
+UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -12,7 +13,6 @@ LOGGER.setLevel(logging.DEBUG)
 
 class Status(Enum):
     """Possible task statuses"""
-
     OK = 'ok'
     NO_DATA = 'no_data'
     FAIL = 'fail'
@@ -55,10 +55,18 @@ def generate_status(name: str,
     }
 
 
-def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
+RE_TIME_GROUPS = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z)?')
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S'
+
+
+def convert_timestamp(timestamp: str) -> str:
     """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""
+    match_ts = RE_TIME_GROUPS.match(timestamp)
     try:
-        datetime_object = datetime.strptime(timestamp, timestamp_fmt)
+        if match_ts is None:
+            raise ValueError
+        timestamp, nsec, timezone, *_ = match_ts.groups()
+        datetime_object = datetime.strptime(timestamp, TIME_PATTERN)
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''

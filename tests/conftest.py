@@ -206,7 +206,6 @@ def json2mdwn_data():
 
 @pytest.fixture
 def time_data():
-    TIME_FORMAT_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
     received_date = '2005-08-09T18:31:42.123456Z'
-    actual_date = convert_timestamp(received_date, TIME_FORMAT_PATTERN)
+    actual_date = convert_timestamp(received_date)
     return actual_date, received_date
