@@ -12,7 +12,6 @@ LOGGER.setLevel(logging.DEBUG)
 
 class Status(Enum):
     """Possible task statuses"""
-
     OK = 'ok'
     NO_DATA = 'no_data'
     FAIL = 'fail'
