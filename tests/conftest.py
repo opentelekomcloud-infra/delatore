@@ -114,7 +114,7 @@ def awx_hook_data():
         'id': f'{uuid4()}',
         'name': 'TEST1_AWX_WEB_HOOK',
         'status': 'running',
-        'started': '2005-08-09T18:31:42.201142Z',
+        'started': '2005-08-09T18:31:42.201142+00:00',
         'url': None
     }
 
