@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, Optional
 
 UNIFIED_TIME_PATTERN = '%d.%m.%Y %H:%M:%S'
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -56,7 +57,6 @@ def generate_status(name: str,
 
 
 RE_TIME_GROUPS = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z)?')
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S'
 
 
 def convert_timestamp(timestamp: str):
@@ -65,7 +65,7 @@ def convert_timestamp(timestamp: str):
     try:
         if match_ts is None:
             raise ValueError
-        timestamp, nsec, timezone, *_ = match_ts.groups()
+        timestamp, nsec, timezone, *_ = match_ts.groups()   #pylint: disable=W0612
         datetime_object = datetime.strptime(timestamp, TIME_PATTERN)
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
