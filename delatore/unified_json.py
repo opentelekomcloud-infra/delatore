@@ -56,7 +56,7 @@ def generate_status(name: str,
 
 
 RE_TIME_GROUPS = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z)?')
-TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
+TIME_PATTERN = '%Y-%m-%dT%H:%M:%S'
 
 
 def convert_timestamp(timestamp: str):
@@ -66,7 +66,7 @@ def convert_timestamp(timestamp: str):
         if match_ts is None:
             raise ValueError
         timestamp, nsec, timezone, *_ = match_ts.groups()
-        datetime_object = datetime.strptime(f'{timestamp}{nsec[:6]}{timezone}', TIME_PATTERN)
+        datetime_object = datetime.strptime(timestamp, TIME_PATTERN)
     except ValueError:
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''
