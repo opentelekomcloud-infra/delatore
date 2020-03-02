@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.utils.markdown import escape_md
 from apubsub import Service
+from ocomone import Resources
 
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
@@ -17,10 +18,25 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 STATUS = 'status'
+HELP = 'help'
 TG_CONFIG = OUTPUTS_CFG['telegram_bot']
 STATUS_TOPICS = {
     'awx': AWXApiSource.params().topic_in,
 }
+
+__MESSAGES_PATH = Resources(__file__)
+
+
+def _load_help():
+    msg_path = __MESSAGES_PATH['help.md']
+    with open(msg_path, encoding='utf-8') as msg_file:
+        msg = ''
+        for line in msg_file:
+            msg += line
+    return {HELP: msg}
+
+
+MESSAGES = _load_help()
 
 
 def _not_in_current_loop(smth):
@@ -33,7 +49,8 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event, config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
+    def __init__(self, msg_service: Service, stop_event: asyncio.Event,
+                 config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.config = config
@@ -56,6 +73,7 @@ class BotRunner:
             LOGGER.warning('No dispatcher exist. Create dispatcher.')
             self._dispatcher = Dispatcher(self.bot)
             self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
+            self._dispatcher.message_handler(commands=[HELP])(self.handle_help_cmd)
         return self._dispatcher
 
     async def handle_status(self, message: Message):
@@ -68,6 +86,12 @@ class BotRunner:
         if source in STATUS_TOPICS:
             return await self.client.publish(STATUS_TOPICS[source], template_name or '')
         return await message.answer(rf'Invalid source: `{escape_md(source)}`')
+
+    async def handle_help_cmd(self, message: Message):
+        """Handler for /help command"""
+        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
+        answer_message = MESSAGES[HELP]
+        return await message.answer(answer_message)
 
     async def alert(self, message):
         """Send message to chat alerting users"""
