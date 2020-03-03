@@ -24,7 +24,7 @@ STATUS_TOPICS = {
     'awx': AWXApiSource.params().topic_in,
 }
 
-__MESSAGES_PATH = Resources(__file__)
+__MESSAGES_PATH = Resources(__file__, resources_dir='messages')
 
 
 def _load_help():
