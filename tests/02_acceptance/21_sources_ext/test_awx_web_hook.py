@@ -30,3 +30,19 @@ async def test_http_server_notification(awx_web_hook_src: AWXWebHookSource, sub:
     assert resp.status == 200
     data = json.loads(await sub.get(.5))
     assert data == expected
+
+
+@pytest.mark.parametrize('data', [
+    'kjhlkhg',
+    '{"as": "ds}',
+    '{"name": "asd", "status": "OK", "started": "asb"}'
+])
+async def test_http_server_notification_400(awx_web_hook_src: AWXWebHookSource, sub: Client, data):
+    await sub.subscribe(awx_web_hook_src.TOPIC)
+    await asyncio.sleep(.1)
+    async with ClientSession() as session:
+        async with session.post(f'http://localhost:{awx_web_hook_src.port}/notifications',
+                                headers={'Content-Type': 'application/json'},
+                                data=data, timeout=5) as resp:
+            pass
+    assert resp.status == 400

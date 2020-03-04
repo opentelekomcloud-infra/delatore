@@ -1,11 +1,13 @@
 import logging
 from abc import ABC
 from asyncio import Queue
+from json import JSONDecodeError
 from traceback import format_exc
 
 from aiohttp import web
 from aiohttp.web_request import Request
 from apubsub.client import Client
+from jsonschema import ValidationError, draft7_format_checker, validate
 
 from .awx_api import switch_awx_status
 from .base import Source
@@ -51,6 +53,24 @@ class HttpListenerSource(Source, ABC):
         await self.site.stop()
 
 
+WEB_HOOK_JSON_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'name': {'type': 'string'},
+        'status': {'type': 'string'},
+        'started': {
+            'type': 'string',
+            'format': 'date-time',
+        },
+        'url': {
+            'type': ['string', 'null'],
+            'format': 'url'
+        }
+    },
+    'required': ['name', 'status', 'started', 'url'],
+}
+
+
 class AWXWebHookSource(HttpListenerSource):
     """HTTP listener for AWX web hooks"""
 
@@ -64,7 +84,17 @@ class AWXWebHookSource(HttpListenerSource):
         self.updates = Queue()
 
     async def notifications(self, request: web.Request):
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return web.Response(status=400,
+                                text="Failed to parse request data as JSON")
+        try:
+            validate(data, WEB_HOOK_JSON_SCHEMA, format_checker=draft7_format_checker)
+        except ValidationError:
+            return web.Response(status=400,
+                                text=f"Fail to parse data: \n{data}\n"
+                                     f"Expected Schema: {WEB_HOOK_JSON_SCHEMA}")
         LOGGER.debug('Data from AWX: %s', data)
         await self.updates.put(data)
         return web.Response(text='OK')
