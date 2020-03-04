@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.utils.markdown import escape_md
 from apubsub import Service
+from ocomone import Resources
 
 from .parsing import CommandParsingError, parse_command
 from ...configuration import OUTPUTS_CFG
@@ -17,14 +18,41 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 STATUS = 'status'
+HELP = 'help'
 TG_CONFIG = OUTPUTS_CFG['telegram_bot']
 STATUS_TOPICS = {
     'awx': AWXApiSource.params().topic_in,
 }
 
+__MESSAGES_PATH = Resources(__file__, resources_dir='messages')
+
+
+def _load_help():
+    msg_path = __MESSAGES_PATH['help.md']
+    with open(msg_path, encoding='utf-8') as msg_file:
+        msg = ''
+        for line in msg_file:
+            msg += line
+    return {HELP: msg}
+
+
+MESSAGES = _load_help()
+
 
 def _not_in_current_loop(smth):
     return (smth is None) or (asyncio.get_event_loop() != smth.loop)
+
+
+async def handle_help_cmd(message: Message):
+    """Handler for /help command"""
+    log_msg(message)
+    answer_message = MESSAGES[HELP]
+    await message.answer(answer_message)
+
+
+def log_msg(message: Message):
+    """Add LOGGER message"""
+    LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
 
 
 class BotRunner:
@@ -33,7 +61,8 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event, config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
+    def __init__(self, msg_service: Service, stop_event: asyncio.Event,
+                 config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.config = config
@@ -55,12 +84,13 @@ class BotRunner:
         if _not_in_current_loop(self._dispatcher):
             LOGGER.warning('No dispatcher exist. Create dispatcher.')
             self._dispatcher = Dispatcher(self.bot)
-            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
+            self._dispatcher.register_message_handler(handle_help_cmd, commands=[HELP])
+            self._dispatcher.register_message_handler(self.handle_status, commands=[STATUS])
         return self._dispatcher
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
-        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
+        log_msg(message)
         try:
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
         except CommandParsingError:

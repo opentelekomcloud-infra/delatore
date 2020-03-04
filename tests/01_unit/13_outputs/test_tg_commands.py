@@ -7,6 +7,7 @@ import pytest
 from aiogram.types import Chat, Message
 from apubsub.client import Client
 
+from delatore.outputs.telegram.bot import handle_help_cmd
 from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
 from delatore.sources import AWXApiSource
 from tests.helpers import random_string
@@ -82,10 +83,23 @@ def patched_message(text, chat_id):
 @pytest.mark.parametrize('cmd', [
     f'/status {random_string()}',
     f'/status {random_string()} {random_string()}',
-    f'/status'])
+    f'/status',
+])
 @pytest.mark.asyncio
 async def test_bot_invalid_cmd(patched_bot, chat_id, cmd):
     message, answer_queue = patched_message(cmd, chat_id)
     await patched_bot.handle_status(message)
+    response = answer_queue.get_nowait()
+    assert response
+
+
+@pytest.mark.parametrize('cmd', [
+    f'/help',
+    f'/help@{random_string()}'
+])
+@pytest.mark.asyncio
+async def test_help_cmd(cmd, chat_id):
+    message, answer_queue = patched_message(cmd, chat_id)
+    await handle_help_cmd(message)
     response = answer_queue.get_nowait()
     assert response
