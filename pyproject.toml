@@ -18,6 +18,8 @@ aiohttp-socks = "^0.3.4"
 aiodns = "^2.0.0"
 influxdb = "^5.2.3"
 pyyaml-typed = "^0.1.0"
+jsonschema = {extras = ["format"], version = "^3.2.0"}
+rfc3339-validator = "^0.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
