@@ -86,7 +86,6 @@ class BotRunner:
             self._dispatcher = Dispatcher(self.bot)
             self._dispatcher.register_message_handler(handle_help_cmd, commands=[HELP])
             self._dispatcher.register_message_handler(self.handle_status, commands=[STATUS])
-            # self._dispatcher.register_message_handler(add_logger, commands=[STATUS, HELP])
         return self._dispatcher
 
     async def handle_status(self, message: Message):
