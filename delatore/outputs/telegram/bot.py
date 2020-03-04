@@ -43,6 +43,18 @@ def _not_in_current_loop(smth):
     return (smth is None) or (asyncio.get_event_loop() != smth.loop)
 
 
+async def handle_help_cmd(message: Message):
+    """Handler for /help command"""
+    await add_logger(message)
+    answer_message = MESSAGES[HELP]
+    await message.answer(answer_message)
+
+
+async def add_logger(message: Message):
+    """Add LOGGER message"""
+    LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
+
+
 class BotRunner:
     """Bot runner wrapper"""
 
@@ -72,13 +84,14 @@ class BotRunner:
         if _not_in_current_loop(self._dispatcher):
             LOGGER.warning('No dispatcher exist. Create dispatcher.')
             self._dispatcher = Dispatcher(self.bot)
-            self._dispatcher.message_handler(commands=[STATUS])(self.handle_status)
-            self._dispatcher.message_handler(commands=[HELP])(self.handle_help_cmd)
+            self._dispatcher.register_message_handler(handle_help_cmd, commands=[HELP])
+            self._dispatcher.register_message_handler(self.handle_status, commands=[STATUS])
+            # self._dispatcher.register_message_handler(add_logger, commands=[STATUS, HELP])
         return self._dispatcher
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
-        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
+        await add_logger(message)
         try:
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
         except CommandParsingError:
@@ -86,12 +99,6 @@ class BotRunner:
         if source in STATUS_TOPICS:
             return await self.client.publish(STATUS_TOPICS[source], template_name or '')
         return await message.answer(rf'Invalid source: `{escape_md(source)}`')
-
-    async def handle_help_cmd(self, message: Message):
-        """Handler for /help command"""
-        LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
-        answer_message = MESSAGES[HELP]
-        return await message.answer(answer_message)
 
     async def alert(self, message):
         """Send message to chat alerting users"""
