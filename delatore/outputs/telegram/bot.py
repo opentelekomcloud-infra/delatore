@@ -45,12 +45,12 @@ def _not_in_current_loop(smth):
 
 async def handle_help_cmd(message: Message):
     """Handler for /help command"""
-    await add_logger(message)
+    add_logger(message)
     answer_message = MESSAGES[HELP]
     await message.answer(answer_message)
 
 
-async def add_logger(message: Message):
+def add_logger(message: Message):
     """Add LOGGER message"""
     LOGGER.debug('Message received: %s in chat %s', message.text, message.chat)
 
@@ -91,7 +91,7 @@ class BotRunner:
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
-        await add_logger(message)
+        add_logger(message)
         try:
             source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
         except CommandParsingError:
