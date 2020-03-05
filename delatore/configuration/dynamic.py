@@ -30,12 +30,13 @@ def read_config(config_file=RESOURCES['config.ini']):
         awx_auth_token = defaults.get('awx_auth_token', os.getenv('AWX_AUTH_TOKEN'))
         alerta_key = defaults.get('alerta_api_key', os.getenv('ALERTA_API_KEY'))
         proxy = defaults.get('proxy', None)
-        return InstanceConfig(token, chat_id, influx_password, awx_auth_token, proxy)
+        return InstanceConfig(token, chat_id, influx_password, awx_auth_token, proxy, alerta_key)
     return InstanceConfig(
         os.getenv('token'),
         os.getenv('chat_id'),
         os.getenv('INFLUX_PASSWORD'),
-        os.getenv('AWX_AUTH_TOKEN')
+        os.getenv('AWX_AUTH_TOKEN'),
+        os.getenv('ALERTA_API_KEY'),
     )
 
 

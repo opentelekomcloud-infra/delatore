@@ -2,6 +2,14 @@
   params:
     parse_mode: 'MarkdownV2'
   subscriptions:
-  - 'INFLUX'
-  - 'AWX_WEB_HOOK'
-  - 'AWX_CLIENT_OUT'
+    - 'INFLUX'
+    - 'AWX_WEB_HOOK'
+    - 'AWX_CLIENT_OUT'
+
+#TODO: ask for these options
+- name: alerta
+  endpoint: 'https://alerts.eco.tsi-dev.otc-service.com'
+  environment: 'test'
+  service: 'test'
+  subscriptions:
+    - 'INFLUX'

@@ -28,3 +28,4 @@ urllib3==1.25.8
 uvloop==0.14.0; sys_platform == "linux"
 yarl==1.4.2
 zipp==3.1.0; python_version < "3.8"
+alerta==7.4.4

@@ -17,6 +17,9 @@ class Configuration:
 class OutputConfiguration(Configuration):
     """Single output service configuration"""
     subscriptions: List[str]
+    service: List[str]
+    environment: str
+    endpoint: str
 
 
 @dataclass(frozen=True)

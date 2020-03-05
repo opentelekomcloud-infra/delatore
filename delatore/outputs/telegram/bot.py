@@ -57,7 +57,6 @@ def log_msg(message: Message):
 
 class BotRunner:
     """Bot runner wrapper"""
-
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
