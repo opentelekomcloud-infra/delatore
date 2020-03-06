@@ -23,7 +23,7 @@ class AlertaRunner:
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.config = config
-        self.alerta_api_key = config.alerta_key
+        self.alerta_api_key = config.alerta_api_key
 
     @property
     def alerta(self):

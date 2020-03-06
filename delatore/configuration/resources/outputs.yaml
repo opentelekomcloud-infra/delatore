@@ -7,10 +7,11 @@
     - 'AWX_CLIENT_OUT'
 
 - name: alerta
-  endpoint: 'https://alerts.eco.tsi-dev.otc-service.com'
-  environment: 'OTC_CSM'
-  service: 'test'
-  event: 'influx_report'
-  resource: 'influx'
+  params:
+    endpoint: 'https://alerts.eco.tsi-dev.otc-service.com'
+    environment: 'OTC_CSM'
+    service: 'test'
+    event: 'influx_report'
+    resource: 'influx'
   subscriptions:
     - 'INFLUX'
