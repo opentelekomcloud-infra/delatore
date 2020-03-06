@@ -7,7 +7,6 @@ from apubsub import Service
 
 from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import DEFAULT_INSTANCE_CONFIG, InstanceConfig
-from ...outputs.telegram.json2mdwn import convert
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -30,22 +29,20 @@ class AlertaRunner:
     def alerta(self):
         """Return alerta instance, create new if missing"""
         if self._alerta is None:
-            LOGGER.warning('No alerta exist. Create alerta.')
+            LOGGER.warning('No alerta exist. Create client.')
             self._alerta = Client(key=self.alerta_api_key)
         return self._alerta
 
     async def alert(self, message):
-        """Send message to chat alerting users"""
+        """Send message to alerta"""
         LOGGER.debug('Alerta message sent: ')
-        alerta_message = {}
         for record in message:
-            if record['status'] == 'FAIL':
-                alerta_message += record
-        return await self.alerta.send_alert(environment=TG_CONFIG.environment,
-                                            service=TG_CONFIG.service,
-                                            resource=alerta_message['resource'],
-                                            event=alerta_message['event'],
-                                            value=alerta_message['value'])
+            if record['status'] == 'fail' or record['status'] == 'no_data':
+                await self.alerta.send_alert(environment=TG_CONFIG.environment,
+                                             service=TG_CONFIG.service,
+                                             resource=TG_CONFIG.resource,
+                                             event=TG_CONFIG.event,
+                                             value=record['status'])
 
     async def remove(self, alert_id):
         """Remove message from alerta"""
@@ -65,10 +62,7 @@ class AlertaRunner:
             message = await self.client.get(.1)
             if message is not None:
                 data = json.loads(message)
-                try:
-                    await self.alert(convert(data))  # check if TG response was 200
-                except Exception:  # pylint:disable=broad-except
-                    LOGGER.exception('Failed to send message %s', data)
+                await self.alert(data)  # check if TG response was 200
 
     async def _stopper(self):
         while not self.stop_event.is_set():

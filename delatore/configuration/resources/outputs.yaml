@@ -6,10 +6,11 @@
     - 'AWX_WEB_HOOK'
     - 'AWX_CLIENT_OUT'
 
-#TODO: ask for these options
 - name: alerta
   endpoint: 'https://alerts.eco.tsi-dev.otc-service.com'
-  environment: 'test'
+  environment: 'OTC_CSM'
   service: 'test'
+  event: 'influx_report'
+  resource: 'influx'
   subscriptions:
     - 'INFLUX'

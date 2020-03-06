@@ -20,6 +20,8 @@ class OutputConfiguration(Configuration):
     service: List[str]
     environment: str
     endpoint: str
+    event: str
+    resource: str
 
 
 @dataclass(frozen=True)
