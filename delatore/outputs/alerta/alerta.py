@@ -1,24 +1,47 @@
-import asyncio
 import json
 import logging
+import threading
+from asyncio import sleep
 
 from alertaclient.api import Client
 from apubsub import Service
 
-from ...configuration import OUTPUTS_CFG
+from ...configuration import OUTPUTS_CFG, SOURCES_CFG
 from ...configuration.dynamic import DEFAULT_INSTANCE_CONFIG, InstanceConfig
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-TG_CONFIG = OUTPUTS_CFG['alerta']
+ALERTA_CONFIG = OUTPUTS_CFG['alerta']
+STATUS = 'status'
+
+
+def get_name_timeout(conf):
+    result = {}
+    for metric in conf.params['metrics']:
+        result[metric['name']] = metric['timeout']
+    return result
+
+
+INFLUX_CONFIG = get_name_timeout(SOURCES_CFG['influxdb'])
+
+
+def create_msg(record):
+    for key, value in INFLUX_CONFIG.items():
+        if key == record['name']:
+            return f'{record["name"]} ' \
+                   f'has status: {record["status"]}, ' \
+                   f'timeout: {value}s.'
+    return f'{record["name"]} ' \
+           f'has status: {record["status"]}, ' \
+           f'timeout: {0}s.'
 
 
 class AlertaRunner:
     """Alerta runner wrapper"""
     _alerta: Client = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event,
+    def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
@@ -30,19 +53,20 @@ class AlertaRunner:
         """Return alerta instance, create new if missing"""
         if self._alerta is None:
             LOGGER.warning('No alerta exist. Create client.')
-            self._alerta = Client(key=self.alerta_api_key)
+            self._alerta = Client(key=self.alerta_api_key, endpoint=ALERTA_CONFIG.params['endpoint'])
         return self._alerta
 
     async def alert(self, message):
         """Send message to alerta"""
         LOGGER.debug('Alerta message sent: ')
-        for record in message:
+        for record in message['status_list']:
             if record['status'] == 'fail' or record['status'] == 'no_data':
-                await self.alerta.send_alert(environment=TG_CONFIG.environment,
-                                             service=TG_CONFIG.service,
-                                             resource=TG_CONFIG.resource,
-                                             event=TG_CONFIG.event,
-                                             value=record['status'])
+                self.alerta.send_alert(environment=ALERTA_CONFIG.params['environment'],
+                                       service=ALERTA_CONFIG.params['service'],
+                                       resource=ALERTA_CONFIG.params['resource'],
+                                       event=ALERTA_CONFIG.params['event'],
+                                       value=create_msg(record),
+                                       severity=ALERTA_CONFIG.params['severity'], )
 
     async def remove(self, alert_id):
         """Remove message from alerta"""
@@ -52,10 +76,9 @@ class AlertaRunner:
     async def start_posting(self):
         """Start posting updates to channel"""
         await self.client.start_consuming()
-        topics = TG_CONFIG.subscriptions
-        await asyncio.wait([
-            self.client.subscribe(topic) for topic in topics
-        ])
+        topics = ALERTA_CONFIG.subscriptions
+        for topic in topics:
+            await self.client.subscribe(topic)
         LOGGER.info('Alerta subscribed to topics: %s', topics)
         while not self.stop_event.is_set():
             # message consumed
@@ -66,12 +89,10 @@ class AlertaRunner:
 
     async def _stopper(self):
         while not self.stop_event.is_set():
-            await asyncio.sleep(.1)
-        self.client.stop_getting()
+            await sleep(0.1)
+        await self.client.stop_getting()
 
     async def start(self):
         """Start alerta"""
-        await asyncio.wait([
-            self.start_posting(),
-            self._stopper(),
-        ])
+        await self.start_posting()
+        await self._stopper()

@@ -8,10 +8,12 @@
 
 - name: alerta
   params:
-    endpoint: 'https://alerts.eco.tsi-dev.otc-service.com'
-    environment: 'OTC_CSM'
-    service: 'test'
+    endpoint: 'https://alerts.eco.tsi-dev.otc-service.com/api'
+    environment: 'CSM'
+    service:
+      - 'test'
     event: 'influx_report'
-    resource: 'influx'
+    resource: 'delatore'
+    severity: 'minor'
   subscriptions:
     - 'INFLUX'
