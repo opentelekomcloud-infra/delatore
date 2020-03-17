@@ -26,3 +26,10 @@ async def patched_awx_client(awx_client_data, service, stop_event):
     loop.create_task(client.start(stop_event))
     yield client
     stop_event.set()
+
+# @pytest.fixture
+# async def alerta_client(awx_client_data, service, threading_stop_event):
+#     alerta = AlertaRunner(service, threading_stop_event, DEFAULT_INSTANCE_CONFIG)
+#     await alerta.start()
+#     yield alerta
+#     threading_stop_event.set()

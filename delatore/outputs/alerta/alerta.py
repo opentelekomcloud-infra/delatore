@@ -1,7 +1,7 @@
 import json
 import logging
 import threading
-from asyncio import sleep
+from time import sleep
 
 from alertaclient.api import Client
 from apubsub import Service
@@ -95,4 +95,10 @@ class AlertaRunner:
     async def start(self):
         """Start alerta"""
         await self.start_posting()
+        await self._stopper()
+
+    async def stop(self, stop_event: threading.Event):
+        """Stop alerta"""
+        await self.start_posting()
+        self.stop_event = stop_event
         await self._stopper()

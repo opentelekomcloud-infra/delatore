@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from asyncio.queues import Queue
 from random import randrange
 from uuid import uuid4
@@ -24,6 +25,11 @@ def service():
 @pytest.fixture
 def stop_event():
     return asyncio.Event()
+
+
+@pytest.fixture
+def threading_stop_event():
+    return threading.Event()
 
 
 @pytest.fixture
