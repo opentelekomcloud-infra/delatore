@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import threading
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
@@ -60,7 +61,7 @@ class BotRunner:
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
-    def __init__(self, msg_service: Service, stop_event: asyncio.Event,
+    def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = msg_service.get_client()
         self.stop_event = stop_event

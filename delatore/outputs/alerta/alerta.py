@@ -1,7 +1,7 @@
+import asyncio
 import json
 import logging
 import threading
-from time import sleep
 
 from alertaclient.api import Client
 from apubsub import Service
@@ -40,6 +40,7 @@ def create_msg(record):
 class AlertaRunner:
     """Alerta runner wrapper"""
     _alerta: Client = None
+    _alerta_thread: threading.Thread
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
@@ -56,7 +57,7 @@ class AlertaRunner:
             self._alerta = Client(key=self.alerta_api_key, endpoint=ALERTA_CONFIG.params['endpoint'])
         return self._alerta
 
-    async def alert(self, message):
+    def alert(self, message):
         """Send message to alerta"""
         LOGGER.debug('Alerta message sent: ')
         for record in message['status_list']:
@@ -68,10 +69,10 @@ class AlertaRunner:
                                        value=create_msg(record),
                                        severity=ALERTA_CONFIG.params['severity'], )
 
-    async def remove(self, alert_id):
+    def remove(self, alert_id):
         """Remove message from alerta"""
         LOGGER.debug('Alerta %s removed from table', alert_id)
-        return await self.alerta.delete_alert(alert_id)
+        return self.alerta.delete_alert(alert_id)
 
     async def start_posting(self):
         """Start posting updates to channel"""
@@ -85,20 +86,25 @@ class AlertaRunner:
             message = await self.client.get(.1)
             if message is not None:
                 data = json.loads(message)
-                await self.alert(data)  # check if TG response was 200
+                self.alert(data)  # check if TG response was 200
 
     async def _stopper(self):
         while not self.stop_event.is_set():
-            await sleep(0.1)
+            await asyncio.sleep(.5)
         await self.client.stop_getting()
 
     async def start(self):
         """Start alerta"""
-        await self.start_posting()
-        await self._stopper()
 
-    async def stop(self, stop_event: threading.Event):
-        """Stop alerta"""
-        await self.start_posting()
-        self.stop_event = stop_event
+        def _main():
+            asyncio.run(self.start_posting())
+
+        self._alerta_thread = threading.Thread(target=_main,
+                                               name="Alerta-Thread", )
+        self._alerta_thread.start()
         await self._stopper()
+        self._alerta_thread.join()
+
+    def stop(self, stop_event: threading.Event):
+        """Stop alerta"""
+        self.stop_event = stop_event

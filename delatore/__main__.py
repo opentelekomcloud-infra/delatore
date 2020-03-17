@@ -3,7 +3,6 @@ import asyncio
 import os
 import threading
 from argparse import ArgumentParser
-from concurrent import futures
 
 from apubsub import Service
 
@@ -33,36 +32,20 @@ def _config():
 
 
 async def _ordered_start(service):
-    from delatore.outputs import start_bot, start_alerta
+    from delatore.outputs import start_outputs
     from delatore.sources import start_sources
 
     config = _config()
 
-    stop_event = asyncio.Event()
-    stop_event_thread = threading.Event()
+    stop_event = threading.Event()
     loop = asyncio.get_running_loop()
-    out_bot_task = loop.create_task(start_bot(service,
-                                              stop_event,
-                                              config))
-
+    out_tsk = loop.create_task(start_outputs(service, stop_event, config))
     await asyncio.sleep(.5)
-    src_tsk = loop.create_task(start_sources(service,
-                                             stop_event,
-                                             config))
-
-    with futures.ThreadPoolExecutor(max_workers=5) as executor:
-        executor.submit(start_alerta,
-                        service,
-                        stop_event_thread,
-                        config)
-
+    src_tsk = loop.create_task(start_sources(service, stop_event, config))
     await asyncio.wait([
         src_tsk,
-        out_bot_task,
+        out_tsk,
     ])
-
-    with futures.ThreadPoolExecutor(max_workers=5) as executor:
-        executor.submit(start_alerta, service, stop_event_thread, config)
 
 
 def _main():

@@ -1,6 +1,6 @@
 """All delatore outputs"""
 import asyncio
-import threading
+from threading import Event
 
 from apubsub import Service
 
@@ -9,13 +9,8 @@ from .telegram import BotRunner
 from ..configuration import InstanceConfig
 
 
-async def start_bot(service: Service,
-                    stop_event: asyncio.Event,
-                    config: InstanceConfig):
-    await BotRunner(service, stop_event, config).start()
-
-
-def start_alerta(service: Service,
-                 stop_event: threading.Event,
-                 config: InstanceConfig):
-    AlertaRunner(service, stop_event, config).start()
+async def start_outputs(service: Service, stop_event: Event, config: InstanceConfig):
+    await asyncio.wait([
+        AlertaRunner(service, stop_event, config).start(),
+        BotRunner(service, stop_event, config).start(),
+    ])
