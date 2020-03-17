@@ -152,6 +152,15 @@ def source_data(request, influx_source_data, awx_client_data, awx_hook_data):
         raise ValueError
 
 
+@pytest.fixture(params=[InfluxSource])
+def source_data_alerta(request, influx_source_data):
+    source = request.param
+    if source == InfluxSource:
+        return InfluxSource, influx_source_data
+    else:
+        raise ValueError
+
+
 @pytest.fixture
 async def bot_alert_queue():
     queue = asyncio.Queue(1)
