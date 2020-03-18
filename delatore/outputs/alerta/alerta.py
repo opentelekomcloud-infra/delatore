@@ -56,7 +56,7 @@ class AlertaRunner:
         """Send messages to alerta"""
         common_args = dict(
             environment=ALERTA_CONFIG.params['environment'],
-            service=ALERTA_CONFIG.params['service'],
+            service=self.config.alerta_service,
             resource=f'{ALERTA_CONFIG.params["resource"]}{message["source"]}',
             origin=ALERTA_CONFIG.params['origin']
         )

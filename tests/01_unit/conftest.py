@@ -27,6 +27,11 @@ def alerta_api_key():
 
 
 @pytest.fixture
+def alerta_service():
+    return random_string(10)
+
+
+@pytest.fixture
 def config_file(token, chat_id, influx_password, awx_auth_token, alerta_api_key, tmp_dir):
     file_path = generate_config(token, chat_id, influx_password, awx_auth_token, alerta_api_key, tmp_dir)
     yield file_path
