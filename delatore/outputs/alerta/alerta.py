@@ -75,7 +75,7 @@ class AlertaRunner:
                     severity='ok',
                     **common_args,
                 )[0]
-            LOGGER.debug(f'Alerta message sent')
+            LOGGER.debug('Alerta message sent')
 
     def get_current_alerts(self, origin):
         return self.alerta.get_alerts([('origin', origin), ('repeat', False)])
