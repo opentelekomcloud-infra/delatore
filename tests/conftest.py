@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 from apubsub import Service
 
-from delatore.outputs import BotRunner
+from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 from delatore.unified_json import convert_timestamp
@@ -205,6 +205,15 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
         while not queue.empty():
             queue.get_nowait()
             queue.task_done()
+
+
+@pytest.fixture
+async def patched_alerta(service, stop_event):
+    alerta = AlertaRunner(service, stop_event)
+    asyncio.create_task(alerta.start())
+    await asyncio.sleep(.5)
+    yield alerta
+    alerta.stop_event.set()
 
 
 @pytest.fixture

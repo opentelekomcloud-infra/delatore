@@ -29,8 +29,6 @@ async def test_source_message_sending(bot, source_data):
 
 
 @pytest.mark.asyncio
-async def test_alerta_message_sending(alerta, source_data_alerta):
+async def test_alerta_message_sending(patched_alerta, source_data_alerta):
     source, (_, data) = source_data_alerta
-    # await asyncio.wait([alerta.start()])
-    await send_and_remove_alerta(alerta, data)
-    # await alerta.stop()
+    await send_and_remove_alerta(patched_alerta, data)
