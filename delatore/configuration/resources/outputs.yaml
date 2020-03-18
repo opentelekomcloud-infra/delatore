@@ -11,7 +11,7 @@
     endpoint: 'https://alerts.eco.tsi-dev.otc-service.com/api'
     environment: 'CSM'
     service:
-      - 'test'
+      - 'csm'
     resource: 'csm_'
     origin: 'delatore'
     severity: 'minor'
