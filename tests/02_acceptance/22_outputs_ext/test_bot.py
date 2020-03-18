@@ -11,9 +11,9 @@ async def send_and_remove_tg(_bot, text):
     await _bot.remove(message.message_id)
 
 
-async def send_and_remove_alerta(_alerta, text):
-    message = _alerta.alert(text)
-    _alerta.remove(message)
+async def send_and_remove_alerta(_alerta, status_list):
+    alerts_id = _alerta.alert(status_list)
+    _alerta.remove(alerts_id)
 
 
 @pytest.mark.asyncio

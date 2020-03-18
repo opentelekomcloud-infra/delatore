@@ -70,7 +70,7 @@ def influx_source_data():
         },
         {
             'name': 'LB_DOWN',
-            'status': 'no_data',
+            'status': 'ok',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         }
@@ -92,7 +92,7 @@ def influx_source_data():
             },
             {
                 'name': 'LB_DOWN',
-                'status': 'no_data',
+                'status': 'ok',
                 'timestamp': '09.08.2005 18:31',
                 'details_url': None
             }

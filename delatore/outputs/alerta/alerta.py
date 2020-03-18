@@ -27,14 +27,9 @@ INFLUX_CONFIG = get_name_timeout(SOURCES_CFG['influxdb'])
 
 
 def create_msg(record):
-    for key, value in INFLUX_CONFIG.items():
-        if key == record['name']:
-            return f'{record["name"]} ' \
-                   f'has status: {record["status"]}, ' \
-                   f'timeout: {value}s.'
     return f'{record["name"]} ' \
            f'has status: {record["status"]}, ' \
-           f'timeout: {0}s.'
+           f'timeout: {INFLUX_CONFIG.get(record["name"], default=0)}s.'
 
 
 class AlertaRunner:
@@ -59,24 +54,36 @@ class AlertaRunner:
 
     def alert(self, message):
         """Send messages to alerta"""
-        LOGGER.debug('Alerta message sent: ')
-        alert_id = 's0m3-rand0m-1d'
+        common_args = dict(
+            environment=ALERTA_CONFIG.params['environment'],
+            service=ALERTA_CONFIG.params['service'],
+            resource=f'{ALERTA_CONFIG.params["resource"]}{message["source"]}',
+            origin=ALERTA_CONFIG.params['origin']
+        )
         for record in message['status_list']:
-            if record['status'] == 'fail' or record['status'] == 'no_data':
-                alert_id = self.alerta.send_alert(environment=ALERTA_CONFIG.params['environment'],
-                                                  service=ALERTA_CONFIG.params['service'],
-                                                  resource=ALERTA_CONFIG.params['resource'],
-                                                  event=ALERTA_CONFIG.params['event'],
-                                                  value=create_msg(record),
-                                                  origin=ALERTA_CONFIG.params['origin'],
-                                                  severity=ALERTA_CONFIG.params['severity'], )[0]
+            if record['status'] in ['fail', 'no_data']:
+                yield self.alerta.send_alert(
+                    event=record["name"],
+                    value=create_msg(record),
+                    severity=ALERTA_CONFIG.params['severity'],
+                    **common_args,
+                )[0]
+            else:
+                yield self.alerta.send_alert(
+                    event=record["name"],
+                    severity='ok',
+                    **common_args,
+                )[0]
+            LOGGER.debug(f'Alerta message sent')
 
-        return alert_id
+    def get_current_alerts(self, origin):
+        return self.alerta.get_alerts([('origin', origin), ('repeat', False)])
 
-    def remove(self, alert_id):
+    def remove(self, alerta_ids):
         """Remove message from alerta"""
-        LOGGER.debug('Alerta %s removed from table', alert_id)
-        return self.alerta.delete_alert(alert_id)
+        LOGGER.debug('Alerts removed from table')
+        for alerta_id in alerta_ids:
+            self.alerta.delete_alert(alerta_id)
 
     async def start_posting(self):
         """Start posting updates to channel"""

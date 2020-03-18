@@ -12,8 +12,7 @@
     environment: 'CSM'
     service:
       - 'test'
-    event: 'influx_report'
-    resource: 'influxdb'
+    resource: 'csm_'
     origin: 'delatore'
     severity: 'minor'
   subscriptions:
