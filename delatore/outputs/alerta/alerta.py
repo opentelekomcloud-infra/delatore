@@ -29,7 +29,7 @@ INFLUX_CONFIG = get_name_timeout(SOURCES_CFG['influxdb'])
 def create_msg(record):
     return f'{record["name"]} ' \
            f'has status: {record["status"]}, ' \
-           f'timeout: {INFLUX_CONFIG.get(record["name"], default=0)}s.'
+           f'timeout: {INFLUX_CONFIG.get(record["name"], 0)}s.'
 
 
 class AlertaRunner:
@@ -62,9 +62,10 @@ class AlertaRunner:
         )
         for record in message['status_list']:
             if record['status'] in ['fail', 'no_data']:
+                value = create_msg(record)
                 yield self.alerta.send_alert(
                     event=record["name"],
-                    value=create_msg(record),
+                    value=value,
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
                 )[0]
