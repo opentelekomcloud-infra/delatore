@@ -58,7 +58,7 @@ class AlertaRunner:
         return self._alerta
 
     def alert(self, message):
-        """Send message to alerta"""
+        """Send messages to alerta"""
         LOGGER.debug('Alerta message sent: ')
         alert_id = 's0m3-rand0m-1d'
         for record in message['status_list']:
