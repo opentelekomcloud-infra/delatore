@@ -56,16 +56,15 @@ class AlertaRunner:
         """Send messages to alerta"""
         common_args = dict(
             environment=ALERTA_CONFIG.params['environment'],
-            service=self.config.alerta_service,
+            service=[self.config.alerta_service],
             resource=f'{ALERTA_CONFIG.params["resource"]}{message["source"]}',
             origin=ALERTA_CONFIG.params['origin']
         )
         for record in message['status_list']:
             if record['status'] in ['fail', 'no_data']:
-                value = create_msg(record)
                 yield self.alerta.send_alert(
                     event=record["name"],
-                    value=value,
+                    value=create_msg(record),
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
                 )[0]
