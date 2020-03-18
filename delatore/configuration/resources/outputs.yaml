@@ -13,7 +13,8 @@
     service:
       - 'test'
     event: 'influx_report'
-    resource: 'delatore'
+    resource: 'influxdb'
+    origin: 'delatore'
     severity: 'minor'
   subscriptions:
     - 'INFLUX'

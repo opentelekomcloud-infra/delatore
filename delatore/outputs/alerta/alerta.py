@@ -60,14 +60,18 @@ class AlertaRunner:
     def alert(self, message):
         """Send message to alerta"""
         LOGGER.debug('Alerta message sent: ')
+        alert_id = 's0m3-rand0m-1d'
         for record in message['status_list']:
             if record['status'] == 'fail' or record['status'] == 'no_data':
-                return self.alerta.send_alert(environment=ALERTA_CONFIG.params['environment'],
-                                              service=ALERTA_CONFIG.params['service'],
-                                              resource=ALERTA_CONFIG.params['resource'],
-                                              event=ALERTA_CONFIG.params['event'],
-                                              value=create_msg(record),
-                                              severity=ALERTA_CONFIG.params['severity'], )
+                alert_id = self.alerta.send_alert(environment=ALERTA_CONFIG.params['environment'],
+                                                  service=ALERTA_CONFIG.params['service'],
+                                                  resource=ALERTA_CONFIG.params['resource'],
+                                                  event=ALERTA_CONFIG.params['event'],
+                                                  value=create_msg(record),
+                                                  origin=ALERTA_CONFIG.params['origin'],
+                                                  severity=ALERTA_CONFIG.params['severity'], )[0]
+
+        return alert_id
 
     def remove(self, alert_id):
         """Remove message from alerta"""

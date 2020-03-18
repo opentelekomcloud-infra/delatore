@@ -58,13 +58,19 @@ def influx_source_data():
     data = [
         {
             'name': 'TEST1_INFLUX',
-            'status': 'ok',
+            'status': 'no_data',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         },
         {
             'name': 'TEST2_INFLUX',
             'status': 'fail',
+            'timestamp': '2005-08-09T18:31:42',
+            'details_url': None
+        },
+        {
+            'name': 'LB_DOWN',
+            'status': 'no_data',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         }
@@ -81,6 +87,12 @@ def influx_source_data():
             {
                 'name': 'TEST2_INFLUX',
                 'status': 'fail',
+                'timestamp': '09.08.2005 18:31',
+                'details_url': None
+            },
+            {
+                'name': 'LB_DOWN',
+                'status': 'no_data',
                 'timestamp': '09.08.2005 18:31',
                 'details_url': None
             }
