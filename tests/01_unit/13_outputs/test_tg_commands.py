@@ -86,7 +86,7 @@ def patched_message(text, chat_id):
     f'/status',
 ])
 @pytest.mark.asyncio
-async def test_bot_invalid_cmd(patched_bot, chat_id, cmd):
+async def test_bot_invalid_cmd(patched_bot, cmd, chat_id):
     message, answer_queue = patched_message(cmd, chat_id)
     await patched_bot.handle_status(message)
     response = answer_queue.get_nowait()

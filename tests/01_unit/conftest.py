@@ -22,8 +22,24 @@ def awx_auth_token():
 
 
 @pytest.fixture
-def config_file(token, chat_id, influx_password, awx_auth_token, tmp_dir):
-    file_path = generate_config(token, chat_id, influx_password, awx_auth_token, tmp_dir)
+def alerta_api_key():
+    return random_string(30)
+
+
+@pytest.fixture
+def alerta_service():
+    return random_string(10)
+
+
+@pytest.fixture
+def config_file(token, chat_id, influx_password, awx_auth_token, alerta_api_key, alerta_service, tmp_dir):
+    file_path = generate_config(token,
+                                chat_id,
+                                influx_password,
+                                awx_auth_token,
+                                alerta_api_key,
+                                alerta_service,
+                                tmp_dir)
     yield file_path
     os.remove(file_path)
 

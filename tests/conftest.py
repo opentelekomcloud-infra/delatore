@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from asyncio.queues import Queue
 from random import randrange
 from uuid import uuid4
@@ -7,7 +8,7 @@ from uuid import uuid4
 import pytest
 from apubsub import Service
 
-from delatore.outputs import BotRunner
+from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 from delatore.unified_json import convert_timestamp
@@ -24,6 +25,11 @@ def service():
 @pytest.fixture
 def stop_event():
     return asyncio.Event()
+
+
+@pytest.fixture
+def threading_stop_event():
+    return threading.Event()
 
 
 @pytest.fixture
@@ -52,13 +58,19 @@ def influx_source_data():
     data = [
         {
             'name': 'TEST1_INFLUX',
-            'status': 'ok',
+            'status': 'no_data',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         },
         {
             'name': 'TEST2_INFLUX',
             'status': 'fail',
+            'timestamp': '2005-08-09T18:31:42',
+            'details_url': None
+        },
+        {
+            'name': 'LB_DOWN',
+            'status': 'ok',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
         }
@@ -75,6 +87,12 @@ def influx_source_data():
             {
                 'name': 'TEST2_INFLUX',
                 'status': 'fail',
+                'timestamp': '09.08.2005 18:31',
+                'details_url': None
+            },
+            {
+                'name': 'LB_DOWN',
+                'status': 'ok',
                 'timestamp': '09.08.2005 18:31',
                 'details_url': None
             }
@@ -146,6 +164,15 @@ def source_data(request, influx_source_data, awx_client_data, awx_hook_data):
         raise ValueError
 
 
+@pytest.fixture(params=[InfluxSource])
+def source_data_alerta(request, influx_source_data):
+    source = request.param
+    if source == InfluxSource:
+        return InfluxSource, influx_source_data
+    else:
+        raise ValueError
+
+
 @pytest.fixture
 async def bot_alert_queue():
     queue = asyncio.Queue(1)
@@ -178,6 +205,15 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
         while not queue.empty():
             queue.get_nowait()
             queue.task_done()
+
+
+@pytest.fixture
+async def patched_alerta(service, stop_event):
+    alerta = AlertaRunner(service, stop_event)
+    asyncio.create_task(alerta.start())
+    await asyncio.sleep(.5)
+    yield alerta
+    alerta.stop_event.set()
 
 
 @pytest.fixture

@@ -19,12 +19,14 @@ def current_timestamp(fmt='%Y-%m-%dT%H:%M:%S.%fZ'):
     return datetime.now().strftime(fmt)
 
 
-def generate_config(token, chat_id, influx_password, awx_auth_token, tmp_dir):
+def generate_config(token, chat_id, influx_password, awx_auth_token, alerta_api_key, alerta_service, tmp_dir):
     file_path = os.path.abspath(f'{tmp_dir}/cfg.ini')
     with open(file_path, 'w+') as cfg:
         cfg.write('[DEFAULT]\n'
                   f'token = {token}\n'
                   f'chat_id = {chat_id}\n'
                   f'influx_password = {influx_password}\n'
-                  f'awx_auth_token = {awx_auth_token}')
+                  f'awx_auth_token = {awx_auth_token}\n'
+                  f'alerta_api_key = {alerta_api_key}\n'
+                  f'alerta_service = {alerta_service}')
     return file_path

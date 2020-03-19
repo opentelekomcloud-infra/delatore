@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "delatore"
-version = "0.3.5"
+version = "0.4.0"
 description = "Telegram bot for CSM jobs notifications"
 authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
@@ -20,6 +20,7 @@ influxdb = "^5.2.3"
 pyyaml-typed = "^0.1.0"
 jsonschema = {extras = ["format"], version = "^3.2.0"}
 rfc3339-validator = "^0.1.2"
+alerta = "^7.4.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
