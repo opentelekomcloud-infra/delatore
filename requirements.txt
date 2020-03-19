@@ -3,7 +3,7 @@ aiogram==2.6.1
 aiohttp==3.6.2
 aiohttp-socks==0.3.4
 alerta==7.4.4
-apubsub==0.2.2
+apubsub==0.2.3
 async-timeout==3.0.1
 attrs==19.3.0
 babel==2.8.0
@@ -23,7 +23,7 @@ pycparser==2.20
 pyrsistent==0.15.7
 python-dateutil==2.8.1
 pytz==2019.3
-pyyaml==5.3
+pyyaml==5.3.1
 pyyaml-typed==0.1.1
 requests==2.23.0
 requests-hawk==1.0.1
