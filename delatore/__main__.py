@@ -23,7 +23,7 @@ def _config():
     args = arg_p.parse_args()
     config_file = args.config
 
-    token, chat_id = args.token, args.chat_id
+    token, chat_id = args.token, args.chat
     influx_password, awx_auth_token = args.influx_password, args.awx_auth_token
 
     alerta_api_key, alerta_service = args.alerta_api_key, args.alerta_service
