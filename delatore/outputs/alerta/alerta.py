@@ -54,6 +54,7 @@ class AlertaRunner:
 
     def alert(self, message):
         """Send messages to alerta"""
+        alerta_ids = []
         common_args = dict(
             environment=ALERTA_CONFIG.params['environment'],
             service=[self.config.alerta_service],
@@ -62,19 +63,22 @@ class AlertaRunner:
         )
         for record in message['status_list']:
             if record['status'] in ['fail', 'no_data']:
-                yield self.alerta.send_alert(
+                report_id = self.alerta.send_alert(
                     event=record["name"],
                     value=create_msg(record),
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
                 )[0]
             else:
-                yield self.alerta.send_alert(
+                report_id = self.alerta.send_alert(
                     event=record["name"],
                     severity='ok',
                     **common_args,
                 )[0]
+            
+            alerta_ids.append(report_id)
             LOGGER.debug('Alerta message sent')
+        return alerta_ids
 
     def get_current_alerts(self, origin):
         return self.alerta.get_alerts([('origin', origin), ('repeat', False)])
