@@ -69,14 +69,14 @@ class AlertaRunner:
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
                 )[0]
-                alerta_ids.append(report_id)
             else:
                 report_id = self.alerta.send_alert(
                     event=record["name"],
                     severity='ok',
                     **common_args,
                 )[0]
-                alerta_ids.append(report_id)
+            
+            alerta_ids.append(report_id)
             LOGGER.debug('Alerta message sent')
         return alerta_ids
 
