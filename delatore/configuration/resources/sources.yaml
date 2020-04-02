@@ -27,7 +27,7 @@
         timeout: 5400
       - name: HDD_TEST
         metric_id: diskio
-        query: "SELECT LAST(writes) FROM {entity} WHERE host='scn3-server' LIMIT 1;"
+        query: "SELECT LAST(writes) FROM {entity} WHERE host=~/scn3/ LIMIT 1;"
         timeout: 300
   publishes: 'INFLUX'
   timings:
