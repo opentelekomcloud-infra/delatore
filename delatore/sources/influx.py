@@ -206,7 +206,6 @@ class InfluxSource(Source):
 
 class InfluxSourceLBTiming (InfluxSource):
 
-
     @classmethod
     def params(cls) -> InfluxParams:
         if cls._params is None:
@@ -223,16 +222,19 @@ class InfluxSourceLBTiming (InfluxSource):
 
     async def get_update(self) -> dict:
         metrics = self.params().metrics
-        last_elapsed_time = await asyncio.gather(*[
+        last_elapsed_time, last_time_ms, status = await asyncio.gather(*[
             self._get_status(met) for met in metrics
         ])
         q = Queue( maxsize = 5)
-        q.get();
+        empty_dict = {}
+        for i in range(5):
+            q.put(0.1)
+        q.get()
         q.put(last_elapsed_time)
         if (min(list(q.queue)) > 0.6 ):
-
-            return
-        results = generate_status(metric.name, Status.OK,
+            return empty_dict
+        results = []
+        results[0] = generate_status(metrics[0].name, status,
                         last_time_ms.strftime(UNIFIED_TIME_PATTERN))
         return generate_message(self.CONFIG_ID, results)
 
@@ -246,13 +248,12 @@ class InfluxSourceLBTiming (InfluxSource):
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
+        status = Status.OK
         if now - last_time_ms.timestamp() > metric.timeout:
-            return generate_status(metric.name, Status.FAIL,
-                                   last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+            status = Status.FAIL
         last_elapsed_time = last_record.raw['series'][0]['values'][0][0]
-
-    return
-
+        status = Status.OK
+        return last_elapsed_time, last_time_ms, status
 
 
 

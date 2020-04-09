@@ -5,7 +5,7 @@ from apubsub import Service
 
 from .awx_api import AWXApiSource
 from .http import AWXWebHookSource
-from .influx import InfluxSource
+from .influx import InfluxSource, InfluxSourceLBTiming
 from ..configuration import InstanceConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -18,4 +18,5 @@ async def start_sources(msg_service: Service, stop_event: asyncio.Event, config:
         AWXApiSource(msg_service.get_client(), config).start(stop_event),
         AWXWebHookSource(msg_service.get_client()).start(stop_event),
         InfluxSource(msg_service.get_client(), config).start(stop_event),
+        InfluxSourceLBTiming(msg_service.get_client(), config).start(stop_event)
     ])

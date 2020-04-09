@@ -42,9 +42,9 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 100;'
-        timeout: 300
-  publishes: 'INFLUX'
+        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        timeout: 60
+  publishes: 'LB-TIMING'
   timings:
     polling_interval: 60
     request_timeout: 5
