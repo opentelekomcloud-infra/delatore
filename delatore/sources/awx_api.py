@@ -15,7 +15,8 @@ LOGGER.setLevel(logging.INFO)
 __awx_status_override = {
     'failed': Status.FAIL,
     'successful': Status.OK,
-    'canceled': Status.CANCELED
+    'canceled': Status.CANCELED,
+    'never updated': Status.NO_DATA,
 }
 
 
@@ -29,7 +30,7 @@ AWX_API_TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class AWXParams(NamedTuple):
-    """Influx params storage"""
+    """AWX params storage"""
     host: str
     topic_in: str
 

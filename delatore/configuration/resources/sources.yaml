@@ -8,7 +8,7 @@
       - name: LB_LOAD
         metric_id: lb_timing
         query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
-        timeout: 300
+        timeout: 60
       - name: LB_DOWN
         metric_id: lb_down
         query: 'SELECT LAST(requests) FROM {entity} LIMIT 1;'
@@ -42,7 +42,7 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        query: 'SELECT LAST(elapsed) FROM "lb_timing" WHERE ("server" =~ /^*basic-\d/ AND "client" =~ /^80.+/) LIMIT 1'
         timeout: 60
   publishes: 'LB-TIMING'
   timings:
