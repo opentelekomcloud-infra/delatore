@@ -13,7 +13,7 @@ def _status_to_md_row(status_record):
     if url:
         timestamp = link(timestamp, url)
     else:
-        timestamp = f'`{timestamp}`'
+        timestamp = f'`{timestamp or "n/a"}`'
     details = rf'{name} \({timestamp}\)'
     return rf'{status_emoji}  —  {details}'
 
