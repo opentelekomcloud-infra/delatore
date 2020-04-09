@@ -40,7 +40,6 @@ def generate_error(source: str, message: str) -> dict:
         'error': message,
     }
 
-
 def generate_status(name: str,
                     status: Status,
                     timestamp: Optional[str] = None,
@@ -58,7 +57,7 @@ def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
     """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""
     try:
         datetime_object = datetime.strptime(timestamp, timestamp_fmt)
-    except ValueError:
+    except (ValueError, TypeError):
         LOGGER.exception('Failed to convert timestamp: %s', timestamp)
         return ''
     return datetime_object.strftime(UNIFIED_TIME_PATTERN)

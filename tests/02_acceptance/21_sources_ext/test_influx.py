@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from apubsub.client import Client
 
-from delatore.sources import InfluxSource
+from delatore.sources import InfluxSource, InfluxSourceLBTiming
 pytestmark = pytest.mark.asyncio
 
 
@@ -12,6 +12,10 @@ async def test_influx_data(influxdb: InfluxSource):
     a = 5
     assert update is not None
 
+async def test_influx_data_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming):
+    update = await influxdb_lb_timing.get_update()
+    a = 5
+    assert update is not None
 
 
 

@@ -16,7 +16,7 @@ from influxdb.resultset import ResultSet
 
 from .base import Source
 from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, generate_status
+from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, generate_status, generate_error
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -193,6 +193,7 @@ class InfluxSource(Source):
         last_record = await self.influx_client.query(query)
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
+            a = 5
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
@@ -206,37 +207,50 @@ class InfluxSource(Source):
 
 class InfluxSourceLBTiming (InfluxSource):
 
+    CONFIG_ID = 'influxdb_lb_timing'
+    _params: InfluxParams = None
+    list_elapsed_time = [1, 1, 1, 1, 1]
+
     @classmethod
     def params(cls) -> InfluxParams:
         if cls._params is None:
             params = cls.config.params
             metrics = params.pop('metrics')
-            metrics = []
+            metric_in_list = []
             for met in metrics:
-                if met.metric_id == 'lb_timing':             # met.metric_id
+                if met['metric_id'] == 'lb_timing':
                     metric = Metric(**met)
                     if metric is not None:
-                        metrics.__add__(metric)
-            cls._params = InfluxParams(metrics=metrics, **params)
+                        metric_in_list.append(metric)
+            cls._params = InfluxParams(metrics=metric_in_list, **params)
         return cls._params
 
     async def get_update(self) -> dict:
         metrics = self.params().metrics
-        last_elapsed_time, last_time_ms, status = await asyncio.gather(*[
-            self._get_status(met) for met in metrics
-        ])
-        q = Queue( maxsize = 5)
-        empty_dict = {}
-        for i in range(5):
-            q.put(0.1)
-        q.get()
-        q.put(last_elapsed_time)
-        if (min(list(q.queue)) > 0.6 ):
-            return empty_dict
+        last_elapsed_time, last_time_ms, status = await  self._get_status(metrics[0])
+        self.list_elapsed_time.pop(0)
+        self.list_elapsed_time.append(last_elapsed_time)
         results = []
-        results[0] = generate_status(metrics[0].name, status,
-                        last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+        if (min(self.list_elapsed_time) < 60):
+            results.append(generate_status(metrics[0].name, status,
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        results.append(generate_error('InfluxdbLBTiming', await self._get_error_message() ))
         return generate_message(self.CONFIG_ID, results)
+
+
+    async def _get_error_message(self):
+        with open('../templates/error_message.txt', 'r') as myfile:
+            str_template = myfile.read()
+        query1 = 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ "hostname") GROUP BY time("5m")'
+        query2 = 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query3 = 'SELECT non_negative_derivative(mean("bytes_recv"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query4 = 'SELECT non_negative_derivative(mean("bytes_sent"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
+        result_query1 = await self.influx_client.query(query1)
+        result_query2 = await self.influx_client.query(query2)
+        result_query3 = await self.influx_client.query(query3)
+        result_query4 = await self.influx_client.query(query4)
+        str_template.format(result_query1 = result_query1, result_query2 = result_query2, result_query3 = result_query3, result_query4 = result_query4)
+        return str_template
 
 
     async def _get_status(self, metric):
@@ -244,6 +258,8 @@ class InfluxSourceLBTiming (InfluxSource):
         last_record = await self.influx_client.query(query)
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
+            last_elapsed_time = last_record.raw['series'][0]['values'][0][1]
+            a = 5
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
@@ -251,9 +267,10 @@ class InfluxSourceLBTiming (InfluxSource):
         status = Status.OK
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        last_elapsed_time = last_record.raw['series'][0]['values'][0][0]
-        status = Status.OK
         return last_elapsed_time, last_time_ms, status
+
+
+
 
 
 
