@@ -29,7 +29,7 @@ AWX_API_TIME_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class AWXParams(NamedTuple):
-    """Influx params storage"""
+    """AWX params storage"""
     host: str
     topic_in: str
 
