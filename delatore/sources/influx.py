@@ -4,6 +4,7 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from queue import Queue
 from typing import List, NamedTuple
 
 import aiohttp
@@ -201,6 +202,58 @@ class InfluxSource(Source):
                                    last_time_ms.strftime(UNIFIED_TIME_PATTERN))
         return generate_status(metric.name, Status.FAIL,
                                last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+
+
+class InfluxSourceLBTiming (InfluxSource):
+
+
+    @classmethod
+    def params(cls) -> InfluxParams:
+        if cls._params is None:
+            params = cls.config.params
+            metrics = params.pop('metrics')
+            metrics = []
+            for met in metrics:
+                if met.metric_id == 'lb_timing':             # met.metric_id
+                    metric = Metric(**met)
+                    if metric is not None:
+                        metrics.__add__(metric)
+            cls._params = InfluxParams(metrics=metrics, **params)
+        return cls._params
+
+    async def get_update(self) -> dict:
+        metrics = self.params().metrics
+        last_elapsed_time = await asyncio.gather(*[
+            self._get_status(met) for met in metrics
+        ])
+        q = Queue( maxsize = 5)
+        q.get();
+        q.put(last_elapsed_time)
+        if (min(list(q.queue)) > 0.6 ):
+
+            return
+        results = generate_status(metric.name, Status.OK,
+                        last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+        return generate_message(self.CONFIG_ID, results)
+
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        try:
+            last_time = last_record.raw['series'][0]['values'][0][0]
+        except KeyError:
+            return generate_status(metric.name, Status.NO_DATA, None)
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms.timestamp() > metric.timeout:
+            return generate_status(metric.name, Status.FAIL,
+                                   last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+        last_elapsed_time = last_record.raw['series'][0]['values'][0][0]
+
+    return
+
+
 
 
 class InfluxTimestampParseException(Exception):

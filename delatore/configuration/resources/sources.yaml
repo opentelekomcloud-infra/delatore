@@ -33,6 +33,21 @@
   timings:
     polling_interval: 60
     request_timeout: 5
+- name: influxdb_lb_timing
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_LOAD
+        metric_id: lb_timing
+        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 100;'
+        timeout: 300
+  publishes: 'INFLUX'
+  timings:
+    polling_interval: 60
+    request_timeout: 5
 - name: awx_api
   params:
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
