@@ -15,7 +15,8 @@ LOGGER.setLevel(logging.INFO)
 __awx_status_override = {
     'failed': Status.FAIL,
     'successful': Status.OK,
-    'canceled': Status.CANCELED
+    'canceled': Status.CANCELED,
+    'never updated': Status.NO_DATA,
 }
 
 
