@@ -208,7 +208,7 @@ class InfluxSource(Source):
 class InfluxSourceLBTiming(InfluxSource):
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
-    list_elapsed_time = [70, 70, 70, 70, 70]
+    list_elapsed_time = [1, 1, 1, 1, 1]
 
     @classmethod
     def params(cls) -> InfluxParams:
@@ -244,9 +244,9 @@ class InfluxSourceLBTiming(InfluxSource):
         metrics = self.params().metrics
         last_elapsed_time, last_time_ms, status = await self._get_status(metrics[0])
         self.list_elapsed_time.pop(0)
-        self.list_elapsed_time.append(last_elapsed_time)
+        self.list_elapsed_time.append(4)
         results = []
-        if min(self.list_elapsed_time) < 60:
+        if min(self.list_elapsed_time) < 0:
             results.append(generate_status(metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
@@ -260,15 +260,15 @@ class InfluxSourceLBTiming(InfluxSource):
             node_distribution_query = metrics[2].query.format(entity=metrics[2].metric_id)
             network_bytes_recv_query = metrics[3].query.format(entity=metrics[3].metric_id)
             network_bytes_send_query = metrics[4].query.format(entity=metrics[4].metric_id)
-        result_query1, result_query2, result_query3, result_query4 = await asyncio.gather(
+        results_queries = await asyncio.gather(
             self.influx_client.query(cpu_utilization_query),
             self.influx_client.query(node_distribution_query),
             self.influx_client.query(network_bytes_recv_query),
             self.influx_client.query(network_bytes_send_query))
-        str_template.format(result_query1=result_query1,
-                            result_query2=result_query2,
-                            result_query3=result_query3,
-                            result_query4=result_query4)
+        str_template.format(result_query1=results_queries[0],
+                            result_query2=results_queries[1],
+                            result_query3=results_queries[2],
+                            result_query4=results_queries[3])
         return str_template
 
     async def _get_status(self, metric):
