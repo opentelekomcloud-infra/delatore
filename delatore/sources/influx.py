@@ -239,7 +239,7 @@ class InfluxSourceLBTiming (InfluxSource):
 
 
     async def _get_error_message(self):
-        with open('../templates/error_message.txt', 'r') as myfile:
+        with open('../templates/error_message_lb_timing.txt', 'r') as myfile:
             str_template = myfile.read()
         query1 = 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ "hostname") GROUP BY time("5m")'
         query2 = 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time("5m")'
@@ -271,7 +271,15 @@ class InfluxSourceLBTiming (InfluxSource):
 
 
 
+class InfluxSourceLBDown (InfluxSource):
 
+    CONFIG_ID = 'influxdb_lb_down'
+    _params: InfluxParams = None
+
+    async def _get_error_message(self):
+        with open('../templates/error_message_lb_down.txt', 'r') as myfile:
+            str_template = myfile.read()
+        return str_template
 
 
 class InfluxTimestampParseException(Exception):
