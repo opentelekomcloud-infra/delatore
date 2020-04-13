@@ -210,33 +210,17 @@ class InfluxSourceLBTiming(InfluxSource):
     _params: InfluxParams = None
     list_elapsed_time = [1, 1, 1, 1, 1]
 
+    _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
+
     @classmethod
     def params(cls) -> InfluxParams:
         if cls._params is None:
             params = cls.config.params
             metrics = params.pop('metrics')
             metric_in_list = []
+            metrics = [Metric(**met) for met in metrics]
             for met in metrics:
-                if met['metric_id'] == 'lb_timing':
-                    metric = Metric(**met)
-                    if metric is not None:
-                        metric_in_list.append(metric)
-                if met['metric_id'] == 'cpu_utilization':
-                    metric = Metric(**met)
-                    if metric is not None:
-                        metric_in_list.append(metric)
-                if met['metric_id'] == 'node_distribution':
-                    metric = Metric(**met)
-                    if metric is not None:
-                        metric_in_list.append(metric)
-                if met['metric_id'] == 'network_bytes_recv':
-                    metric = Metric(**met)
-                    if metric is not None:
-                        metric_in_list.append(metric)
-                if met['metric_id'] == 'network_bytes_send':
-                    metric = Metric(**met)
-                    if metric is not None:
-                        metric_in_list.append(metric)
+                metric_in_list.append(met)
             cls._params = InfluxParams(metrics=metric_in_list, **params)
         return cls._params
 
