@@ -244,11 +244,14 @@ class InfluxSourceLBTiming (InfluxSource):
         query2 = 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time("5m")'
         query3 = 'SELECT non_negative_derivative(mean("bytes_recv"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
         query4 = 'SELECT non_negative_derivative(mean("bytes_sent"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
-        result_query1 = await self.influx_client.query(query1)
-        result_query2 = await self.influx_client.query(query2)
-        result_query3 = await self.influx_client.query(query3)
-        result_query4 = await self.influx_client.query(query4)
-        str_template.format(result_query1 = result_query1, result_query2 = result_query2, result_query3 = result_query3, result_query4 = result_query4)
+        result_query1,  result_query2, result_query3,  result_query4 = await asyncio.gather(self.influx_client.query(query1),
+                                                                                            self.influx_client.query(query2),
+                                                                                            self.influx_client.query(query3),
+                                                                                            self.influx_client.query(query4))
+        str_template.format(result_query1 = result_query1,
+                            result_query2 = result_query2,
+                            result_query3 = result_query3,
+                            result_query4 = result_query4)
         return str_template
 
 
