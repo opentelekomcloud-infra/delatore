@@ -1,3 +1,4 @@
+from ocomone import Resources
 import asyncio
 import json
 import logging
@@ -19,7 +20,7 @@ from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, gener
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
-
+_CONFIGS = Resources(__file__)
 
 class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
@@ -204,11 +205,10 @@ class InfluxSource(Source):
                                last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
 
-class InfluxSourceLBTiming (InfluxSource):
-
+class InfluxSourceLBTiming(InfluxSource):
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
-    list_elapsed_time = [1, 1, 1, 1, 1]
+    list_elapsed_time = [70, 70, 70, 70, 70]
 
     @classmethod
     def params(cls) -> InfluxParams:
@@ -221,39 +221,55 @@ class InfluxSourceLBTiming (InfluxSource):
                     metric = Metric(**met)
                     if metric is not None:
                         metric_in_list.append(metric)
+                if met['metric_id'] == 'cpu_utilization':
+                    metric = Metric(**met)
+                    if metric is not None:
+                        metric_in_list.append(metric)
+                if met['metric_id'] == 'node_distribution':
+                    metric = Metric(**met)
+                    if metric is not None:
+                        metric_in_list.append(metric)
+                if met['metric_id'] == 'network_bytes_recv':
+                    metric = Metric(**met)
+                    if metric is not None:
+                        metric_in_list.append(metric)
+                if met['metric_id'] == 'network_bytes_send':
+                    metric = Metric(**met)
+                    if metric is not None:
+                        metric_in_list.append(metric)
             cls._params = InfluxParams(metrics=metric_in_list, **params)
         return cls._params
 
     async def get_update(self) -> dict:
         metrics = self.params().metrics
-        last_elapsed_time, last_time_ms, status = await  self._get_status(metrics[0])
+        last_elapsed_time, last_time_ms, status = await self._get_status(metrics[0])
         self.list_elapsed_time.pop(0)
         self.list_elapsed_time.append(last_elapsed_time)
         results = []
-        if (min(self.list_elapsed_time) < 60):
+        if min(self.list_elapsed_time) < 60:
             results.append(generate_status(metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        results.append(generate_error('InfluxdbLBTiming', await self._get_error_message() ))
+        else:
+            results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(metrics)))
         return generate_message(self.CONFIG_ID, results)
 
-
-    async def _get_error_message(self):
-        with open('../templates/error_message.txt', 'r') as myfile:
+    async def _get_error_message(self, metrics):
+        with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as myfile:
             str_template = myfile.read()
-        query1 = 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ "hostname") GROUP BY time("5m")'
-        query2 = 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time("5m")'
-        query3 = 'SELECT non_negative_derivative(mean("bytes_recv"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
-        query4 = 'SELECT non_negative_derivative(mean("bytes_sent"), 10s) FROM "net" WHERE ("interface" = \'ens3\' AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
-        result_query1,  result_query2, result_query3,  result_query4 = await asyncio.gather(self.influx_client.query(query1),
-                                                                                            self.influx_client.query(query2),
-                                                                                            self.influx_client.query(query3),
-                                                                                            self.influx_client.query(query4))
-        str_template.format(result_query1 = result_query1,
-                            result_query2 = result_query2,
-                            result_query3 = result_query3,
-                            result_query4 = result_query4)
+            cpu_utilization_query = metrics[1].query.format(entity=metrics[1].metric_id)
+            node_distribution_query = metrics[2].query.format(entity=metrics[2].metric_id)
+            network_bytes_recv_query = metrics[3].query.format(entity=metrics[3].metric_id)
+            network_bytes_send_query = metrics[4].query.format(entity=metrics[4].metric_id)
+        result_query1, result_query2, result_query3, result_query4 = await asyncio.gather(
+            self.influx_client.query(cpu_utilization_query),
+            self.influx_client.query(node_distribution_query),
+            self.influx_client.query(network_bytes_recv_query),
+            self.influx_client.query(network_bytes_send_query))
+        str_template.format(result_query1=result_query1,
+                            result_query2=result_query2,
+                            result_query3=result_query3,
+                            result_query4=result_query4)
         return str_template
-
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
@@ -261,7 +277,6 @@ class InfluxSourceLBTiming (InfluxSource):
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
             last_elapsed_time = last_record.raw['series'][0]['values'][0][1]
-            a = 5
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
@@ -270,7 +285,6 @@ class InfluxSourceLBTiming (InfluxSource):
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
         return last_elapsed_time, last_time_ms, status
-
 
 
 class InfluxTimestampParseException(Exception):
