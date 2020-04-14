@@ -60,7 +60,7 @@
         metric_id: network_bytes_send
         query: 'SELECT DERIVATIVE(MEAN("bytes_sent"), 6m) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(20m) LIMIT 1'
         timeout: 300
-  publishes: 'LB-TIMING'
+  publishes: 'LB_TIMING'
   timings:
     polling_interval: 60
     request_timeout: 5
@@ -75,7 +75,7 @@
         metric_id: lb_down_test
         query: 'SELECT count("state") FROM "lb_down_test" WHERE ("reason" != "0") GROUP BY time(1m)'
         timeout: 60
-  publishes: 'LB-DOWN'
+  publishes: 'LB_DOWN'
   timings:
     polling_interval: 60
     request_timeout: 5

@@ -226,7 +226,7 @@ class InfluxSourceLBTiming(InfluxSource):
         metrics = self.params().metrics
         last_elapsed_time, last_time_ms, status = await self._get_status(metrics[0])
         self.list_elapsed_time.pop(0)
-        self.list_elapsed_time.append(4)
+        self.list_elapsed_time.append(last_elapsed_time)
         results = []
         if min(self.list_elapsed_time) < 0:
             results.append(generate_status(metrics[0].name, status,
@@ -278,29 +278,40 @@ class InfluxSourceLBDOWN(InfluxSource):
 
     async def get_update(self) -> dict:
         metrics = self.params().metrics
-        exit_status, last_time_ms, status = await self._get_status(metrics[0])
+        error_script_status, last_time_ms, status = await self._get_status(metrics[0])
         results = []
-        if exit_status == 0:
+        if error_script_status == False :
             results.append(generate_status(metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-
+        else:
+            str = await self._get_error_message()
+            results.append(generate_error('InfluxdbLBDown', str))
         return generate_message(self.CONFIG_ID, results)
+
+    async def _get_error_message(self):
+        with open(_CONFIGS['error_message_lb_down.txt'], 'r') as myfile:
+            str_template = myfile.read()
+        return str_template
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        a = 5
-        try:
-            last_time = last_record.raw['series'][0]['values'][0][0]
-            exit_code =
-        except KeyError:
-            return generate_status(metric.name, Status.NO_DATA, None)
-        now = datetime.utcnow().timestamp()
-        last_time_ms = _convert_time(last_time)
+        last_time_ms = 0
         status = Status.OK
-        if now - last_time_ms.timestamp() > metric.timeout:
-            status = Status.FAIL
-        return last_time_ms, status
+        error_script_status = False
+        if 'series' not in last_record.raw:
+            error_script_status = True
+        else:
+            try:
+                last_time = last_record.raw['series'][0]['values'][0][0]
+            except KeyError:
+                return generate_status(metric.name, Status.NO_DATA, None)
+            now = datetime.utcnow().timestamp()
+            last_time_ms = _convert_time(last_time)
+            if now - last_time_ms.timestamp() > metric.timeout:
+                status = Status.FAIL
+        return error_script_status, last_time_ms, status
+
 
 
 class InfluxTimestampParseException(Exception):
