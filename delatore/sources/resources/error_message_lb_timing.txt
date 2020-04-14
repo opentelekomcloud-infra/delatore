@@ -1,0 +1,9 @@
+- LB_LOAD
+- Status: Alerting
+- Alert message: Response time are above "threshold"
+- Host: "hostname"
+- Response time: "current_response_time"
+- CPU utilization: {result_query1}
+- Node distribution: {result_query2}
+- Network bytes recv: {result_query3}
+- Network bytes send: {result_query4}
