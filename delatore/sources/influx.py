@@ -270,6 +270,39 @@ class InfluxSourceLBTiming(InfluxSource):
         return last_elapsed_time, last_time_ms, status
 
 
+
+class InfluxSourceLBDOWN(InfluxSource):
+
+    CONFIG_ID = 'influxdb_lb_down'
+    _params: InfluxParams = None
+
+    async def get_update(self) -> dict:
+        metrics = self.params().metrics
+        exit_status, last_time_ms, status = await self._get_status(metrics[0])
+        results = []
+        if exit_status == 0:
+            results.append(generate_status(metrics[0].name, status,
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        a = 5
+        try:
+            last_time = last_record.raw['series'][0]['values'][0][0]
+            exit_code =
+        except KeyError:
+            return generate_status(metric.name, Status.NO_DATA, None)
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        status = Status.OK
+        if now - last_time_ms.timestamp() > metric.timeout:
+            status = Status.FAIL
+        return last_time_ms, status
+
+
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
 
