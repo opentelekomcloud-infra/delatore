@@ -46,19 +46,19 @@
         timeout: 60
       - name: LB_LOAD:CPU_utilization
         metric_id: cpu_utilization
-        query: 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query: 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ /^*scn1-*/) GROUP BY time(5m)'
         timeout: 60
       - name: LB_LOAD:Node_distribution
         metric_id: node_distribution
-        query: 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query: 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time(5m)'
         timeout: 60
       - name: LB_LOAD:Network_bytes_recv
         metric_id: network_bytes_recv
-        query: 'SELECT non_negative_derivative(mean("bytes_recv"), 10s) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query: 'SELECT non_negative_derivative(mean("bytes_recv"), 10s) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(5m)'
         timeout: 60
       - name: LB_LOAD:Network_bytes_send
         metric_id: network_bytes_send
-        query: 'SELECT non_negative_derivative(mean("bytes_sent"), 10s) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time("5m")'
+        query: 'SELECT non_negative_derivative(mean("bytes_sent"), 10s) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(5m)'
         timeout: 60
   publishes: 'LB-TIMING'
   timings:

@@ -234,7 +234,8 @@ class InfluxSourceLBTiming(InfluxSource):
             results.append(generate_status(metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(metrics)))
+            str = await self._get_error_message(metrics)
+            results.append(generate_error('InfluxdbLBTiming', str))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_error_message(self, metrics):
