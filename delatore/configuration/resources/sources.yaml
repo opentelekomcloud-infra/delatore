@@ -44,22 +44,23 @@
         metric_id: lb_timing
         query: 'SELECT LAST(elapsed) FROM "lb_timing" WHERE ("server" =~ /^*basic-\d/ AND "client" =~ /^80.+/) LIMIT 1'
         timeout: 60
-  publishes: 'LB-TIMING'
-  timings:
-    polling_interval: 60
-    request_timeout: 5
-- name: influxdb_lb_down
-  params:
-    host: 'influx1.eco.tsi-dev.otc-service.com'
-    port: 8086
-    username: 'csm'
-    database: 'csm'
-    metrics:
-      - name: LB_DOWN
-        metric_id: lb_down
-        query: 'SELECT LAST(elapsed) FROM "lb_timing" WHERE ("server" =~ /^*basic-\d/ AND "client" =~ /^80.+/) LIMIT 1'
+      - name: LB_LOAD:CPU_utilization
+        metric_id: cpu_utilization
+        query: 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1'
         timeout: 60
-  publishes: 'LB-DOWN'
+      - name: LB_LOAD:Node_distribution
+        metric_id: node_distribution
+        query: 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1'
+        timeout: 60
+      - name: LB_LOAD:Network_bytes_recv
+        metric_id: network_bytes_recv
+        query: 'SELECT DERIVATIVE(MEAN("bytes_recv"), 6m) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(20m) LIMIT 1'
+        timeout: 300
+      - name: LB_LOAD:Network_bytes_send
+        metric_id: network_bytes_send
+        query: 'SELECT DERIVATIVE(MEAN("bytes_sent"), 6m) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(20m) LIMIT 1'
+        timeout: 300
+  publishes: 'LB-TIMING'
   timings:
     polling_interval: 60
     request_timeout: 5
