@@ -43,8 +43,6 @@
       - name: LB_LOAD
         metric_id: lb_timing
         query: 'SELECT LAST(elapsed) FROM "lb_timing" WHERE ("server" =~ /^*basic-\d/ AND "client" =~ /^80.+/) LIMIT 1'
-<<<<<<<<< Temporary merge branch 1
-=========
         timeout: 60
       - name: LB_LOAD:CPU_utilization
         metric_id: cpu_utilization
