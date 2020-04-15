@@ -296,16 +296,13 @@ class InfluxSourceLBDOWN(InfluxSource):
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = 0
+        last_time_ms = None
         status = Status.OK
         error_script_status = False
         if 'series' not in last_record.raw:
             error_script_status = True
         else:
-            try:
-                last_time = last_record.raw['series'][0]['values'][0][0]
-            except KeyError:
-                return generate_status(metric.name, Status.NO_DATA, None)
+            last_time = last_record.raw['series'][0]['values'][0][0]
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
             if now - last_time_ms.timestamp() > metric.timeout:
