@@ -60,6 +60,7 @@ class BotRunner:
     """Bot runner wrapper"""
     _bot: Bot = None
     _dispatcher: Dispatcher = None
+    _last_message: str = None
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
@@ -129,7 +130,8 @@ class BotRunner:
             if message is not None:
                 data = json.loads(message)
                 try:
-                    await self.alert(convert(data))  # check if TG response was 200
+                    json2mdwn_messge_new = convert(data)
+                    await self.alert(json2mdwn_messge)  # check if TG response was 200
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
 

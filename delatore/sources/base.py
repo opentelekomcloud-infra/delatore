@@ -54,6 +54,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
+        self.heartbeat_interval = 3600
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
@@ -69,7 +70,9 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if _same_status(new, last) and self.ignore_duplicates:
+            if self.ignore_duplicates and \
+                    _same_status(new, last) and \
+                    _heartbeat_status(new, last) < self.heartbeat_interval:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
@@ -87,3 +90,9 @@ def _same_status(new: dict, last: dict) -> bool:
     this_statuses = {st['name']: st['status'] for st in new['status_list']}
     another_statuses = {st['name']: st['status'] for st in last['status_list']}
     return this_statuses == another_statuses
+
+
+def _heartbeat_status(new: dict, last: dict) -> int:
+    if last is None:
+        return 0
+    return last['message_timestamp'] - new['message_timestamp']
