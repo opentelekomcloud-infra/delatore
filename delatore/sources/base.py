@@ -66,7 +66,8 @@ class Source(ABC, metaclass=SourceMeta):
         LOGGER.info('Source %s started', name)
         while not stop_event.is_set():
             try:
-                new = await asyncio.wait_for(self.get_update(), self.request_timeout)
+                new = await asyncio.wait_for(self.get_update(), 15)
+                a = 5
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if _same_status(new, last) and self.ignore_duplicates:

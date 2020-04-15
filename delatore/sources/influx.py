@@ -209,6 +209,7 @@ class InfluxSourceLBTiming(InfluxSource):
     list_elapsed_time = [1, 1, 1, 1, 1]
 
     _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
+    _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
 
     @classmethod
     def params(cls) -> InfluxParams:
@@ -240,15 +241,22 @@ class InfluxSourceLBTiming(InfluxSource):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as myfile:
             str_template = myfile.read()
             list_queries = []
-            for met in metrics[1:]:
-                list_queries.append(met.query.format(entity=met.metric_id))
+        for met in metrics[1:]:
+            list_queries.append(met.query.format(entity=met.metric_id))
         results_queries = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
         ])
-        str_template.format(result_query1=results_queries[0].raw['series'][0]['values'][0][1],
-                            result_query2=results_queries[1].raw['series'][0]['values'][0][1],
-                            result_query3=results_queries[2],
-                            result_query4=results_queries[3])
+        results_queries_without_empty_lines = []
+        for result_query in results_queries:
+            try:
+                results_queries_without_empty_lines.append(result_query.raw['series'][0]['values'][0][1])
+            except KeyError:
+                results_queries_without_empty_lines.append('No data')
+        str_template = str_template.format(cpu_utilization=results_queries_without_empty_lines[0],
+                            node_distribution=results_queries_without_empty_lines[1],
+                            network_bytes_recv=results_queries_without_empty_lines[2],
+                            network_bytes_send=results_queries_without_empty_lines[3])
+        str = str_template
         return str_template
 
 
