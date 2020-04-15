@@ -239,20 +239,18 @@ class InfluxSourceLBTiming(InfluxSource):
     async def _get_error_message(self, metrics):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as myfile:
             str_template = myfile.read()
-            cpu_utilization_query = metrics[1].query.format(entity=metrics[1].metric_id)
-            node_distribution_query = metrics[2].query.format(entity=metrics[2].metric_id)
-            network_bytes_recv_query = metrics[3].query.format(entity=metrics[3].metric_id)
-            network_bytes_send_query = metrics[4].query.format(entity=metrics[4].metric_id)
-        results_queries = await asyncio.gather(
-            self.influx_client.query(cpu_utilization_query),
-            self.influx_client.query(node_distribution_query),
-            self.influx_client.query(network_bytes_recv_query),
-            self.influx_client.query(network_bytes_send_query))
+            list_queries = []
+            for met in metrics[1:]:
+                list_queries.append(met.query.format(entity=met.metric_id))
+        results_queries = await asyncio.gather(*[
+            self.influx_client.query(query) for query in list_queries
+        ])
         str_template.format(result_query1=results_queries[0].raw['series'][0]['values'][0][1],
                             result_query2=results_queries[1].raw['series'][0]['values'][0][1],
                             result_query3=results_queries[2],
                             result_query4=results_queries[3])
         return str_template
+
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
