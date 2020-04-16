@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "delatore"
-version = "0.4.4"
+version = "0.4.5"
 description = "Bot for CSM jobs notifications in telegram and alerta"
 authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
