@@ -56,7 +56,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
-        self.heartbeat_interval = 10
+        self.heartbeat_interval = 3600
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
@@ -75,12 +75,12 @@ class Source(ABC, metaclass=SourceMeta):
             if self.ignore_duplicates and \
                     _same_status(new, last) and \
                     _heartbeat_status(new, last) >= self.heartbeat_interval:
-                LOGGER.debug('Same data received from source: %s\ndata:\n%s', name, new)
                 json_message = json.dumps(new)
                 await self.client.publish(self.TOPIC_al, json_message)
                 last = new
-                LOGGER.debug('Wait for new data for %s', self.polling_interval)
-                await asyncio.sleep(self.polling_interval)
+                continue
+            elif self.ignore_duplicates and \
+                    _same_status(new, last):
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
@@ -94,7 +94,7 @@ class Source(ABC, metaclass=SourceMeta):
 def _heartbeat_status(new: dict, last: dict) -> int:
     if last is None:
         return 0
-    return last['message_timestamp'] - new['message_timestamp']
+    return new['message_timestamp'] - last['message_timestamp']
 
 
 def _same_status(new: dict, last: dict) -> bool:
