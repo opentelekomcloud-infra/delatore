@@ -12,19 +12,28 @@ async def test_influx_data(influxdb: InfluxSource):
     a = 5
     assert update is not None
 
+
 async def test_influx_data_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming):
     update = await influxdb_lb_timing.get_update()
     assert update is not None
+
 
 async def test_influx_data_lb_down(influxdb_lb_down: InfluxSourceLBDOWN):
     update = await influxdb_lb_down.get_update()
     assert update is not None
 
+
+async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming, pub: Client, sub: Client):
+    await sub.subscribe(influxdb_lb_timing.TOPIC)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert update is not None
+
+
 async def test_trigger_from_loop_lb_down(influxdb_lb_down: InfluxSourceLBDOWN, pub: Client, sub: Client):
     await sub.subscribe(influxdb_lb_down.TOPIC)
     await asyncio.sleep(.1)
     update = await sub.get(5)
-    a = 5
     assert update is not None
 
 
