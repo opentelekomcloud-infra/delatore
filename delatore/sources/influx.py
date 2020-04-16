@@ -150,6 +150,7 @@ class InfluxSource(Source):
 
     CONFIG_ID = 'influxdb'
     _params: InfluxParams = None
+    _error_message_file = None
 
     @classmethod
     def params(cls) -> InfluxParams:
@@ -203,33 +204,39 @@ class InfluxSource(Source):
         return generate_status(metric.name, Status.FAIL,
                                last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
+    async def _get_error_message(self):
+        with open(_CONFIGS[self._error_message_file], 'r') as file:
+            str_template = file.read()
+        return str_template
+
 
 class InfluxSourceLBTiming(InfluxSource):
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
     list_elapsed_time = [1, 1, 1, 1, 1]
+    _metrics = None
 
     _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
     _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
 
     async def get_update(self) -> dict:
-        metrics = self.params().metrics
-        last_elapsed_time, last_time_ms, status = await self._get_status(metrics[0])
+        self._metrics = self.params().metrics
+        last_elapsed_time, last_time_ms, status = await self._get_status(self._metrics[0])
         self.list_elapsed_time.pop(0)
         self.list_elapsed_time.append(last_elapsed_time)
         results = []
         if min(self.list_elapsed_time) < 60:
-            results.append(generate_status(metrics[0].name, status,
+            results.append(generate_status(self._metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(metrics)))
+            results.append(generate_error('InfluxdbLBTiming', await self._get_error_message()))
         return generate_message(self.CONFIG_ID, results)
 
-    async def _get_error_message(self, metrics):
+    async def _get_error_message(self):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
             str_template = file.read()
             list_queries = []
-        for met in metrics[1:]:
+        for met in self._metrics[1:]:
             list_queries.append(met.query.format(entity=met.metric_id))
         results_queries = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
@@ -265,6 +272,7 @@ class InfluxSourceLBTiming(InfluxSource):
 class InfluxSourceLBDOWN(InfluxSource):
     CONFIG_ID = 'influxdb_lb_down'
     _params: InfluxParams = None
+    _error_message_file = 'error_message_lb_down.txt'
 
     async def get_update(self) -> dict:
         metrics = self.params().metrics
@@ -276,11 +284,6 @@ class InfluxSourceLBDOWN(InfluxSource):
         else:
             results.append(generate_error('InfluxdbLBDown', await self._get_error_message() ))
         return generate_message(self.CONFIG_ID, results)
-
-    async def _get_error_message(self):
-        with open(_CONFIGS['error_message_lb_down.txt'], 'r') as file:
-            str_template = file.read()
-        return str_template
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
