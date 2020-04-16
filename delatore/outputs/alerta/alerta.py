@@ -75,7 +75,7 @@ class AlertaRunner:
                     severity='ok',
                     **common_args,
                 )[0]
-            
+
             alerta_ids.append(report_id)
             LOGGER.debug('Alerta message sent')
         return alerta_ids

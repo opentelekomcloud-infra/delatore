@@ -47,12 +47,10 @@ class Source(ABC, metaclass=SourceMeta):
     instance_config: InstanceConfig
 
     def __init__(self, client: Client,
-                 ignore_duplicates=True,
                  instance_config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
         self.client = client
         self.polling_interval = self.config.timings.polling_interval
         self.request_timeout = self.config.timings.request_timeout
-        self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
         self.heartbeat_interval = 3600
 
@@ -70,9 +68,7 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if self.ignore_duplicates and \
-                    same_status(new, last) and \
-                    _heartbeat_status(new, last) < self.heartbeat_interval:
+            if _heartbeat_status(new, last) < self.heartbeat_interval:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
@@ -80,16 +76,6 @@ class Source(ABC, metaclass=SourceMeta):
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
-
-
-def same_status(new: dict, last: dict) -> bool:
-    if last is None:
-        return False
-    if new == last:
-        return True
-    this_statuses = {st['name']: st['status'] for st in new['status_list']}
-    another_statuses = {st['name']: st['status'] for st in last['status_list']}
-    return this_statuses == another_statuses
 
 
 def _heartbeat_status(new: dict, last: dict) -> int:

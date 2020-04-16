@@ -157,7 +157,7 @@ class InfluxSource(Source):
         return cls._params
 
     def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
-        super().__init__(client, instance_config=instance_config, ignore_duplicates=False)
+        super().__init__(client, instance_config=instance_config)
         self._influx_client = None
 
     @property
