@@ -61,7 +61,6 @@ class BotRunner:
     """Bot runner wrapper"""
     _bot: Bot = None
     _dispatcher: Dispatcher = None
-    _last_message: str = None
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
