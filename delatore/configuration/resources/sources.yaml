@@ -7,23 +7,23 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(elapsed) FROM {entity} LIMIT 1;"
         timeout: 60
       - name: LB_DOWN
         metric_id: lb_down
-        query: 'SELECT LAST(requests) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(requests) FROM {entity} LIMIT 1;"
         timeout: 900
       - name: SCSI_HDD_TEST
         metric_id: iscsi_connection
-        query: 'SELECT LAST(state) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(state) FROM {entity} LIMIT 1;"
         timeout: 300
       - name: RDS_TEST
         metric_id: ce_result
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(elapsed) FROM {entity} LIMIT 1;"
         timeout: 300
       - name: AUTOSCALING
         metric_id: as_result
-        query: 'SELECT LAST(value) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(value) FROM {entity} LIMIT 1;"
         timeout: 5400
       - name: HDD_TEST
         metric_id: diskio
@@ -42,23 +42,23 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: 'SELECT LAST(elapsed) FROM "lb_timing" WHERE ("server" =~ /^*basic-\d/ AND "client" =~ /^80.+/) LIMIT 1'
+        query: "SELECT LAST(elapsed) FROM \"lb_timing\" WHERE (\"server\" =~ /^*basic-*/ AND \"client\" =~ /^80.+/) LIMIT 1;"
         timeout: 60
       - name: LB_LOAD:CPU_utilization
         metric_id: cpu_utilization
-        query: 'SELECT max("usage_user") FROM "cpu" WHERE ("host" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1'
+        query: "SELECT max(\"usage_user\") FROM \"cpu\" WHERE (\"host\" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1;"
         timeout: 60
       - name: LB_LOAD:Node_distribution
         metric_id: node_distribution
-        query: 'SELECT count("elapsed") FROM "lb_timing" WHERE ("server" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1'
+        query: "SELECT count(\"elapsed\") FROM \"lb_timing\" WHERE (\"server\" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1;"
         timeout: 60
       - name: LB_LOAD:Network_bytes_recv
         metric_id: network_bytes_recv
-        query: 'SELECT DERIVATIVE(MEAN("bytes_recv"), 6m) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(20m) LIMIT 1'
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 10s) FROM (SELECT MEAN(\"bytes_recv\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*test*-scn1-*/) GROUP BY time(10m), host, interface) LIMIT 10;"
         timeout: 300
       - name: LB_LOAD:Network_bytes_send
         metric_id: network_bytes_send
-        query: 'SELECT DERIVATIVE(MEAN("bytes_sent"), 6m) FROM "net" WHERE ("interface" = "ens3" AND "host" =~ /^*scn1-*/) GROUP BY time(20m) LIMIT 1'
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 6m) FROM (SELECT MEAN(\"bytes_sent\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*scn1-*/) GROUP BY time(20m), host, interface) LIMIT 10;"
         timeout: 300
   publishes: 'LB_TIMING'
   timings:
@@ -73,7 +73,7 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: 'SELECT count("state") FROM "lb_down_test" WHERE ("reason" != "0") GROUP BY time(1m)'
+        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY time(1m)"
         timeout: 60
   publishes: 'LB_DOWN'
   timings:

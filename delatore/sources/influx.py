@@ -151,13 +151,14 @@ class InfluxSource(Source):
     CONFIG_ID = 'influxdb'
     _params: InfluxParams = None
     _error_message_file = None
+    _metrics = None
 
     @classmethod
     def params(cls) -> InfluxParams:
         if cls._params is None:
             params = cls.config.params
-            metrics = params.pop('metrics')
-            metrics = [Metric(**met) for met in metrics]
+            cls._metrics = params.pop('metrics')
+            metrics = [Metric(**met) for met in cls._metrics]
             cls._params = InfluxParams(metrics=metrics, **params)
         return cls._params
 
@@ -183,9 +184,9 @@ class InfluxSource(Source):
         return self._influx_client
 
     async def get_update(self) -> dict:
-        metrics = self.params().metrics
+        self._metrics = self.params().metrics
         results = await asyncio.gather(*[
-            self._get_status(met) for met in metrics
+            self._get_status(met) for met in self._metrics
         ])
         return generate_message(self.CONFIG_ID, results)
 
@@ -214,7 +215,6 @@ class InfluxSourceLBTiming(InfluxSource):
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
     list_elapsed_time = [1, 1, 1, 1, 1]
-    _metrics = None
 
     _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
     _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
@@ -275,11 +275,11 @@ class InfluxSourceLBDOWN(InfluxSource):
     _error_message_file = 'error_message_lb_down.txt'
 
     async def get_update(self) -> dict:
-        metrics = self.params().metrics
-        error_script_status, last_time_ms, status = await self._get_status(metrics[0])
+        self._metrics = self.params().metrics
+        error_script_status, last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
         if not error_script_status:
-            results.append(generate_status(metrics[0].name, status,
+            results.append(generate_status(self._metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
             results.append(generate_error('InfluxdbLBDown', await self._get_error_message() ))
