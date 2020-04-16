@@ -54,7 +54,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
-        self.heartbeat_interval = 3600
+        self.heartbeat_interval = 10
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
@@ -71,7 +71,7 @@ class Source(ABC, metaclass=SourceMeta):
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if self.ignore_duplicates and \
-                    _same_status(new, last) and \
+                    same_status(new, last) and \
                     _heartbeat_status(new, last) < self.heartbeat_interval:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
@@ -82,7 +82,7 @@ class Source(ABC, metaclass=SourceMeta):
             await asyncio.sleep(self.polling_interval)
 
 
-def _same_status(new: dict, last: dict) -> bool:
+def same_status(new: dict, last: dict) -> bool:
     if last is None:
         return False
     if new == last:

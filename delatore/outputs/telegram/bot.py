@@ -14,6 +14,7 @@ from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import DEFAULT_INSTANCE_CONFIG, InstanceConfig
 from ...outputs.telegram.json2mdwn import convert
 from ...sources import AWXApiSource
+from ...sources.base import same_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -124,14 +125,17 @@ class BotRunner:
         ])
         LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
+        last = None
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
             if message is not None:
                 data = json.loads(message)
                 try:
-                    json2mdwn_messge_new = convert(data)
-                    await self.alert(json2mdwn_messge)  # check if TG response was 200
+                    if same_status(data, last):
+                        continue
+                    await self.alert(convert(data))  # check if TG response was 200
+                    last = data
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
 
