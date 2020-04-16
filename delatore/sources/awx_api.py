@@ -75,7 +75,7 @@ class AWXApiSource(Source):
     def __init__(self, client: Client, instance_config: InstanceConfig):
         # polling here - polling of input requests
         # request timeout - timeout for API request
-        super().__init__(client)
+        super().__init__(client, ignore_duplicates=False)
         self.instance_config = instance_config
 
     def get_session(self):

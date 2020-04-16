@@ -14,6 +14,7 @@ from ...configuration import OUTPUTS_CFG
 from ...configuration.dynamic import DEFAULT_INSTANCE_CONFIG, InstanceConfig
 from ...outputs.telegram.json2mdwn import convert
 from ...sources import AWXApiSource
+from ...sources.base import same_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -131,7 +132,7 @@ class BotRunner:
             if message is not None:
                 data = json.loads(message)
                 try:
-                    if _same_status(data, last):
+                    if same_status(data, last):
                         continue
                     await self.alert(convert(data))  # check if TG response was 200
                     last = data
@@ -157,7 +158,7 @@ class BotRunner:
         ])
 
 
-def _same_status(new: dict, last: dict) -> bool:
+def same_status(new: dict, last: dict) -> bool:
     if last is None:
         return False
     if new == last:

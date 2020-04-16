@@ -9,6 +9,7 @@ from delatore.sources import AWXApiSource, InfluxSource
 @pytest.fixture
 async def influxdb(service):
     src = InfluxSource(service.get_client())
+    src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
     await asyncio.sleep(.1)

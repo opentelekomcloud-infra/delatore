@@ -22,6 +22,7 @@ async def patched_awx_client(awx_client_data, service, stop_event):
     client = AWXApiSource(service.get_client(), DEFAULT_INSTANCE_CONFIG)
     client.get_templates = _get_templates
     loop = asyncio.get_running_loop()
+    client.ignore_duplicates = False
     loop.create_task(client.start(stop_event))
     yield client
     stop_event.set()
