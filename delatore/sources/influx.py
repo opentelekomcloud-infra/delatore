@@ -123,9 +123,6 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
         raise InfluxDBClientError(data, response.status)
 
 
-INFLUX_POLLING_INTERVAL = 60
-
-
 @dataclass(frozen=True)
 class Metric:
     """Metric description"""

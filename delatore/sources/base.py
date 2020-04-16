@@ -54,7 +54,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
-        self.heartbeat_interval = 10
+        self.heartbeat_interval = 3600
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
