@@ -71,7 +71,6 @@ class Source(ABC, metaclass=SourceMeta):
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if self.ignore_duplicates and \
-                    same_status(new, last) and \
                     _heartbeat_status(new, last) < self.heartbeat_interval:
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
@@ -80,16 +79,6 @@ class Source(ABC, metaclass=SourceMeta):
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
-
-
-def same_status(new: dict, last: dict) -> bool:
-    if last is None:
-        return False
-    if new == last:
-        return True
-    this_statuses = {st['name']: st['status'] for st in new['status_list']}
-    another_statuses = {st['name']: st['status'] for st in last['status_list']}
-    return this_statuses == another_statuses
 
 
 def _heartbeat_status(new: dict, last: dict) -> int:
