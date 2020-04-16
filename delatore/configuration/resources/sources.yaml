@@ -63,7 +63,7 @@
   publishes: 'LB_TIMING'
   timings:
     polling_interval: 60
-    request_timeout: 5
+    request_timeout: 15
 - name: influxdb_lb_down
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'
@@ -78,7 +78,7 @@
   publishes: 'LB_DOWN'
   timings:
     polling_interval: 60
-    request_timeout: 5
+    request_timeout: 15
 - name: awx_api
   params:
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
