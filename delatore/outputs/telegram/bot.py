@@ -123,17 +123,13 @@ class BotRunner:
         ])
         LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
-        last = None
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
             if message is not None:
                 data = json.loads(message)
                 try:
-                    if _same_status(data, last):
-                        continue
                     await self.alert(convert(data))  # check if TG response was 200
-                    last = data
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
 
@@ -154,13 +150,3 @@ class BotRunner:
             self.dispatcher.start_polling(),
             self._stopper(),
         ])
-
-
-def _same_status(new: dict, last: dict) -> bool:
-    if last is None:
-        return False
-    if new == last:
-        return True
-    this_statuses = {st['name']: st['status'] for st in new['status_list']}
-    another_statuses = {st['name']: st['status'] for st in last['status_list']}
-    return this_statuses == another_statuses

@@ -26,7 +26,8 @@ class SourceMeta(ABCMeta):
     """Source class meta setting up data from configuration"""
 
     CONFIG_ID: str
-    TOPIC: str
+    TOPIC_tg: str
+    TOPIC_al: str
     config: SourceConfiguration
 
     def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
@@ -34,7 +35,8 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPIC = cls.config.publishes
+            cls.TOPIC_tg = cls.config.publishes[0]
+            cls.TOPIC_al = cls.config.publishes[1]
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -54,7 +56,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
-        self.heartbeat_interval = 3600
+        self.heartbeat_interval = 10
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
@@ -71,11 +73,19 @@ class Source(ABC, metaclass=SourceMeta):
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if self.ignore_duplicates and \
-                    _heartbeat_status(new, last) < self.heartbeat_interval:
+                    _same_status(new, last) and \
+                    _heartbeat_status(new, last) >= self.heartbeat_interval:
+                LOGGER.debug('Same data received from source: %s\ndata:\n%s', name, new)
+                json_message = json.dumps(new)
+                await self.client.publish(self.TOPIC_al, json_message)
+                last = new
+                LOGGER.debug('Wait for new data for %s', self.polling_interval)
+                await asyncio.sleep(self.polling_interval)
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
-            await self.client.publish(self.TOPIC, json_message)
+            await self.client.publish(self.TOPIC_tg, json_message)
+            await self.client.publish(self.TOPIC_al, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
@@ -85,3 +95,13 @@ def _heartbeat_status(new: dict, last: dict) -> int:
     if last is None:
         return 0
     return last['message_timestamp'] - new['message_timestamp']
+
+
+def _same_status(new: dict, last: dict) -> bool:
+    if last is None:
+        return False
+    if new == last:
+        return True
+    this_statuses = {st['name']: st['status'] for st in new['status_list']}
+    another_statuses = {st['name']: st['status'] for st in last['status_list']}
+    return this_statuses == another_statuses
