@@ -27,7 +27,7 @@ class Topics(NamedTuple):
     info: str
 
     @classmethod
-    def get_prefix(cls, prefix: str):
+    def with_prefix(cls, prefix: str):
         prefix = prefix.upper()
         return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO')
 
@@ -44,7 +44,7 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPICS = Topics.get_prefix(cls.config.topic_prefix)
+            cls.TOPICS = Topics.with_prefix(cls.config.topic_prefix)
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -80,8 +80,7 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if self.ignore_duplicates and \
-                    _same_status(new, last):
+            if self.ignore_duplicates and _same_status(new, last):
                 if _delta_seconds(new, last) >= self.heartbeat_interval:
                     json_message = json.dumps(new)
                     await self.client.publish(self.TOPICS.info, json_message)
