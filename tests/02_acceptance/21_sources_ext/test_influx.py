@@ -14,7 +14,7 @@ async def test_influx_data(influxdb: InfluxSource):
 
 
 async def test_trigger_from_loop(influxdb: InfluxSource, pub: Client, sub: Client):
-    await sub.subscribe(influxdb.TOPIC)
+    await sub.subscribe(influxdb.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
     assert update is not None

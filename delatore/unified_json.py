@@ -30,6 +30,7 @@ def generate_message(source: str, status_list: List[dict]) -> dict:
     return {
         'source': source,
         'status_list': copy.deepcopy(status_list),
+        'message_timestamp': datetime.utcnow().timestamp()
     }
 
 

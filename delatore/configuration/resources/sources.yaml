@@ -29,7 +29,7 @@
         metric_id: diskio
         query: "SELECT LAST(writes) FROM {entity} WHERE host=~/scn3/ LIMIT 1;"
         timeout: 300
-  publishes: 'INFLUX'
+  topic_prefix: 'INFLUX'
   timings:
     polling_interval: 60
     request_timeout: 5
@@ -37,14 +37,14 @@
   params:
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
     topic_in: 'AWX_CLIENT_IN'
-  publishes: 'AWX_CLIENT_OUT'
+  topic_prefix: 'AWX_CLIENT_OUT'
   timings:
     polling_interval: .1  # /status request polling
     request_timeout: 5
 - name: awx_web_hook
   params:
     port: 23834
-  publishes: 'AWX_WEB_HOOK'
+  topic_prefix: 'AWX_WEB_HOOK'
   timings:
     polling_interval: .1  # internal queue polling interval
     request_timeout: 5  # internal queue .get timeout

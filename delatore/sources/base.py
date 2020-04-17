@@ -5,7 +5,7 @@ import json
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from inspect import isabstract
-from typing import Optional, Union
+from typing import NamedTuple, Optional, Union
 
 from apubsub.client import Client
 
@@ -22,11 +22,21 @@ class NoUpdates(Exception):
     """Raised when source has no updates"""
 
 
+class Topics(NamedTuple):
+    changes: str
+    info: str
+
+    @classmethod
+    def with_prefix(cls, prefix: str):
+        prefix = prefix.upper()
+        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO')
+
+
 class SourceMeta(ABCMeta):
     """Source class meta setting up data from configuration"""
 
     CONFIG_ID: str
-    TOPIC: str
+    TOPICS: Topics
     config: SourceConfiguration
 
     def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
@@ -34,7 +44,7 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPIC = cls.config.publishes
+            cls.TOPICS = Topics.with_prefix(cls.config.topic_prefix)
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -54,6 +64,7 @@ class Source(ABC, metaclass=SourceMeta):
         self.request_timeout = self.config.timings.request_timeout
         self.ignore_duplicates = ignore_duplicates
         self.instance_config = instance_config
+        self.heartbeat_interval = 3600
 
     @abstractmethod
     async def get_update(self) -> Optional[dict]:
@@ -69,14 +80,24 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if _same_status(new, last) and self.ignore_duplicates:
+            if self.ignore_duplicates and _same_status(new, last):
+                if _delta_seconds(new, last) >= self.heartbeat_interval:
+                    json_message = json.dumps(new)
+                    await self.client.publish(self.TOPICS.info, json_message)
+                    last = new
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
-            await self.client.publish(self.TOPIC, json_message)
+            await self.client.publish(self.TOPICS.changes, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
+
+
+def _delta_seconds(new: dict, last: dict) -> int:
+    if last is None:
+        return 0
+    return new['message_timestamp'] - last['message_timestamp']
 
 
 def _same_status(new: dict, last: dict) -> bool:

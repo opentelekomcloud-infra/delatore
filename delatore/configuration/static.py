@@ -28,7 +28,7 @@ class Timings:
 @dataclass(frozen=True)
 class SourceConfiguration(Configuration):
     """Single source service configuration"""
-    publishes: str
+    topic_prefix: str
     timings: Timings
 
 
