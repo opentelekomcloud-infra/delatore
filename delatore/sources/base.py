@@ -35,8 +35,8 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPIC_changes = cls.config.changes
-            cls.TOPIC_info = cls.config.info
+            cls.TOPIC_changes = cls.config.topics.changes
+            cls.TOPIC_info = cls.config.topics.info
 
 
 class Source(ABC, metaclass=SourceMeta):

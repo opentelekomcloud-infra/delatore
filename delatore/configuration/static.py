@@ -26,10 +26,15 @@ class Timings:
 
 
 @dataclass(frozen=True)
-class SourceConfiguration(Configuration):
-    """Single source service configuration"""
+class Topics:
     changes: str
     info: str
+
+
+@dataclass(frozen=True)
+class SourceConfiguration(Configuration):
+    """Single source service configuration"""
+    topics: Topics
     timings: Timings
 
 
