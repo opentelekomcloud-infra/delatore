@@ -39,7 +39,7 @@
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
     topic_in: 'AWX_CLIENT_IN'
   changes: 'AWX_CLIENT_OUT_CHANGES'
-  info: 'AWX_CLIENT_OUT_info'
+  info: 'AWX_CLIENT_OUT_INFO'
   timings:
     polling_interval: .1  # /status request polling
     request_timeout: 5
