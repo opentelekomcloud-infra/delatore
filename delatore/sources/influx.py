@@ -219,6 +219,17 @@ class InfluxSourceLBTiming(InfluxSource):
     _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
     _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
 
+    _threshold = 60
+
+    @property
+    def threshold(self):
+        return self._threshold
+
+    @threshold.setter
+    def threshold(self, threshold):
+        self._threshold = threshold
+
+
     async def get_update(self) -> dict:
         self._metrics = self.params().metrics
         last_elapsed_time, last_time_ms, status = await self._get_status(self._metrics[0])

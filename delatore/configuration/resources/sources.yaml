@@ -43,7 +43,7 @@
       - name: LB_LOAD
         metric_id: lb_timing
         query: "SELECT LAST(elapsed) FROM \"lb_timing\" WHERE (\"server\" =~ /^*basic-*/ AND \"client\" =~ /^80.+/) LIMIT 1;"
-        timeout: 60
+        timeout: 300
       - name: LB_LOAD:CPU_utilization
         metric_id: cpu_utilization
         query: "SELECT max(\"usage_user\") FROM \"cpu\" WHERE (\"host\" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1;"

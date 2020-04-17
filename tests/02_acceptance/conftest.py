@@ -15,6 +15,7 @@ async def influxdb(service):
     await asyncio.sleep(.1)
     return src
 
+
 @pytest.fixture
 async def influxdb_lb_timing(service):
     src = InfluxSourceLBTiming(service.get_client())
@@ -25,6 +26,37 @@ async def influxdb_lb_timing(service):
     return src
 
 @pytest.fixture
+async def influxdb_lb_timing_result_1(service):
+    src = InfluxSourceLBTiming(service.get_client())
+    src.threshold = 0
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+@pytest.fixture
+async def influxdb_lb_timing_result_2(service):
+    src = InfluxSourceLBTiming(service.get_client())
+    src.threshold = 60
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+@pytest.fixture
+async def influxdb_lb_timing_result_3(service):
+    src = InfluxSourceLBTiming(service.get_client())
+    src.threshold = 90
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+
+@pytest.fixture
 async def influxdb_lb_down(service):
     src = InfluxSourceLBDOWN(service.get_client())
     src.ignore_duplicates = False
@@ -32,6 +64,7 @@ async def influxdb_lb_down(service):
     loop.create_task(src.start(asyncio.Event()))
     await asyncio.sleep(.1)
     return src
+
 
 @pytest.fixture
 async def awx_client(service):
