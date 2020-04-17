@@ -26,8 +26,8 @@ class SourceMeta(ABCMeta):
     """Source class meta setting up data from configuration"""
 
     CONFIG_ID: str
-    TOPIC_tg: str
-    TOPIC_al: str
+    TOPIC_changes: str
+    TOPIC_info: str
     config: SourceConfiguration
 
     def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
@@ -35,8 +35,8 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPIC_tg = cls.config.publishes[0]
-            cls.TOPIC_al = cls.config.publishes[1]
+            cls.TOPIC_changes = cls.config.changes
+            cls.TOPIC_info = cls.config.info
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -74,9 +74,9 @@ class Source(ABC, metaclass=SourceMeta):
                 continue
             if self.ignore_duplicates and \
                     _same_status(new, last) and \
-                    _heartbeat_status(new, last) >= self.heartbeat_interval:
+                    _heartbeat_timestamp(new, last) >= self.heartbeat_interval:
                 json_message = json.dumps(new)
-                await self.client.publish(self.TOPIC_al, json_message)
+                await self.client.publish(self.TOPIC_info, json_message)
                 last = new
                 continue
             elif self.ignore_duplicates and \
@@ -84,14 +84,13 @@ class Source(ABC, metaclass=SourceMeta):
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
-            await self.client.publish(self.TOPIC_tg, json_message)
-            await self.client.publish(self.TOPIC_al, json_message)
+            await self.client.publish(self.TOPIC_changes, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)
 
 
-def _heartbeat_status(new: dict, last: dict) -> int:
+def _heartbeat_timestamp(new: dict, last: dict) -> int:
     if last is None:
         return 0
     return new['message_timestamp'] - last['message_timestamp']
