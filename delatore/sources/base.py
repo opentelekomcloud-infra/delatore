@@ -81,14 +81,11 @@ class Source(ABC, metaclass=SourceMeta):
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if self.ignore_duplicates and \
-                    _same_status(new, last) and \
-                    _delta_seconds(new, last) >= self.heartbeat_interval:
-                json_message = json.dumps(new)
-                await self.client.publish(self.TOPICS.info, json_message)
-                last = new
-                continue
-            elif self.ignore_duplicates and \
                     _same_status(new, last):
+                if _delta_seconds(new, last) >= self.heartbeat_interval:
+                    json_message = json.dumps(new)
+                    await self.client.publish(self.TOPICS.info, json_message)
+                    last = new
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
