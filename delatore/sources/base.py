@@ -36,7 +36,6 @@ class SourceMeta(ABCMeta):
     """Source class meta setting up data from configuration"""
 
     CONFIG_ID: str
-    PREFIX: str
     TOPICS: Topics
     config: SourceConfiguration
 
@@ -45,8 +44,7 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.PREFIX = cls.config.topic_prefix
-            cls.TOPICS = Topics.get_prefix(cls.PREFIX)
+            cls.TOPICS = Topics.get_prefix(cls.config.topic_prefix)
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -84,7 +82,7 @@ class Source(ABC, metaclass=SourceMeta):
                 continue
             if self.ignore_duplicates and \
                     _same_status(new, last) and \
-                    _heartbeat_timestamp(new, last) >= self.heartbeat_interval:
+                    _delta_seconds(new, last) >= self.heartbeat_interval:
                 json_message = json.dumps(new)
                 await self.client.publish(self.TOPICS.info, json_message)
                 last = new
@@ -100,7 +98,7 @@ class Source(ABC, metaclass=SourceMeta):
             await asyncio.sleep(self.polling_interval)
 
 
-def _heartbeat_timestamp(new: dict, last: dict) -> int:
+def _delta_seconds(new: dict, last: dict) -> int:
     if last is None:
         return 0
     return new['message_timestamp'] - last['message_timestamp']

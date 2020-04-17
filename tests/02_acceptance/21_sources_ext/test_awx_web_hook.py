@@ -29,7 +29,7 @@ async def test_http_server_notification(awx_web_hook_src: AWXWebHookSource, sub:
             pass
     assert resp.status == 200
     data = json.loads(await sub.get(.5))
-    del data['message_timestamp']  # stub for test
+    data.pop('message_timestamp')  # stub for test
     assert data == expected
 
 
