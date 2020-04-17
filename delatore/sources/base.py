@@ -5,7 +5,7 @@ import json
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from inspect import isabstract
-from typing import Optional, Union
+from typing import NamedTuple, Optional, Union
 
 from apubsub.client import Client
 
@@ -22,12 +22,22 @@ class NoUpdates(Exception):
     """Raised when source has no updates"""
 
 
+class Topics(NamedTuple):
+    changes: str
+    info: str
+
+    @classmethod
+    def get_prefix(cls, prefix: str):
+        prefix = prefix.upper()
+        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO')
+
+
 class SourceMeta(ABCMeta):
     """Source class meta setting up data from configuration"""
 
     CONFIG_ID: str
-    TOPIC_changes: str
-    TOPIC_info: str
+    PREFIX: str
+    TOPICS: Topics
     config: SourceConfiguration
 
     def __init__(cls, name, bases=(), dct=None):  # pylint:disable=redefined-builtin
@@ -35,8 +45,8 @@ class SourceMeta(ABCMeta):
         if not isabstract(cls):  # skip configuration for abstracts
             assert hasattr(cls, 'CONFIG_ID')
             cls.config = SOURCES_CFG[cls.CONFIG_ID]
-            cls.TOPIC_changes = cls.config.topics.changes
-            cls.TOPIC_info = cls.config.topics.info
+            cls.PREFIX = cls.config.topic_prefix
+            cls.TOPICS = Topics.get_prefix(cls.PREFIX)
 
 
 class Source(ABC, metaclass=SourceMeta):
@@ -76,7 +86,7 @@ class Source(ABC, metaclass=SourceMeta):
                     _same_status(new, last) and \
                     _heartbeat_timestamp(new, last) >= self.heartbeat_interval:
                 json_message = json.dumps(new)
-                await self.client.publish(self.TOPIC_info, json_message)
+                await self.client.publish(self.TOPICS.info, json_message)
                 last = new
                 continue
             elif self.ignore_duplicates and \
@@ -84,7 +94,7 @@ class Source(ABC, metaclass=SourceMeta):
                 continue
             LOGGER.debug('New data received from source: %s\ndata:\n%s', name, new)
             json_message = json.dumps(new)
-            await self.client.publish(self.TOPIC_changes, json_message)
+            await self.client.publish(self.TOPICS.changes, json_message)
             last = new
             LOGGER.debug('Wait for new data for %s', self.polling_interval)
             await asyncio.sleep(self.polling_interval)

@@ -26,15 +26,9 @@ class Timings:
 
 
 @dataclass(frozen=True)
-class Topics:
-    changes: str
-    info: str
-
-
-@dataclass(frozen=True)
 class SourceConfiguration(Configuration):
     """Single source service configuration"""
-    topics: Topics
+    topic_prefix: str
     timings: Timings
 
 
