@@ -13,7 +13,7 @@ async def test_influx_data(influxdb: InfluxSource):
 
 
 async def test_trigger_from_loop(influxdb: InfluxSource, pub: Client, sub: Client):
-    await sub.subscribe(influxdb.TOPIC)
+    await sub.subscribe(influxdb.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
     assert update is not None
@@ -30,60 +30,34 @@ async def test_influx_data_lb_down(influxdb_lb_down: InfluxSourceLBDOWN):
 
 
 async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming, pub: Client, sub: Client):
-    await sub.subscribe(influxdb_lb_timing.TOPIC)
+    await sub.subscribe(influxdb_lb_timing.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
-    a = 5
     assert update is not None
 
 
 async def test_trigger_from_loop_lb_down(influxdb_lb_down: InfluxSourceLBDOWN, pub: Client, sub: Client):
-    await sub.subscribe(influxdb_lb_down.TOPIC)
+    await sub.subscribe(influxdb_lb_down.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
     assert update is not None
 
-@pytest.fixture
-async def influxdb_lb_timing_result_1(service):
-    src = InfluxSourceLBTiming(service.get_client())
-    src.threshold = 0
-    src.ignore_duplicates = False
-    loop = asyncio.get_running_loop()
-    loop.create_task(src.start(asyncio.Event()))
-    await asyncio.sleep(.1)
-    return src
 
-@pytest.fixture
-async def influxdb_lb_timing_result_2(service):
-    src = InfluxSourceLBTiming(service.get_client())
-    src.threshold = 60
-    src.ignore_duplicates = False
-    loop = asyncio.get_running_loop()
-    loop.create_task(src.start(asyncio.Event()))
-    await asyncio.sleep(.1)
-    return src
-
-@pytest.fixture
-async def influxdb_lb_timing_result_3(service):
-    src = InfluxSourceLBTiming(service.get_client())
-    src.threshold = 90
-    src.ignore_duplicates = False
-    loop = asyncio.get_running_loop()
-    loop.create_task(src.start(asyncio.Event()))
-    await asyncio.sleep(.1)
-    return src
-
-
-@pytest.mark.parametrize(
-    "src, check",
-    [(influxdb_lb_timing_result_1, 'error'), (influxdb_lb_timing_result_2, 'ok'),(influxdb_lb_timing_result_3, 'ok')],
-)
-async def test_result_lb_timing(src, check, pub: Client, sub: Client):
-    await sub.subscribe(src.TOPIC)
+async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSourceLBTiming, pub, sub):
+    await sub.subscribe(influxdb_lb_timing_result_error.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
-    if check == 'error':
-         assert "status_list" in update
-    if check == 'ok':
-         assert "- LB_LOAD" in update
-    assert update is not None
+    assert "- LB_LOAD" in update
+
+async def test_result_lb_timing_ok1(influxdb_lb_timing_result_ok1: InfluxSourceLBTiming, pub, sub):
+    await sub.subscribe(influxdb_lb_timing_result_ok1.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert "status_list" in update
+
+async def test_result_lb_timing_ok2(influxdb_lb_timing_result_ok2: InfluxSourceLBTiming, pub, sub):
+    await sub.subscribe(influxdb_lb_timing_result_ok2.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert "status_list" in update
+

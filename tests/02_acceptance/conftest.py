@@ -26,7 +26,7 @@ async def influxdb_lb_timing(service):
     return src
 
 @pytest.fixture
-async def influxdb_lb_timing_result_1(service):
+async def influxdb_lb_timing_result_error(service):
     src = InfluxSourceLBTiming(service.get_client())
     src.threshold = 0
     src.ignore_duplicates = False
@@ -36,7 +36,7 @@ async def influxdb_lb_timing_result_1(service):
     return src
 
 @pytest.fixture
-async def influxdb_lb_timing_result_2(service):
+async def influxdb_lb_timing_result_ok1(service):
     src = InfluxSourceLBTiming(service.get_client())
     src.threshold = 60
     src.ignore_duplicates = False
@@ -46,7 +46,7 @@ async def influxdb_lb_timing_result_2(service):
     return src
 
 @pytest.fixture
-async def influxdb_lb_timing_result_3(service):
+async def influxdb_lb_timing_result_ok2(service):
     src = InfluxSourceLBTiming(service.get_client())
     src.threshold = 90
     src.ignore_duplicates = False

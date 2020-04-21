@@ -2,9 +2,10 @@
   params:
     parse_mode: 'MarkdownV2'
   subscriptions:
-    - 'INFLUX'
-    - 'AWX_WEB_HOOK'
-    - 'AWX_CLIENT_OUT'
+    - 'INFLUX_CHANGES'
+    - 'AWX_WEB_HOOK_CHANGES'
+    - 'LB_TIMING_CHANGES'
+    - 'AWX_CLIENT_OUT_CHANGES'
 
 - name: alerta
   params:
@@ -14,4 +15,6 @@
     origin: 'delatore'
     severity: 'minor'
   subscriptions:
-    - 'INFLUX'
+    - 'INFLUX_CHANGES'
+    - 'INFLUX_INFO'
+    - 'LB_TIMING_INFO'
