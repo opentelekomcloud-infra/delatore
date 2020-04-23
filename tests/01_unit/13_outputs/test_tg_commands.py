@@ -66,7 +66,10 @@ async def test_bot_status_awx(patched_bot, sub: Client, chat_id, target):
     message_text = f'/status awx {target}'
     await patched_bot.handle_status(Message(text=message_text, chat=Chat(id=chat_id)))
     data = await sub.get(.1)
-    assert data == target
+    if target == '':
+        assert data == target
+    else:
+        assert data == f'{target};1'
 
 
 def patched_message(text, chat_id):

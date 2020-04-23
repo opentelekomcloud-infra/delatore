@@ -53,8 +53,10 @@ class AWXApiSource(Source):
         else:
             template_name = template_name_and_depth
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter, depth)
-        data = self.convert(data, template_name_and_depth)
+        data = await self.get_templates(_filter, int(depth))
+        LOGGER.error('Got templates')
+        data = self.convert(data, template_name)
+        LOGGER.error('Converted')
         return data
 
     @classmethod
@@ -100,19 +102,16 @@ class AWXApiSource(Source):
         https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         async with self.get_session() as session:
-            async with session.get(self.params().host + '/job_templates', params=filters, timeout=5) as response:
+            LOGGER.error('With session')
+            async with session.get(self.params().host + '/job_templates', params=filters, timeout=15) as response:
+                LOGGER.error('Got templates')
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            if int(depth) > 1:
+            if depth > 1:
                 container = []
-                template = {'name': response_data['results'][0]['name'], 'status': '', 'last_job_run': ''}
                 for i in range(depth):
-                    template['status'] = \
-                        response_data['results'][0]['summary_fields']['recent_jobs'][i]['status']
-                    template['last_job_run'] = \
-                        response_data['results'][0]['summary_fields']['recent_jobs'][i]['finished']
-                    container.append(template)
+                    container.append(create_record(response_data['results'][0], i))
                 return container
             return response_data['results']
         except KeyError:
@@ -127,8 +126,10 @@ def single_template_filter(template_name: str):
     return None
 
 
-def split_message(message: str):
-    split = message.split(';')
-    if len(split) == 2:
-        return split[0], split[1]
-    return '', 1
+def create_record(data: Dict, index: int):
+    template = {
+        'name': data['name'],
+        'status': data['summary_fields']['recent_jobs'][index]['status'],
+        'last_job_run': data['summary_fields']['recent_jobs'][index]['finished']
+    }
+    return template
