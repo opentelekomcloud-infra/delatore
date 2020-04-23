@@ -42,13 +42,19 @@ class AWXApiSource(Source):
     _params: Optional[AWXParams] = None
 
     async def get_update(self):
-        template_name = await self.client.get(self.polling_interval)
-        if template_name is None:
+        template_name_and_depth = await self.client.get(self.polling_interval)
+        if template_name_and_depth is None:
             raise NoUpdates
-
+        slitted_template = template_name_and_depth.split(';')
+        depth = 1
+        if len(slitted_template) == 2:
+            template_name = slitted_template[0]
+            depth = slitted_template[1]
+        else:
+            template_name = template_name_and_depth
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter)
-        data = self.convert(data, template_name)
+        data = await self.get_templates(_filter, depth)
+        data = self.convert(data, template_name_and_depth)
         return data
 
     @classmethod
@@ -87,7 +93,7 @@ class AWXApiSource(Source):
         await self.client.subscribe(self.params().topic_in)
         await super().start(stop_event)
 
-    async def get_templates(self, filters: dict = None) -> Optional[list]:
+    async def get_templates(self, filters: dict = None, depth: int = 1) -> Optional[list]:
         """Returns list of all job templates for csm organization
 
         This methods support Ansible tower filtering
@@ -98,6 +104,16 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
+            if int(depth) > 1:
+                container = []
+                template = {'name': response_data['results'][0]['name'], 'status': '', 'last_job_run': ''}
+                for i in range(depth):
+                    template['status'] = \
+                        response_data['results'][0]['summary_fields']['recent_jobs'][i]['status']
+                    template['last_job_run'] = \
+                        response_data['results'][0]['summary_fields']['recent_jobs'][i]['finished']
+                    container.append(template)
+                return container
             return response_data['results']
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
@@ -109,3 +125,10 @@ def single_template_filter(template_name: str):
     if template_name:
         return {'name__iexact': template_name}
     return None
+
+
+def split_message(message: str):
+    split = message.split(';')
+    if len(split) == 2:
+        return split[0], split[1]
+    return '', 1
