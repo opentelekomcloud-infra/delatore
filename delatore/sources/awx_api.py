@@ -54,9 +54,7 @@ class AWXApiSource(Source):
             template_name = template_name_and_depth
         _filter = single_template_filter(template_name)
         data = await self.get_templates(_filter, int(depth))
-        LOGGER.error('Got templates')
         data = self.convert(data, template_name)
-        LOGGER.error('Converted')
         return data
 
     @classmethod
@@ -102,9 +100,7 @@ class AWXApiSource(Source):
         https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         async with self.get_session() as session:
-            LOGGER.error('With session')
             async with session.get(self.params().host + '/job_templates', params=filters, timeout=15) as response:
-                LOGGER.error('Got templates')
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
