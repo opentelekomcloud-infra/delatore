@@ -232,12 +232,11 @@ class InfluxSourceLBTiming(InfluxSource):
         self.list_elapsed_time.pop(0)
         self.list_elapsed_time.append(last_elapsed_time)
         results = []
-        if min(self.list_elapsed_time) < self.threshold:
+        if min(self.list_elapsed_time) < 0:
             results.append(generate_status(self._metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
             results.append(generate_error('InfluxdbLBTiming', await self._get_error_message()))
-            a = 5
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_error_message(self):

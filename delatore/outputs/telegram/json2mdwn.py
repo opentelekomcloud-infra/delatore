@@ -3,7 +3,7 @@ from aiogram.utils.markdown import escape_md, link
 
 from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
-
+import re
 
 def _status_to_md_row(status_record):
     status_emoji = replace_emoji(status_record['status'])
@@ -22,12 +22,15 @@ def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
     source = escape_md(data['source'])
     src_row = f'*From {source}*'
-    if 'status_list' in data:
-        status_list = '\n'.join(
-            _status_to_md_row(status) for status in data['status_list']
-        )
+    status_list = ''
+    if 'error' in data['status_list'][0]:
+        str = re.escape(data["status_list"][0]["error"])
+        status_list = f'Error:\n{str}'
     else:
-        status_list = f'Error: {data["error"]}'
+        if 'status_list' in data:
+            status_list = '\n'.join(
+                _status_to_md_row(status) for status in data['status_list']
+            )
     return f'{src_row}\n{status_list}'
 
 

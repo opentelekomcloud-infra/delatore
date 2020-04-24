@@ -53,6 +53,7 @@ async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, sour
     await pub.publish(source_cls.TOPICS.changes, message)
     try:
         await asyncio.wait_for(bot_alert_queue.get(), 1.5)
+
         bot_alert_queue.task_done()
     except asyncio.TimeoutError:
         raise AssertionError

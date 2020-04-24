@@ -115,7 +115,7 @@ class BotRunner:
         return await self.bot.delete_message(self.chat_id, message_id)
 
     async def start_posting(self):
-        """Start posting updates to channel"""
+        self.channel = """Start posting updates to channel"""
         await self.client.start_consuming()
         topics = TG_CONFIG.subscriptions
         await asyncio.wait([
@@ -126,10 +126,12 @@ class BotRunner:
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
+            a = 5
             if message is not None:
                 data = json.loads(message)
                 try:
-                    await self.alert(convert(data))  # check if TG response was 200
+                    a = convert(data)
+                    await self.alert(a)  # check if TG response was 200
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
 
