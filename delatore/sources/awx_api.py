@@ -45,11 +45,11 @@ class AWXApiSource(Source):
         template_name_and_depth = await self.client.get(self.polling_interval)
         if template_name_and_depth is None:
             raise NoUpdates
-        slitted_template = template_name_and_depth.split(';')
+        split_template = template_name_and_depth.split(';')
         depth = 1
-        if len(slitted_template) == 2:
-            template_name = slitted_template[0]
-            depth = slitted_template[1]
+        if len(split_template) == 2:
+            template_name = split_template[0]
+            depth = split_template[1]
         else:
             template_name = template_name_and_depth
         _filter = single_template_filter(template_name)
