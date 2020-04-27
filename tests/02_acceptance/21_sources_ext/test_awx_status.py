@@ -22,6 +22,18 @@ async def test_get_data(awx_client):
     assert all(key in status for key in ['name', 'status', 'timestamp', 'details_url'])  # FIXME: WUT!?
 
 
+@pytest.mark.parametrize('template_name', ['Deploy Delatore'])
+@pytest.mark.parametrize('depth', [3, 5])
+@pytest.mark.asyncio
+async def test_get_data_with_depth(awx_client, template_name, depth):
+    _filter = single_template_filter(template_name)
+    container = await awx_client.get_templates(_filter, depth)
+    assert len(container) == depth
+    message = awx_client.convert(container, template_name)
+    assert message['source'] == awx_client.CONFIG_ID
+    assert len(message['status_list']) == depth
+
+
 async def test_get_all_scenarios(awx_client):
     _filter = single_template_filter(TEMPLATE_NAME)
     single, multiple = await asyncio.gather(

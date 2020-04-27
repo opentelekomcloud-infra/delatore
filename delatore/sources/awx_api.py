@@ -100,7 +100,7 @@ class AWXApiSource(Source):
         https://docs.ansible.com/ansible-tower/latest/html/towerapi/filtering.html
         """
         async with self.get_session() as session:
-            async with session.get(self.params().host + '/job_templates', params=filters, timeout=15) as response:
+            async with session.get(self.params().host + '/job_templates', params=filters, timeout=5) as response:
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
