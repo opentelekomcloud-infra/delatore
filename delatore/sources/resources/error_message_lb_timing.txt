@@ -3,7 +3,7 @@
 - Alert message: Response time are above "threshold"
 - Host: "hostname"
 - Response time: "current_response_time"
-- CPU utilization: {cpu_utilization}
-- Node distribution: {node_distribution}
-- Network bytes recv: {network_bytes_recv}
-- Network bytes send: {network_bytes_send}
+- CPU utilization: {cpu_utilization} %
+- Node distribution: {node_distribution1}\/{node_distribution2}
+- Network bytes recv \(Kbyte\): {network_bytes_recv}
+- Network bytes send \(Kbyte\): {network_bytes_send}

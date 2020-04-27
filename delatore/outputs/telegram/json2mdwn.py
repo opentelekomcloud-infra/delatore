@@ -24,8 +24,8 @@ def convert(data: dict):
     src_row = f'*From {source}*'
     status_list = ''
     if 'error' in data['status_list'][0]:
-        str = re.escape(data["status_list"][0]["error"])
-        status_list = f'Error:\n{str}'
+        message = data["status_list"][0]["error"].replace('.', '\.').replace('_', '\_').replace('-', '\-')
+        status_list = f'Error:\n{message}'
     else:
         if 'status_list' in data:
             status_list = '\n'.join(

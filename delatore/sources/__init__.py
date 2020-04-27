@@ -18,5 +18,6 @@ async def start_sources(msg_service: Service, stop_event: asyncio.Event, config:
         AWXApiSource(msg_service.get_client(), config).start(stop_event),
         AWXWebHookSource(msg_service.get_client()).start(stop_event),
         InfluxSource(msg_service.get_client(), config).start(stop_event),
-        InfluxSourceLBTiming(msg_service.get_client(), config).start(stop_event)
+        InfluxSourceLBTiming(msg_service.get_client(), config).start(stop_event),
+        InfluxSourceLBDOWN(msg_service.get_client(), config).start(stop_event)
     ])

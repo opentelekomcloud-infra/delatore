@@ -49,15 +49,12 @@ async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSou
     update = await sub.get(5)
     assert "- LB_LOAD" in update
 
-async def test_result_lb_timing_ok1(influxdb_lb_timing_result_ok1: InfluxSourceLBTiming, pub, sub):
-    await sub.subscribe(influxdb_lb_timing_result_ok1.TOPICS.changes)
-    await asyncio.sleep(.1)
-    update = await sub.get(5)
-    assert "status_list" in update
 
-async def test_result_lb_timing_ok2(influxdb_lb_timing_result_ok2: InfluxSourceLBTiming, pub, sub):
-    await sub.subscribe(influxdb_lb_timing_result_ok2.TOPICS.changes)
+async def test_result_lb_timing_ok(influxdb_lb_timing_result_ok: InfluxSourceLBTiming, pub, sub):
+    await sub.subscribe(influxdb_lb_timing_result_ok.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
-    assert "status_list" in update
+    assert "- LB_LOAD" not in update
+
+
 

@@ -35,20 +35,11 @@ async def influxdb_lb_timing_result_error(service):
     await asyncio.sleep(.1)
     return src
 
-@pytest.fixture
-async def influxdb_lb_timing_result_ok1(service):
-    src = InfluxSourceLBTiming(service.get_client())
-    src.threshold = 60
-    src.ignore_duplicates = False
-    loop = asyncio.get_running_loop()
-    loop.create_task(src.start(asyncio.Event()))
-    await asyncio.sleep(.1)
-    return src
 
 @pytest.fixture
-async def influxdb_lb_timing_result_ok2(service):
+async def influxdb_lb_timing_result_ok(service):
     src = InfluxSourceLBTiming(service.get_client())
-    src.threshold = 90
+    src.threshold = 500
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))

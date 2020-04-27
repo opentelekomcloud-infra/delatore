@@ -232,7 +232,7 @@ class InfluxSourceLBTiming(InfluxSource):
         self.list_elapsed_time.pop(0)
         self.list_elapsed_time.append(last_elapsed_time)
         results = []
-        if min(self.list_elapsed_time) < 0:
+        if min(self.list_elapsed_time) < self.threshold:
             results.append(generate_status(self._metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
@@ -251,13 +251,15 @@ class InfluxSourceLBTiming(InfluxSource):
         results_queries_without_empty_lines = []
         for result_query in results_queries:
             try:
-                results_queries_without_empty_lines.append(result_query.raw['series'][0]['values'][0][1])
+                for line in result_query.raw['series'][0]['values']:
+                    results_queries_without_empty_lines.append(line[1])
             except KeyError:
                 results_queries_without_empty_lines.append('No data')
-        str_template = str_template.format(cpu_utilization=results_queries_without_empty_lines[0],
-                                           node_distribution=results_queries_without_empty_lines[1],
-                                           network_bytes_recv=results_queries_without_empty_lines[2],
-                                           network_bytes_send=results_queries_without_empty_lines[3])
+        str_template = str_template.format(cpu_utilization=round(results_queries_without_empty_lines[0], 3),
+                                           node_distribution1=results_queries_without_empty_lines[1],
+                                           node_distribution2=results_queries_without_empty_lines[2],
+                                           network_bytes_recv=round(results_queries_without_empty_lines[3]/1000, 2),
+                                           network_bytes_send=round(results_queries_without_empty_lines[4]/1000, 2))
         return str_template
 
     async def _get_status(self, metric):

@@ -6,6 +6,7 @@
     - 'AWX_WEB_HOOK_CHANGES'
     - 'LB_TIMING_CHANGES'
     - 'AWX_CLIENT_OUT_CHANGES'
+    - 'LB_DOWN_CHANGES'
 
 - name: alerta
   params:

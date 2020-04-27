@@ -126,12 +126,10 @@ class BotRunner:
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
-            a = 5
             if message is not None:
                 data = json.loads(message)
                 try:
-                    a = convert(data)
-                    await self.alert(a)  # check if TG response was 200
+                    await self.alert(convert(data))  # check if TG response was 200
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
 
