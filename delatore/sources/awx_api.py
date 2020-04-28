@@ -42,16 +42,20 @@ class AWXApiSource(Source):
     _params: Optional[AWXParams] = None
 
     async def get_update(self):
-        template_name_and_depth = await self.client.get(self.polling_interval)
-        if template_name_and_depth is None:
+        input_msg = await self.client.get(self.polling_interval)
+        if input_msg is None:
             raise NoUpdates
-        split_template = template_name_and_depth.split(';')
-        depth = 1
-        if len(split_template) == 2:
-            template_name = split_template[0]
-            depth = split_template[1]
-        else:
-            template_name = template_name_and_depth
+
+        split_template = input_msg.split(';')
+
+        # depth = 1
+        # if len(split_template) == 2:
+        #     template_name = split_template[0]
+        #     depth = split_template[1]
+        # else:
+        #     template_name = input_msg
+        template_name, *depth = split_template
+
         _filter = single_template_filter(template_name)
         data = await self.get_templates(_filter, int(depth))
         data = self.convert(data, template_name)
@@ -93,7 +97,7 @@ class AWXApiSource(Source):
         await self.client.subscribe(self.params().topic_in)
         await super().start(stop_event)
 
-    async def get_templates(self, filters: dict = None, depth: int = 1) -> Optional[list]:
+    async def get_templates(self, filters: dict = None, depth=1) -> Optional[list]:
         """Returns list of all job templates for csm organization
 
         This methods support Ansible tower filtering
@@ -104,12 +108,11 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            if depth > 1:
-                container = []
-                for i in range(depth):
-                    container.append(create_record(response_data['results'][0], i))
-                return container
-            return response_data['results']
+            container = []
+            for i in range(len(response_data['results'])):
+                for j in range(depth):
+                    container.append(_create_record(response_data['results'][i], j))
+            return container
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise
@@ -122,10 +125,15 @@ def single_template_filter(template_name: str):
     return None
 
 
-def create_record(data: Dict, index: int):
+def _create_record(data: Dict, index: int):
     template = {
         'name': data['name'],
-        'status': data['summary_fields']['recent_jobs'][index]['status'],
-        'last_job_run': data['summary_fields']['recent_jobs'][index]['finished']
+        'status': '',
+        'last_job_run': '',
     }
+    try:
+        template['status'] = data['summary_fields']['recent_jobs'][index]['status']
+        template['last_job_run'] = data['summary_fields']['recent_jobs'][index]['finished']
+    except IndexError:
+        template['status'] = 'never updated'
     return template
