@@ -3,7 +3,7 @@ from aiogram.utils.markdown import escape_md, link
 
 from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
-import re
+
 
 def _status_to_md_row(status_record):
     status_emoji = replace_emoji(status_record['status'])

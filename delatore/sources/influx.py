@@ -161,6 +161,7 @@ class InfluxSource(Source):
     def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client, instance_config=instance_config)
         self._influx_client = None
+        self._metrics = self.params().metrics
 
     @property
     def influx_client(self):
@@ -201,16 +202,14 @@ class InfluxSource(Source):
         return generate_status(metric.name, Status.FAIL,
                                last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
-    async def _get_error_message(self):
-        with open(_CONFIGS[self._error_message_file], 'r') as file:
-            str_template = file.read()
-        return str_template
-
 
 class InfluxSourceLBTiming(InfluxSource):
+    """InfluxSourceLBTiming client"""
+
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
-    list_elapsed_time = [1, 1, 1, 1, 1]
+    list_elapsed_time = {}
+    list_hosts = []
 
     _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
     _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
@@ -225,21 +224,22 @@ class InfluxSourceLBTiming(InfluxSource):
     def threshold(self, threshold):
         self._threshold = threshold
 
+    async def init_list_elapsed_time(self):
+        for host in self.list_hosts:
+            self.list_elapsed_time[host] = [1, 1, 1, 1, 1]
 
     async def get_update(self) -> dict:
-        self._metrics = self.params().metrics
-        last_elapsed_time, last_time_ms, status = await self._get_status(self._metrics[0])
-        self.list_elapsed_time.pop(0)
-        self.list_elapsed_time.append(last_elapsed_time)
+        last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
-        if min(self.list_elapsed_time) < self.threshold:
-            results.append(generate_status(self._metrics[0].name, status,
-                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        else:
-            results.append(generate_error('InfluxdbLBTiming', await self._get_error_message()))
+        for host in self.list_hosts:
+            if min(self.list_elapsed_time[host]) > self.threshold:
+                results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
+                return generate_message(self.CONFIG_ID, results)
+        results.append(generate_status(self._metrics[0].name, status,
+                                       last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         return generate_message(self.CONFIG_ID, results)
 
-    async def _get_error_message(self):
+    async def _get_error_message(self, host):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
             str_template = file.read()
             list_queries = []
@@ -255,7 +255,11 @@ class InfluxSourceLBTiming(InfluxSource):
                     results_queries_without_empty_lines.append(line[1])
             except KeyError:
                 results_queries_without_empty_lines.append('No data')
-        str_template = str_template.format(cpu_utilization=round(results_queries_without_empty_lines[0], 3),
+        str_template = str_template.format(
+                                           threshold=self.threshold,
+                                           current_response_time=self.list_elapsed_time[host][4],
+                                           hostname = host,
+                                           cpu_utilization=round(results_queries_without_empty_lines[0], 3),
                                            node_distribution1=results_queries_without_empty_lines[1],
                                            node_distribution2=results_queries_without_empty_lines[2],
                                            network_bytes_recv=round(results_queries_without_empty_lines[3]/1000, 2),
@@ -265,17 +269,27 @@ class InfluxSourceLBTiming(InfluxSource):
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        try:
-            last_time = last_record.raw['series'][0]['values'][0][0]
-            last_elapsed_time = last_record.raw['series'][0]['values'][0][1]
-        except KeyError:
-            return generate_status(metric.name, Status.NO_DATA, None)
-        now = datetime.utcnow().timestamp()
-        last_time_ms = _convert_time(last_time)
-        status = Status.OK
-        if now - last_time_ms.timestamp() > metric.timeout:
-            status = Status.FAIL
-        return last_elapsed_time, last_time_ms, status
+        last_time_ms = None
+        status = Status.FAIL
+        if len(self.list_elapsed_time) == 0:
+            for seria in last_record.raw['series']:
+                self.list_hosts.append(seria['tags']['server'])
+            await self.init_list_elapsed_time()
+        last_record = await self.influx_client.query(query)
+        for seria in last_record.raw['series'] :
+            try:
+                last_time = seria['values'][0][0]
+                hostname = seria['tags']['server']
+                del(self.list_elapsed_time[hostname][0])
+                self.list_elapsed_time[hostname].append(seria['values'][0][1])
+                now = datetime.utcnow().timestamp()
+                last_time_ms = _convert_time(last_time)
+                status = Status.OK
+                if now - last_time_ms.timestamp() > metric.timeout:
+                    status = Status.FAIL
+            except KeyError:
+                return generate_status(metric.name, Status.NO_DATA, None)
+        return last_time_ms, status
 
 
 class InfluxSourceLBDOWN(InfluxSource):
@@ -284,7 +298,6 @@ class InfluxSourceLBDOWN(InfluxSource):
     _error_message_file = 'error_message_lb_down.txt'
 
     async def get_update(self) -> dict:
-        self._metrics = self.params().metrics
         error_script_status, last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
         if not error_script_status:
@@ -309,6 +322,11 @@ class InfluxSourceLBDOWN(InfluxSource):
             if now - last_time_ms.timestamp() > metric.timeout:
                 status = Status.FAIL
         return error_script_status, last_time_ms, status
+
+    async def _get_error_message(self):
+        with open(_CONFIGS[self._error_message_file], 'r') as file:
+            str_template = file.read()
+        return str_template
 
 
 class InfluxTimestampParseException(Exception):
