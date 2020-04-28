@@ -16,10 +16,10 @@ from tests.helpers import random_string
 @pytest.mark.parametrize(['quo'], '\'\"')
 def test_parse_quotted_message(quo):
     """Testing of parsing quotted message"""
-    expected = ('awx', 'Scenario 1.5', 5)
+    expected = ('awx', 'Scenario 1.5', '5')
     message = f'/status {expected[0]} {quo}{expected[1]}{quo} {expected[2]}'
-    source, detailed, count = parse_command(message)
-    assert (source, detailed, count) == expected
+    command = parse_command(message)
+    assert (command.target, command.detailed, command.depth) == expected
 
 
 @pytest.mark.parametrize(('message', 'expected'),
@@ -30,8 +30,8 @@ def test_parse_quotted_message(quo):
                          ])
 def test_parse_command(message, expected):
     """Testing of parsing command arguments"""
-    source, detailed, count = parse_command(message)
-    assert (source, detailed, count) == expected
+    command = parse_command(message)
+    assert (command.target, command.detailed, command.depth) == expected
 
 
 @pytest.mark.parametrize('message',

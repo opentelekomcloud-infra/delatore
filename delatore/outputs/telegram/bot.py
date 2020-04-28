@@ -92,13 +92,12 @@ class BotRunner:
         """Handler for /status command"""
         log_msg(message)
         try:
-            source, template_name, history = parse_command(message.text)  # pylint:disable=unused-variable
+            command = parse_command(message.text)  # pylint:disable=unused-variable
         except CommandParsingError:
             return await message.answer(escape_md('Invalid command. Please check command syntax'))
+        source = command.target
         if source in STATUS_TOPICS:
-            if template_name is None:
-                return await self.client.publish(STATUS_TOPICS[source], '')
-            return await self.client.publish(STATUS_TOPICS[source], f'{template_name};{history}')
+            return await self.client.publish(STATUS_TOPICS[source], f'{command.detailed};{command.depth}')
         return await message.answer(rf'Invalid source: `{escape_md(source)}`')
 
     async def alert(self, message):

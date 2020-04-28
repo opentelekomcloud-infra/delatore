@@ -42,20 +42,11 @@ class AWXApiSource(Source):
     _params: Optional[AWXParams] = None
 
     async def get_update(self):
-        input_msg = await self.client.get(self.polling_interval)
-        if input_msg is None:
+        msg = await self.client.get(self.polling_interval)
+        if msg is None:
             raise NoUpdates
 
-        split_template = input_msg.split(';')
-
-        # depth = 1
-        # if len(split_template) == 2:
-        #     template_name = split_template[0]
-        #     depth = split_template[1]
-        # else:
-        #     template_name = input_msg
-        template_name, *depth = split_template
-
+        template_name, depth = msg.split(';')
         _filter = single_template_filter(template_name)
         data = await self.get_templates(_filter, int(depth))
         data = self.convert(data, template_name)

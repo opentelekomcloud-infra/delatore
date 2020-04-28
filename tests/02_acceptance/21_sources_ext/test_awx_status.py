@@ -23,7 +23,6 @@ async def test_get_data(awx_client):
 
 
 @pytest.mark.parametrize('depth', [3, 5])
-@pytest.mark.asyncio
 async def test_get_data_with_depth(awx_client, depth):
     _filter = single_template_filter(TEMPLATE_NAME)
     container = await awx_client.get_templates(_filter, depth)
@@ -48,10 +47,11 @@ async def test_get_not_existing_scenario(awx_client):
     assert single == []
 
 
-async def test_trigger_from_loop(awx_client, pub: Client, sub: Client):
+@pytest.mark.parametrize('message', ['Scenario 1.5 (native);1', 'Deploy Delatore;1'])
+async def test_trigger_from_loop(awx_client, pub: Client, sub: Client, message):
     await sub.subscribe(awx_client.TOPICS.changes)
     await asyncio.sleep(.2)
-    await pub.publish(awx_client.params().topic_in, TEMPLATE_NAME)
+    await pub.publish(awx_client.params().topic_in, message)
     response = await sub.get(5)
     assert response is not None
 
@@ -60,7 +60,7 @@ async def test_trigger_empty_from_loop(awx_client, pub: Client, sub: Client):
     await sub.subscribe(awx_client.TOPICS.changes)
     await asyncio.sleep(.2)
     template_name = random_string()
-    await pub.publish(awx_client.params().topic_in, template_name)
+    await pub.publish(awx_client.params().topic_in, f'{template_name};{1}')
     response = await sub.get(5)
     no_template = {'source': "awx_api", "error": NO_TEMPLATE_PATTERN.format(template_name)}
     assert json.loads(response) == no_template
