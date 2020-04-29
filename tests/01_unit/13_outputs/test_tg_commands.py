@@ -24,15 +24,14 @@ def test_parse_quotted_message(quo):
 
 @pytest.mark.parametrize(('message', 'expected'),
                          [
-                             ('/status awx \'Scenario 1.5\' 5', ('awx', 'Scenario 1.5', 5)),
-                             ('/status awx', ('awx', '', 1)),
-                             ('/status awx  "Destroy 1" ', ('awx', 'Destroy 1', 1))
+                             ('/status awx \'Scenario 1.5\' 5', ParsedStatusCommand('awx', 'Scenario 1.5', 5)),
+                             ('/status awx', ParsedStatusCommand('awx', '', 1)),
+                             ('/status awx  "Destroy 1" ', ParsedStatusCommand('awx', 'Destroy 1', 1))
                          ])
 def test_parse_command(message, expected):
     """Testing of parsing command arguments"""
     command = parse_command(message)
-    target, detailed, depth = expected
-    assert command == ParsedStatusCommand(target, detailed, depth)
+    assert command == expected
 
 
 @pytest.mark.parametrize('message',
