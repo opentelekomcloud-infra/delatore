@@ -232,8 +232,12 @@ class InfluxSourceLBTiming(InfluxSource):
         last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
         for host in self.list_hosts:
-            if min(self.list_elapsed_time[host]) > self.threshold:
-                results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
+            if (status == Status.FAIL):
+                results.append(generate_status(self._metrics[0].name, status,
+                                       last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            else:
+                if min(self.list_elapsed_time[host]) > self.threshold:
+                    results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_error_message(self, host):
@@ -320,6 +324,54 @@ class InfluxSourceLBDOWN(InfluxSource):
     async def _get_error_message(self):
         with open(_CONFIGS[self._error_message_file], 'r') as file:
             str_template = file.read()
+        return str_template
+
+
+class InfluxSourceLBDOWNFailCount(InfluxSource):
+
+    CONFIG_ID = 'influxdb_lb_down_fail_count'
+    _params: InfluxParams = None
+    _error_message_file = 'error_message_lb_down_fail_count.txt'
+    _list_fail_count = [1, 1, 1, 1, 1]
+    _hostname: str = None
+    threshold = 5
+
+    async def get_update(self) -> dict:
+        count, last_time_ms, status = await self._get_status(self._metrics[0])
+        results = []
+        if status == Status.FAIL:
+            results.append(generate_status(generate_status(self._metrics[0].name, status,
+                                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN))))
+        else:
+            if min(self._list_fail_count) > self.threshold:
+                results.append(generate_error('InfluxdbLBDOWNFailCount', await self._get_error_message()))
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        last_time_ms = None
+        status = Status.FAIL
+        self.hostname = last_record.raw['series'][0]['tags']['host']
+        last_record = await self.influx_client.query(query)
+        try:
+            last_time = last_record.raw['series'][0]['values'][0][0]
+            count = last_record.raw['series'][0]['values'][0][1]
+            del (self._list_fail_count[0])
+            self._list_fail_count.append(count)
+            now = datetime.utcnow().timestamp()
+            last_time_ms = _convert_time(last_time)
+            status = Status.OK
+            if now - last_time_ms.timestamp() > metric.timeout:
+                status = Status.FAIL
+        except KeyError:
+            return generate_status(metric.name, Status.NO_DATA, None)
+        return count, status, last_time_ms
+
+    async def _get_error_message(self):
+        with open(_CONFIGS['error_message_lb_down_fail_count.txt'], 'r') as file:
+            str_template = file.read()
+        str_template = str_template.format( hostname=self.hostname)
         return str_template
 
 

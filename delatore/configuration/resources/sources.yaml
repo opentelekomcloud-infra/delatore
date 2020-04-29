@@ -73,9 +73,24 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY time(1m)"
+        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY host, time(1m)"
         timeout: 60
   topic_prefix: 'LB_DOWN'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
+- name: influxdb_lb_down_fail_count
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_DOWN:Fail count
+        metric_id: lb_down_test
+        query: "SELECT count(\"requests\") FROM \"lb_down\" WHERE (\"ok\" = 'False') GROUP BY host, time(1m) fill(null)"
+        timeout: 60
+  topic_prefix: 'LB_DOWN_FAIL_COUNT'
   timings:
     polling_interval: 60
     request_timeout: 25

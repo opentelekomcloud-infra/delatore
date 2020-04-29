@@ -7,6 +7,7 @@
     - 'LB_TIMING_CHANGES'
     - 'AWX_CLIENT_OUT_CHANGES'
     - 'LB_DOWN_CHANGES'
+    - 'LB_DOWN_FAIL_COUNT_CHANGES'
 
 - name: alerta
   params:
@@ -16,6 +17,3 @@
     origin: 'delatore'
     severity: 'minor'
   subscriptions:
-    - 'INFLUX_CHANGES'
-    - 'INFLUX_INFO'
-    - 'LB_TIMING_INFO'

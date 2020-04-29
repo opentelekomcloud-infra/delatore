@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN
+from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount
 
 
 @pytest.fixture
@@ -25,6 +25,17 @@ async def influxdb_lb_timing(service):
     await asyncio.sleep(.1)
     return src
 
+
+@pytest.fixture
+async def influxdb_lb_down_fail_count(service):
+    src = InfluxSourceLBDOWNFailCount(service.get_client())
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+
 @pytest.fixture
 async def influxdb_lb_timing_result_error(service):
     src = InfluxSourceLBTiming(service.get_client())
@@ -40,6 +51,27 @@ async def influxdb_lb_timing_result_error(service):
 async def influxdb_lb_timing_result_ok(service):
     src = InfluxSourceLBTiming(service.get_client())
     src.threshold = 500
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+@pytest.fixture
+async def influxdb_lb_down_fail_count_error(service):
+    src = InfluxSourceLBDOWNFailCount(service.get_client())
+    src.threshold = 0
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+
+@pytest.fixture
+async def influxdb_lb_down_fail_count_ok(service):
+    src = InfluxSourceLBDOWNFailCount(service.get_client())
+    src.threshold = 10
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))

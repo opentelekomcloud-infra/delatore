@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from apubsub.client import Client
 
-from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN
+from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount
 pytestmark = pytest.mark.asyncio
 
 
@@ -26,6 +26,11 @@ async def test_influx_data_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming):
 
 async def test_influx_data_lb_down(influxdb_lb_down: InfluxSourceLBDOWN):
     update = await influxdb_lb_down.get_update()
+    assert update is not None
+
+
+async def test_influx_data_lb_down_fail_count(influxdb_lb_down_fail_count: InfluxSourceLBDOWNFailCount):
+    update = await influxdb_lb_down_fail_count.get_update()
     assert update is not None
 
 
@@ -57,4 +62,15 @@ async def test_result_lb_timing_ok(influxdb_lb_timing_result_ok: InfluxSourceLBT
     assert "- LB_LOAD" not in update
 
 
+async def test_result_lb_down_fail_count_error(influxdb_lb_down_fail_count_error: InfluxSourceLBDOWNFailCount, pub, sub):
+    await sub.subscribe(influxdb_lb_down_fail_count_error.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert 'Alert message' in update
 
+
+async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: InfluxSourceLBDOWNFailCount, pub, sub):
+    await sub.subscribe(influxdb_lb_down_fail_count_ok.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert 'Alert message' not in update
