@@ -42,12 +42,12 @@ class AWXApiSource(Source):
     _params: Optional[AWXParams] = None
 
     async def get_update(self):
-        template_name = await self.client.get(self.polling_interval)
-        if template_name is None:
+        msg = await self.client.get(self.polling_interval)
+        if msg is None:
             raise NoUpdates
-
+        template_name, depth, *_ = msg.split(';')
         _filter = single_template_filter(template_name)
-        data = await self.get_templates(_filter)
+        data = await self.get_templates(_filter, int(depth))
         data = self.convert(data, template_name)
         return data
 
@@ -87,7 +87,7 @@ class AWXApiSource(Source):
         await self.client.subscribe(self.params().topic_in)
         await super().start(stop_event)
 
-    async def get_templates(self, filters: dict = None) -> Optional[list]:
+    async def get_templates(self, filters: dict = None, depth=1) -> Optional[list]:
         """Returns list of all job templates for csm organization
 
         This methods support Ansible tower filtering
@@ -98,7 +98,12 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            return response_data['results']
+            container = [
+                _create_record(result, j)
+                for result in response_data['results']
+                for j in range(depth)
+            ]
+            return container
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
             raise
@@ -109,3 +114,19 @@ def single_template_filter(template_name: str):
     if template_name:
         return {'name__iexact': template_name}
     return None
+
+
+def _create_record(data: Dict, index: int):
+    template = {
+        'name': data['name'],
+        'status': 'never updated',
+        'last_job_run': '',
+    }
+
+    try:
+        job = data['summary_fields']['recent_jobs'][index]
+        template['last_job_run'] = job['finished']
+        template['status'] = job['status']
+    except IndexError:
+        pass
+    return template

@@ -8,7 +8,7 @@ from aiogram.types import Chat, Message
 from apubsub.client import Client
 
 from delatore.outputs.telegram.bot import handle_help_cmd
-from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
+from delatore.outputs.telegram.parsing import CommandParsingError, ParsedStatusCommand, parse_command
 from delatore.sources import AWXApiSource
 from tests.helpers import random_string
 
@@ -18,20 +18,20 @@ def test_parse_quotted_message(quo):
     """Testing of parsing quotted message"""
     expected = ('awx', 'Scenario 1.5', 5)
     message = f'/status {expected[0]} {quo}{expected[1]}{quo} {expected[2]}'
-    source, detailed, count = parse_command(message)
-    assert (source, detailed, count) == expected
+    command = parse_command(message)
+    assert (command.target, command.detailed, command.depth) == expected
 
 
 @pytest.mark.parametrize(('message', 'expected'),
                          [
-                             ('/status awx \'Scenario 1.5\' 5', ('awx', 'Scenario 1.5', 5)),
-                             ('/status awx', ('awx', None, 1)),
-                             ('/status awx  "Destroy 1" ', ('awx', 'Destroy 1', 1))
+                             ('/status awx \'Scenario 1.5\' 5', ParsedStatusCommand('awx', 'Scenario 1.5', 5)),
+                             ('/status awx', ParsedStatusCommand('awx', '', 1)),
+                             ('/status awx  "Destroy 1" ', ParsedStatusCommand('awx', 'Destroy 1', 1))
                          ])
 def test_parse_command(message, expected):
     """Testing of parsing command arguments"""
-    source, detailed, count = parse_command(message)
-    assert (source, detailed, count) == expected
+    command = parse_command(message)
+    assert command == expected
 
 
 @pytest.mark.parametrize('message',
@@ -66,7 +66,7 @@ async def test_bot_status_awx(patched_bot, sub: Client, chat_id, target):
     message_text = f'/status awx {target}'
     await patched_bot.handle_status(Message(text=message_text, chat=Chat(id=chat_id)))
     data = await sub.get(.1)
-    assert data == target
+    assert data == f'{target};1'
 
 
 def patched_message(text, chat_id):
