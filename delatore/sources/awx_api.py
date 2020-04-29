@@ -111,7 +111,7 @@ class AWXApiSource(Source):
 
 def single_template_filter(template_name: str):
     """Filter by exact template name"""
-    if template_name:
+    if template_name != '':
         return {'name__iexact': template_name}
     return None
 
