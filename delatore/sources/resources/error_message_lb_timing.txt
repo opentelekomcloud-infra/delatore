@@ -4,6 +4,5 @@
 - Host: {hostname}
 - Response time: {current_response_time}
 - CPU utilization: {cpu_utilization} %
-- Node distribution: {node_distribution1}\/{node_distribution2}
 - Network bytes recv \(Kbyte\): {network_bytes_recv}
 - Network bytes send \(Kbyte\): {network_bytes_send}

@@ -234,36 +234,30 @@ class InfluxSourceLBTiming(InfluxSource):
         for host in self.list_hosts:
             if min(self.list_elapsed_time[host]) > self.threshold:
                 results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
-                return generate_message(self.CONFIG_ID, results)
-        results.append(generate_status(self._metrics[0].name, status,
-                                       last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_error_message(self, host):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
             str_template = file.read()
-            list_queries = []
+        list_queries = []
         for met in self._metrics[1:]:
             list_queries.append(met.query.format(entity=met.metric_id))
         results_queries = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
         ])
-        results_queries_without_empty_lines = []
+        results_queries_for_hosts = {self.list_hosts[0]: [], self.list_hosts[1]: []}
         for result_query in results_queries:
-            try:
-                for line in result_query.raw['series'][0]['values']:
-                    results_queries_without_empty_lines.append(line[1])
-            except KeyError:
-                results_queries_without_empty_lines.append('No data')
+            for line in result_query.raw['series'][0]['values']:
+                results_queries_for_hosts[self.list_hosts[0]].append(line[1])
+            for line in result_query.raw['series'][1]['values']:
+                results_queries_for_hosts[self.list_hosts[1]].append(line[1])
         str_template = str_template.format(
                                            threshold=self.threshold,
                                            current_response_time=self.list_elapsed_time[host][4],
-                                           hostname = host,
-                                           cpu_utilization=round(results_queries_without_empty_lines[0], 3),
-                                           node_distribution1=results_queries_without_empty_lines[1],
-                                           node_distribution2=results_queries_without_empty_lines[2],
-                                           network_bytes_recv=round(results_queries_without_empty_lines[3]/1000, 2),
-                                           network_bytes_send=round(results_queries_without_empty_lines[4]/1000, 2))
+                                           hostname=host,
+                                           cpu_utilization=round(results_queries_for_hosts[host][0], 3),
+                                           network_bytes_recv=round(results_queries_for_hosts[host][2]/1000, 2),
+                                           network_bytes_send=round(results_queries_for_hosts[host][3]/1000, 2))
         return str_template
 
     async def _get_status(self, metric):

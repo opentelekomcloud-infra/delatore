@@ -42,23 +42,23 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: "SELECT LAST(elapsed) FROM \"lb_timing\" WHERE (\"server\" =~ /^*scn1-*/ AND \"client\" =~ /^80.+/) GROUP BY server LIMIT 1;"
+        query: "SELECT LAST(elapsed) FROM \"lb_timing\" WHERE (\"server\" =~ /^*test-scn1-*/ AND \"client\" =~ /^80.+/) GROUP BY server LIMIT 1;"
         timeout: 300
       - name: LB_LOAD:CPU_utilization
         metric_id: cpu_utilization
-        query: "SELECT max(\"usage_user\") FROM \"cpu\" WHERE (\"host\" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 1;"
+        query: "SELECT max(\"usage_user\")  FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn1-basic*/) GROUP BY host, time(5m) LIMIT 1;"
         timeout: 60
       - name: LB_LOAD:Node_distribution
         metric_id: node_distribution
-        query: "SELECT count(\"elapsed\") FROM \"lb_timing\" WHERE (\"server\" =~ /^*scn1-*/) GROUP BY time(5m) LIMIT 2;"
+        query: "SELECT count(\"elapsed\") FROM \"lb_timing\" WHERE (\"server\" =~ /^*test-scn1-basic*/) GROUP BY server, time(5m) LIMIT 1;"
         timeout: 60
       - name: LB_LOAD:Network_bytes_recv
         metric_id: network_bytes_recv
-        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 10s) FROM (SELECT MEAN(\"bytes_recv\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*test*-scn1-*/) GROUP BY time(10m), host, interface) LIMIT 1;"
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(mean, 10s) FROM (SELECT MEAN(bytes_recv) FROM net WHERE interface = 'ens3' AND host =~ /^*test-scn1-basic*/  GROUP BY time(10m)) GROUP BY host LIMIT 1;"
         timeout: 300
       - name: LB_LOAD:Network_bytes_send
         metric_id: network_bytes_send
-        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 6m) FROM (SELECT MEAN(\"bytes_sent\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*scn1-*/) GROUP BY time(20m), host, interface) LIMIT 1;"
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 6m) FROM (SELECT MEAN(\"bytes_sent\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*test-scn1-basic*/) GROUP BY time(20m), interface)  GROUP BY host LIMIT 1;"
         timeout: 300
   topic_prefix: 'LB_TIMING'
   timings:

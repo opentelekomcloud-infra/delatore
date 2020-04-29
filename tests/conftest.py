@@ -110,9 +110,9 @@ def influxlbtiming_data():
              [{'source': 'InfluxdbLBTiming',
                'error': '- LB_LOAD\n'
                         '- Status: Alerting\n'
-                        '- Alert message: Response time are above "threshold"'
-                        '\n- Host: "hostname"\n- Response time: 2.77'
-                        '\n- CPU utilization: 0.15 %\n- Node distribution: 593\\/594'
+                        '- Alert message: Response time are above 60'
+                        '\n- Host: "test-scn0-basic-0"\n- Response time: 2.77'
+                        '\n- CPU utilization: 0.15 %\n'
                         '\n- Network bytes recv \\(Kbyte\\): 14.82'
                         '\n- Network bytes send \\(Kbyte\\): 229.7'}],
          'message_timestamp': 1587961158.136254}
@@ -122,11 +122,10 @@ def influxlbtiming_data():
         'Error:'
         '\- LB\_LOAD'
         '\- Status: Alerting'
-        '\- Alert message: Response time are above "threshold"'
-        '\- Host: "hostname"'
+        '\- Alert message: Response time are above 60'
+        '\- Host: "test-scn0-basic-0"'
         '\- Response time: 2.77'
         '\- CPU utilization: 0\.15 %'
-        '\- Node distribution: 593\/594'
         '\- Network bytes recv \(Kbyte\): 14\.82'
         '\- Network bytes send \(Kbyte\): 229\.7'
     }
