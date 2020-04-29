@@ -92,7 +92,7 @@ class BotRunner:
         """Handler for /status command"""
         log_msg(message)
         try:
-            command = parse_command(message.text)  # pylint:disable=unused-variable
+            command = parse_command(message.text)
         except CommandParsingError:
             return await message.answer(escape_md('Invalid command. Please check command syntax'))
         source = command.target

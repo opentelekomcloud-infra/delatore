@@ -45,8 +45,7 @@ class AWXApiSource(Source):
         msg = await self.client.get(self.polling_interval)
         if msg is None:
             raise NoUpdates
-
-        template_name, depth = msg.split(';')
+        template_name, depth, *_ = msg.split(';')
         _filter = single_template_filter(template_name)
         data = await self.get_templates(_filter, int(depth))
         data = self.convert(data, template_name)
@@ -99,10 +98,11 @@ class AWXApiSource(Source):
                 response_data = await response.json()
             assert response.status == 200, f'Expected response 200, got {response.status}'
         try:
-            container = []
-            for i in range(len(response_data['results'])):
-                for j in range(depth):
-                    container.append(_create_record(response_data['results'][i], j))
+            container = [
+                _create_record(result, j)
+                for result in response_data['results']
+                for j in range(depth)
+            ]
             return container
         except KeyError:
             LOGGER.error('No `results` field found in /job_templates response: \nResponse: %s', response_data)
@@ -119,12 +119,14 @@ def single_template_filter(template_name: str):
 def _create_record(data: Dict, index: int):
     template = {
         'name': data['name'],
-        'status': '',
+        'status': 'never updated',
         'last_job_run': '',
     }
+
     try:
-        template['status'] = data['summary_fields']['recent_jobs'][index]['status']
-        template['last_job_run'] = data['summary_fields']['recent_jobs'][index]['finished']
+        job = data['summary_fields']['recent_jobs'][index]
+        template['last_job_run'] = job['finished']
+        template['status'] = job['status']
     except IndexError:
-        template['status'] = 'never updated'
+        pass
     return template

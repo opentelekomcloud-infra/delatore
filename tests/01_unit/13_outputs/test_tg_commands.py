@@ -8,7 +8,7 @@ from aiogram.types import Chat, Message
 from apubsub.client import Client
 
 from delatore.outputs.telegram.bot import handle_help_cmd
-from delatore.outputs.telegram.parsing import CommandParsingError, parse_command
+from delatore.outputs.telegram.parsing import CommandParsingError, ParsedStatusCommand, parse_command
 from delatore.sources import AWXApiSource
 from tests.helpers import random_string
 
@@ -31,7 +31,8 @@ def test_parse_quotted_message(quo):
 def test_parse_command(message, expected):
     """Testing of parsing command arguments"""
     command = parse_command(message)
-    assert (command.target, command.detailed, command.depth) == expected
+    target, detailed, depth = expected
+    assert command == ParsedStatusCommand(target, detailed, depth)
 
 
 @pytest.mark.parametrize('message',
