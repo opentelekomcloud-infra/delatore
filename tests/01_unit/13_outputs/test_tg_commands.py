@@ -16,7 +16,7 @@ from tests.helpers import random_string
 @pytest.mark.parametrize(['quo'], '\'\"')
 def test_parse_quotted_message(quo):
     """Testing of parsing quotted message"""
-    expected = ('awx', 'Scenario 1.5', '5')
+    expected = ('awx', 'Scenario 1.5', 5)
     message = f'/status {expected[0]} {quo}{expected[1]}{quo} {expected[2]}'
     command = parse_command(message)
     assert (command.target, command.detailed, command.depth) == expected
@@ -25,7 +25,7 @@ def test_parse_quotted_message(quo):
 @pytest.mark.parametrize(('message', 'expected'),
                          [
                              ('/status awx \'Scenario 1.5\' 5', ('awx', 'Scenario 1.5', 5)),
-                             ('/status awx', ('awx', None, 1)),
+                             ('/status awx', ('awx', '', 1)),
                              ('/status awx  "Destroy 1" ', ('awx', 'Destroy 1', 1))
                          ])
 def test_parse_command(message, expected):
@@ -66,10 +66,7 @@ async def test_bot_status_awx(patched_bot, sub: Client, chat_id, target):
     message_text = f'/status awx {target}'
     await patched_bot.handle_status(Message(text=message_text, chat=Chat(id=chat_id)))
     data = await sub.get(.1)
-    if target == '':
-        assert data == target
-    else:
-        assert data == f'{target};1'
+    assert data == f'{target};1'
 
 
 def patched_message(text, chat_id):

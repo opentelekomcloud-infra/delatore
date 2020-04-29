@@ -1,9 +1,7 @@
 """Parsing command arguments """
 import logging
 import shlex
-from typing import NamedTuple
-
-from attr import dataclass
+from dataclasses import dataclass
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -16,7 +14,7 @@ class CommandParsingError(Exception):
 
 
 @dataclass
-class ParsedStatusCommand(NamedTuple):
+class ParsedStatusCommand:
     target: str
     detailed: str = ''
     depth: int = 1
@@ -30,6 +28,8 @@ def parse_command(message) -> ParsedStatusCommand:
     LOGGER.debug('Got message: %s', message)
     try:
         _, target, *args = shlex.split(message)
+        return ParsedStatusCommand(target, *args)
     except ValueError:
-        raise CommandParsingError('Issues provided by `/status` command')
-    return ParsedStatusCommand(target, *args)
+        raise CommandParsingError('Incorrect `/status` command')
+    except TypeError:
+        raise CommandParsingError('Too many arguments for `/status` command')
