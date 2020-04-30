@@ -236,16 +236,14 @@ class InfluxSourceLBTiming(InfluxSource):
                 results.append(generate_status(self._metrics[0].name, status,
                                        last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
-                if min(self.list_elapsed_time[host]) > self.threshold:
+                if min(self.list_elapsed_time[host]) > self._threshold:
                     results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_error_message(self, host):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
             str_template = file.read()
-        list_queries = []
-        for met in self._metrics[1:]:
-            list_queries.append(met.query.format(entity=met.metric_id))
+        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results_queries = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
         ])
@@ -270,8 +268,7 @@ class InfluxSourceLBTiming(InfluxSource):
         last_time_ms = None
         status = Status.FAIL
         if len(self.list_elapsed_time) == 0:
-            for seria in last_record.raw['series']:
-                self.list_hosts.append(seria['tags']['server'])
+            self.list_hosts = [seria['tags']['server'] for seria in last_record.raw['series']]
             await self.init_list_elapsed_time()
         last_record = await self.influx_client.query(query)
         for seria in last_record.raw['series'] :

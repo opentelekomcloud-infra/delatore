@@ -24,20 +24,27 @@ async def test_influx_data_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming):
     assert update is not None
 
 
+async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming, pub: Client, sub: Client):
+    await sub.subscribe(influxdb_lb_timing.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert update is not None
+
+
 async def test_influx_data_lb_down(influxdb_lb_down: InfluxSourceLBDOWN):
     update = await influxdb_lb_down.get_update()
     assert update is not None
 
 
-async def test_influx_data_lb_down_fail_count(influxdb_lb_down_fail_count: InfluxSourceLBDOWNFailCount):
-    update = await influxdb_lb_down_fail_count.get_update()
+async def test_trigger_from_loop_lb_down_fail_count(influxdb_lb_down: InfluxSourceLBDOWN, pub: Client, sub: Client):
+    await sub.subscribe(influxdb_lb_down.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
     assert update is not None
 
 
-async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTiming, pub: Client, sub: Client):
-    await sub.subscribe(influxdb_lb_timing.TOPICS.changes)
-    await asyncio.sleep(.1)
-    update = await sub.get(5)
+async def test_influx_data_lb_down_fail_count(influxdb_lb_down_fail_count: InfluxSourceLBDOWNFailCount):
+    update = await influxdb_lb_down_fail_count.get_update()
     assert update is not None
 
 
@@ -51,15 +58,15 @@ async def test_trigger_from_loop_lb_down(influxdb_lb_down: InfluxSourceLBDOWN, p
 async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSourceLBTiming, pub, sub):
     await sub.subscribe(influxdb_lb_timing_result_error.TOPICS.changes)
     await asyncio.sleep(.1)
-    update = await sub.get(5)
-    assert "- LB_LOAD" in update
+    update = await sub.get(15)
+    assert "Alert message" in update
 
 
 async def test_result_lb_timing_ok(influxdb_lb_timing_result_ok: InfluxSourceLBTiming, pub, sub):
     await sub.subscribe(influxdb_lb_timing_result_ok.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
-    assert "- LB_LOAD" not in update
+    assert "Alert message" not in update
 
 
 async def test_result_lb_down_fail_count_error(influxdb_lb_down_fail_count_error: InfluxSourceLBDOWNFailCount, pub, sub):
