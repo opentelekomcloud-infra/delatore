@@ -41,6 +41,7 @@ def generate_error(source: str, message: str) -> dict:
         'error': message,
     }
 
+
 def generate_status(name: str,
                     status: Status,
                     timestamp: Optional[str] = None,

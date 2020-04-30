@@ -92,11 +92,12 @@ class BotRunner:
         """Handler for /status command"""
         log_msg(message)
         try:
-            source, template_name, count = parse_command(message.text)  # pylint:disable=unused-variable
+            command = parse_command(message.text)
         except CommandParsingError:
             return await message.answer(escape_md('Invalid command. Please check command syntax'))
+        source = command.target
         if source in STATUS_TOPICS:
-            return await self.client.publish(STATUS_TOPICS[source], template_name or '')
+            return await self.client.publish(STATUS_TOPICS[source], f'{command.detailed};{command.depth}')
         return await message.answer(rf'Invalid source: `{escape_md(source)}`')
 
     async def alert(self, message):
@@ -115,7 +116,7 @@ class BotRunner:
         return await self.bot.delete_message(self.chat_id, message_id)
 
     async def start_posting(self):
-        self.channel = """Start posting updates to channel"""
+        """Start posting updates to channel"""
         await self.client.start_consuming()
         topics = TG_CONFIG.subscriptions
         await asyncio.wait([

@@ -78,7 +78,6 @@ class Source(ABC, metaclass=SourceMeta):
         while not stop_event.is_set():
             try:
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
-                a = 5
             except (asyncio.TimeoutError, NoUpdates):
                 continue
             if self.ignore_duplicates and _same_status(new, last):

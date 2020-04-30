@@ -10,7 +10,7 @@ from apubsub import Service
 
 from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
-from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource, InfluxSourceLBTiming
+from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 from delatore.unified_json import convert_timestamp
 
 
@@ -102,37 +102,6 @@ def influx_source_data():
 
 
 @pytest.fixture
-def influxlbtiming_data():
-    data = [
-        {'source':
-             'influxdb_lb_timing',
-         'status_list':
-             [{'source': 'InfluxdbLBTiming',
-               'error': '- LB_LOAD\n'
-                        '- Status: Alerting\n'
-                        '- Alert message: Response time are above 60'
-                        '\n- Host: "test-scn0-basic-0"\n- Response time: 2.77'
-                        '\n- CPU utilization: 0.15 %\n'
-                        '\n- Network bytes recv \\(Kbyte\\): 14.82'
-                        '\n- Network bytes send \\(Kbyte\\): 229.7'}],
-         'message_timestamp': 1587961158.136254}
-    ]
-    expected_message = {
-        '*From influxdb\_lb\_timing*'
-        'Error:'
-        '\- LB\_LOAD'
-        '\- Status: Alerting'
-        '\- Alert message: Response time are above 60'
-        '\- Host: "test-scn0-basic-0"'
-        '\- Response time: 2.77'
-        '\- CPU utilization: 0\.15 %'
-        '\- Network bytes recv \(Kbyte\): 14\.82'
-        '\- Network bytes send \(Kbyte\): 229\.7'
-    }
-    return data, expected_message
-
-
-@pytest.fixture
 def awx_client_data():
     data = [
         {
@@ -182,13 +151,11 @@ def awx_hook_data():
     return data, expected_message
 
 
-@pytest.fixture(params=[InfluxSource, InfluxSourceLBTiming, AWXApiSource, AWXWebHookSource])
-def source_data(request, influx_source_data, influxlbtiming_data, awx_client_data, awx_hook_data):
+@pytest.fixture(params=[InfluxSource, AWXApiSource, AWXWebHookSource])
+def source_data(request, influx_source_data, awx_client_data, awx_hook_data):
     source = request.param
     if source == InfluxSource:
         return InfluxSource, influx_source_data
-    if source == InfluxSourceLBTiming:
-        return  InfluxSourceLBTiming, influxlbtiming_data
     elif source == AWXApiSource:
         return AWXApiSource, awx_client_data
     elif source == AWXWebHookSource:
