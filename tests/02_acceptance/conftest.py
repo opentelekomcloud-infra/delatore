@@ -57,6 +57,7 @@ async def influxdb_lb_timing_result_ok(service):
     await asyncio.sleep(.1)
     return src
 
+
 @pytest.fixture
 async def influxdb_lb_down_fail_count_error(service):
     src = InfluxSourceLBDOWNFailCount(service.get_client())
