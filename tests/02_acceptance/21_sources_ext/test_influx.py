@@ -58,7 +58,7 @@ async def test_trigger_from_loop_lb_down(influxdb_lb_down: InfluxSourceLBDOWN, p
 async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSourceLBTiming, pub, sub):
     await sub.subscribe(influxdb_lb_timing_result_error.TOPICS.changes)
     await asyncio.sleep(.1)
-    update = await sub.get(15)
+    update = await sub.get(25)
     assert "Alert message" in update
 
 

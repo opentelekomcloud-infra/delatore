@@ -1,7 +1,9 @@
+"""Influx sources"""
 import asyncio
 import json
 import logging
 import re
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, NamedTuple
@@ -27,7 +29,7 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 
     # pylint: disable=too-many-arguments
 
-    def __init__(self, *args, proxy="", **kwargs):
+    def __init__(self, *args, proxy='', **kwargs):
         self.proxy: str = proxy
         super().__init__(*args, **kwargs)
 
@@ -151,6 +153,7 @@ class InfluxSource(Source):
 
     @classmethod
     def params(cls) -> InfluxParams:
+        """Return new instance of influx client"""
         if cls._params is None:
             params = cls.config.params
             cls._metrics = params.pop('metrics')
@@ -181,7 +184,6 @@ class InfluxSource(Source):
         return self._influx_client
 
     async def get_update(self) -> dict:
-        self._metrics = self.params().metrics
         results = await asyncio.gather(*[
             self._get_status(met) for met in self._metrics
         ])
@@ -206,13 +208,18 @@ class InfluxSource(Source):
 class InfluxSourceLBTiming(InfluxSource):
     """InfluxSourceLBTiming client"""
 
+    # pylint: disable=unused-variable
+
+
     CONFIG_ID = 'influxdb_lb_timing'
     _params: InfluxParams = None
-    list_elapsed_time = {}
-    list_hosts = []
+    _list_timings = {}
+    _hosts = []
 
-    _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
-    _values_for_error_message = {'cpu_utilization', 'node_distribution', 'network_bytes_recv', 'network_bytes_send'}
+    _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution',
+                        'network_bytes_recv', 'network_bytes_send'}
+    _values_for_error_message = {'cpu_utilization', 'node_distribution',
+                                 'network_bytes_recv', 'network_bytes_send'}
 
     _threshold = 60
 
@@ -225,42 +232,62 @@ class InfluxSourceLBTiming(InfluxSource):
         self._threshold = threshold
 
     async def init_list_elapsed_time(self):
-        for host in self.list_hosts:
-            self.list_elapsed_time[host] = [1, 1, 1, 1, 1]
+        for host in self._hosts:
+            self._list_timings[host] = deque([1, 1, 1, 1, 1], maxlen=5)
 
     async def get_update(self) -> dict:
-        last_time_ms, status = await self._get_status(self._metrics[0])
+        main_metric = self._metrics[0]
+        last_time_ms, status = await self._get_status(main_metric)
         results = []
-        for host in self.list_hosts:
-            if (status == Status.FAIL):
-                results.append(generate_status(self._metrics[0].name, status,
-                                       last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        faulty = []
+        for host in self._hosts:
+            if status == Status.FAIL:
+                results.append(generate_status(main_metric, status,
+                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
-                if min(self.list_elapsed_time[host]) > self._threshold:
-                    results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host)))
-
+                if min(self._list_timings[host]) > self._threshold:
+                    faulty.append(host)
+        if faulty:
+            state = await self._get_influx_data()
+            for host in faulty:
+                results.append(generate_error('InfluxdbLBTiming', await self._get_error_message(host, state)))
         return generate_message(self.CONFIG_ID, results)
 
-    async def _get_error_message(self, host):
+    async def _get_influx_data(self):
+        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
+        results = await asyncio.gather(*[
+            self.influx_client.query(query) for query in list_queries
+            ])
+        host_results = {}
+        for host in self._hosts:
+            host_results[host] = []
+        for result in results:
+            host_series = zip(self._hosts, result.raw['series'])
+            for host, seria in host_series:
+                host_results[host].append(seria['values'][0][1])
+        return host_results
+
+    async def _get_error_message(self, host, state):
         with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
             str_template = file.read()
-        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
-        results_queries = await asyncio.gather(*[
-            self.influx_client.query(query) for query in list_queries
-        ])
-        results_queries_for_hosts = {self.list_hosts[0]: [], self.list_hosts[1]: []}
-        for result_query in results_queries:
-            for line in result_query.raw['series'][0]['values']:
-                results_queries_for_hosts[self.list_hosts[0]].append(line[1])
-            for line in result_query.raw['series'][1]['values']:
-                results_queries_for_hosts[self.list_hosts[1]].append(line[1])
+        try:
+            current_response_time = self._list_timings[host][4]
+        except IndexError:
+            current_response_time = 'No data'
+        for i in range(0, len(state) - 1):
+            try:
+                value = state[host][i]
+            except IndexError:
+                state[host].append('No data')
+            except KeyError:
+                return 'No data about this host'
         str_template = str_template.format(
-                                           threshold=self.threshold,
-                                           current_response_time=self.list_elapsed_time[host][4],
-                                           hostname=host,
-                                           cpu_utilization=round(results_queries_for_hosts[host][0], 3),
-                                           network_bytes_recv=round(results_queries_for_hosts[host][2]/1000, 2),
-                                           network_bytes_send=round(results_queries_for_hosts[host][3]/1000, 2))
+            threshold=self.threshold,
+            current_response_time=current_response_time,
+            hostname=host,
+            cpu_utilization=round(state[host][0], 3),
+            network_bytes_recv=round(state[host][2]/1000, 2),
+            network_bytes_send=round(state[host][3]/1000, 2))
         return str_template
 
     async def _get_status(self, metric):
@@ -268,16 +295,18 @@ class InfluxSourceLBTiming(InfluxSource):
         last_record = await self.influx_client.query(query)
         last_time_ms = None
         status = Status.FAIL
-        if len(self.list_elapsed_time) == 0:
-            self.list_hosts = [seria['tags']['server'] for seria in last_record.raw['series']]
-            await self.init_list_elapsed_time()
-        last_record = await self.influx_client.query(query)
-        for seria in last_record.raw['series'] :
+        if len(self._list_timings) == 0:
+            try:
+                self._hosts = [seria['tags']['server'] for seria in last_record.raw['series']]
+            except KeyError:
+                return generate_status(metric.name, Status.NO_DATA, None)
+        await self.init_list_elapsed_time()
+        for seria in last_record.raw['series']:
             try:
                 last_time = seria['values'][0][0]
                 hostname = seria['tags']['server']
-                del(self.list_elapsed_time[hostname][0])
-                self.list_elapsed_time[hostname].append(seria['values'][0][1])
+                self._list_timings[hostname].popleft()
+                self._list_timings[hostname].append(seria['values'][0][1])
                 now = datetime.utcnow().timestamp()
                 last_time_ms = _convert_time(last_time)
                 status = Status.OK
@@ -285,10 +314,17 @@ class InfluxSourceLBTiming(InfluxSource):
                     status = Status.FAIL
             except KeyError:
                 return generate_status(metric.name, Status.NO_DATA, None)
+            except IndexError:
+                return generate_status(metric.name, Status.NO_DATA, None)
         return last_time_ms, status
 
 
 class InfluxSourceLBDOWN(InfluxSource):
+    """InfluxSourceLBDOWN client"""
+
+    # pylint: disable=unused-variable
+
+
     CONFIG_ID = 'influxdb_lb_down'
     _params: InfluxParams = None
     _error_message_file = 'error_message_lb_down.txt'
@@ -300,7 +336,7 @@ class InfluxSourceLBDOWN(InfluxSource):
             results.append(generate_status(self._metrics[0].name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error('InfluxdbLBDown', await self._get_error_message() ))
+            results.append(generate_error(self._metrics[0].name, await self._get_error_message()))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -326,36 +362,39 @@ class InfluxSourceLBDOWN(InfluxSource):
 
 
 class InfluxSourceLBDOWNFailCount(InfluxSource):
+    """InfluxSourceLBDOWNFailCount client"""
+
+    # pylint: disable=attribute-defined-outside-init
+
 
     CONFIG_ID = 'influxdb_lb_down_fail_count'
     _params: InfluxParams = None
     _error_message_file = 'error_message_lb_down_fail_count.txt'
-    _list_fail_count = [1, 1, 1, 1, 1]
+    _list_fail_count = deque([1, 1, 1, 1, 1])
     _hostname: str = None
     threshold = 5
 
+
     async def get_update(self) -> dict:
-        count, last_time_ms, status = await self._get_status(self._metrics[0])
+        last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
         if status == Status.FAIL:
-            results.append(generate_status(generate_status(self._metrics[0].name, status,
-                                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN))))
+            results.append(generate_status(self._metrics[0].name, status,
+                                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
             if min(self._list_fail_count) > self.threshold:
-                results.append(generate_error('InfluxdbLBDOWNFailCount', await self._get_error_message()))
+                results.append(generate_error(self._metrics[0].name, await self._get_error_message()))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = None
-        status = Status.FAIL
         self.hostname = last_record.raw['series'][0]['tags']['host']
         last_record = await self.influx_client.query(query)
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
             count = last_record.raw['series'][0]['values'][0][1]
-            del (self._list_fail_count[0])
+            self._list_fail_count.popleft()
             self._list_fail_count.append(count)
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
@@ -364,12 +403,12 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
                 status = Status.FAIL
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
-        return count, status, last_time_ms
+        return last_time_ms, status
 
     async def _get_error_message(self):
         with open(_CONFIGS['error_message_lb_down_fail_count.txt'], 'r') as file:
             str_template = file.read()
-        str_template = str_template.format( hostname=self.hostname)
+        str_template = str_template.format(hostname=self.hostname)
         return str_template
 
 

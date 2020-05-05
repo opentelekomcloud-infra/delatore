@@ -58,6 +58,10 @@ def log_msg(message: Message):
 
 class BotRunner:
     """Bot runner wrapper"""
+
+    # pylint: disable=unused-variable
+
+
     _bot: Bot = None
     _dispatcher: Dispatcher = None
 
@@ -130,6 +134,7 @@ class BotRunner:
             if message is not None:
                 data = json.loads(message)
                 try:
+                    status = data['status_list'][0]
                     await self.alert(convert(data))  # check if TG response was 200
                 except Exception:  # pylint:disable=broad-except
                     LOGGER.exception('Failed to send message %s', data)
