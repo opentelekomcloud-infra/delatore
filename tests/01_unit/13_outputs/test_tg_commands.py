@@ -59,7 +59,7 @@ async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, sour
 
 
 @pytest.mark.asyncio
-async def test_alerta_src_to_bot(patched_alerta, pub: Client, bot_alert_queue: Queue, source_data_alerta):
+async def test_src_to_alerta(patched_alerta, pub: Client, bot_alert_queue: Queue, source_data_alerta):
     source, (_, message) = source_data_alerta
     message = json.dumps(message)
     await pub.publish(source.TOPICS.changes, message)
