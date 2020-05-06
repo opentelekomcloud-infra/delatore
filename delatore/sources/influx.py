@@ -153,7 +153,6 @@ class InfluxSource(Source):
 
     @classmethod
     def params(cls) -> InfluxParams:
-        """Return new instance of influx client"""
         if cls._params is None:
             params = cls.config.params
             cls._metrics = params.pop('metrics')
@@ -222,6 +221,7 @@ class InfluxSourceLBTiming(InfluxSource):
                                  'network_bytes_recv', 'network_bytes_send'}
 
     _threshold = 60
+    _error_message_file = 'error_message_lb_timing.txt'
 
     @property
     def threshold(self):
@@ -268,7 +268,7 @@ class InfluxSourceLBTiming(InfluxSource):
         return host_results
 
     async def _get_error_message(self, host, state):
-        with open(_CONFIGS['error_message_lb_timing.txt'], 'r') as file:
+        with open(_CONFIGS[self. _error_message_file], 'r') as file:
             str_template = file.read()
         try:
             current_response_time = self._list_timings[host][4]

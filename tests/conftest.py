@@ -22,6 +22,22 @@ def service():
     _service.stop()
 
 
+@pytest.fixture(scope='function')
+def service_function1():
+    _service = Service()
+    _service.start()
+    yield _service
+    _service.stop()
+
+
+@pytest.fixture(scope='function')
+def service_function2():
+    _service = Service()
+    _service.start()
+    yield _service
+    _service.stop()
+
+
 @pytest.fixture
 def stop_event():
     return asyncio.Event()
@@ -43,6 +59,27 @@ async def sub(service):
 @pytest.fixture
 def pub(service):
     return service.get_client()
+
+
+@pytest.fixture(scope='function')
+async def sub1(service_function1):
+    _sub = service_function1.get_client()
+    await _sub.start_consuming()
+    await asyncio.sleep(.01)
+    return _sub
+
+
+@pytest.fixture(scope='function')
+async def sub2(service_function2):
+    _sub = service_function2.get_client()
+    await _sub.start_consuming()
+    await asyncio.sleep(.01)
+    return _sub
+
+
+@pytest.fixture(scope='function')
+def pub2 (service_function):
+    return service_function.get_client()
 
 
 @pytest.fixture(scope='session')
