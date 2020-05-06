@@ -111,11 +111,9 @@ class AlertaRunner:
     async def start(self):
         """Start alerta"""
 
-        def _main():
-            asyncio.run(self.start_posting())
-
-        self._alerta_thread = threading.Thread(target=_main,
-                                               name="Alerta-Thread", )
+        self._alerta_thread = threading.Thread(
+            target=lambda: asyncio.run(self.start_posting()),
+            name="Alerta-Thread")
         self._alerta_thread.start()
         await self._stopper()
         self._alerta_thread.join()
