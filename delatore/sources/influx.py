@@ -330,13 +330,14 @@ class InfluxSourceLBDOWN(InfluxSource):
     _error_message_file = 'error_message_lb_down.txt'
 
     async def get_update(self) -> dict:
-        error_script_status, last_time_ms, status = await self._get_status(self._metrics[0])
+        main_metric = self._metrics[0]
+        error_script_status, last_time_ms, status = await self._get_status(main_metric)
         results = []
         if not error_script_status:
-            results.append(generate_status(self._metrics[0].name, status,
+            results.append(generate_status(main_metric.name, status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error(self._metrics[0].name, await self._get_error_message()))
+            results.append(generate_error(main_metric.name, await self._get_error_message()))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -389,11 +390,13 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        self.hostname = last_record.raw['series'][0]['tags']['host']
+        seria = last_record.raw['series'][0]
+        self.hostname = seria['tags']['host']
         last_record = await self.influx_client.query(query)
         try:
-            last_time = last_record.raw['series'][0]['values'][0][0]
-            count = last_record.raw['series'][0]['values'][0][1]
+            values = seria['values'][0]
+            last_time = values[0]
+            count = values[1]
             self._list_fail_count.popleft()
             self._list_fail_count.append(count)
             now = datetime.utcnow().timestamp()
@@ -403,10 +406,12 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
                 status = Status.FAIL
         except KeyError:
             return generate_status(metric.name, Status.NO_DATA, None)
+        except IndexError:
+            return generate_status(metric.name, Status.NO_DATA, None)
         return last_time_ms, status
 
     async def _get_error_message(self):
-        with open(_CONFIGS['error_message_lb_down_fail_count.txt'], 'r') as file:
+        with open(_CONFIGS[self._error_message_file], 'r') as file:
             str_template = file.read()
         str_template = str_template.format(hostname=self.hostname)
         return str_template

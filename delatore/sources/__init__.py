@@ -17,6 +17,12 @@ async def start_sources(msg_service: Service, stop_event: asyncio.Event, config:
     await asyncio.wait([
         AWXApiSource(msg_service.get_client(), config).start(stop_event),
         AWXWebHookSource(msg_service.get_client()).start(stop_event),
+        await start_influx_sources(msg_service, stop_event, config )
+    ])
+
+
+async def start_influx_sources(msg_service: Service, stop_event: asyncio.Event, config: InstanceConfig):
+    await asyncio.wait([
         InfluxSource(msg_service.get_client(), config).start(stop_event),
         InfluxSourceLBTiming(msg_service.get_client(), config).start(stop_event),
         InfluxSourceLBDOWN(msg_service.get_client(), config).start(stop_event),
