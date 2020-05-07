@@ -58,8 +58,8 @@ async def awx_client(service):
 
 
 @pytest.fixture
-async def influxdb_lb_timing_result_error(service_function1):
-    src = InfluxSourceLBTiming(service_function1.get_client())
+async def influxdb_lb_timing_result_error(service):
+    src = InfluxSourceLBTiming(service.get_client())
     src.threshold = -1
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
@@ -69,8 +69,8 @@ async def influxdb_lb_timing_result_error(service_function1):
 
 
 @pytest.fixture
-async def influxdb_lb_timing_result_ok(service_function2):
-    src = InfluxSourceLBTiming(service_function2.get_client())
+async def influxdb_lb_timing_result_ok(service):
+    src = InfluxSourceLBTiming(service.get_client())
     src.threshold = 500
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
@@ -80,8 +80,8 @@ async def influxdb_lb_timing_result_ok(service_function2):
 
 
 @pytest.fixture
-async def influxdb_lb_down_fail_count_error(service_function1):
-    src = InfluxSourceLBDOWNFailCount(service_function1.get_client())
+async def influxdb_lb_down_fail_count_error(service):
+    src = InfluxSourceLBDOWNFailCount(service.get_client())
     src.threshold = -1
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
@@ -91,8 +91,8 @@ async def influxdb_lb_down_fail_count_error(service_function1):
 
 
 @pytest.fixture
-async def influxdb_lb_down_fail_count_ok(service_function2):
-    src = InfluxSourceLBDOWNFailCount(service_function2.get_client())
+async def influxdb_lb_down_fail_count_ok(service):
+    src = InfluxSourceLBDOWNFailCount(service.get_client())
     src.threshold = 10
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
