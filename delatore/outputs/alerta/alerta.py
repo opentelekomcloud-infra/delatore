@@ -61,6 +61,7 @@ class AlertaRunner:
             resource=f'{ALERTA_CONFIG.params["resource"]}{message["source"]}',
             origin=ALERTA_CONFIG.params['origin']
         )
+        heartbeat_status = True
         for record in message['status_list']:
             if record['status'] in ['fail', 'no_data']:
                 report_id = self.alerta.send_alert(
@@ -69,6 +70,7 @@ class AlertaRunner:
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
                 )[0]
+                heartbeat_status = False
             else:
                 report_id = self.alerta.send_alert(
                     event=record["name"],
@@ -77,6 +79,9 @@ class AlertaRunner:
                 )[0]
 
             alerta_ids.append(report_id)
+            if heartbeat_status:
+                self.alerta.heartbeat(origin=ALERTA_CONFIG.params['origin'])
+                self.remove(alerta_ids)
             LOGGER.debug('Alerta message sent')
         return alerta_ids
 
