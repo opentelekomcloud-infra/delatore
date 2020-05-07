@@ -30,13 +30,13 @@ async def test_source_message_sending(bot, source_data):
 
 
 @pytest.mark.skip
-async def test_alerta_message_sending(patched_alerta, source_data_alerta):
+async def test_alerta_message_sending(alerta, source_data_alerta):
     source, (_, data) = source_data_alerta
-    await send_and_remove_alerta(patched_alerta, data)
+    await send_and_remove_alerta(alerta, data)
 
 
 @pytest.mark.skip
-async def test_alerta_message_series(patched_alerta, source_data_alerta_series):
+async def test_alerta_message_series(alerta, source_data_alerta_series):
     source, (_, data) = source_data_alerta_series
-    await send_alerta(patched_alerta, data)
-    await send_and_remove_alerta(patched_alerta, data)
+    await send_alerta(alerta, data)
+    await send_and_remove_alerta(alerta, data)
