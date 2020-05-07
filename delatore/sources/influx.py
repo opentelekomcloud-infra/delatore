@@ -160,10 +160,14 @@ class InfluxSource(Source):
             cls._params = InfluxParams(metrics=metrics, **params)
         return cls._params
 
+    @classmethod
+    def metrics(cls):
+        return cls.params().metrics
+
     def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client, instance_config=instance_config)
         self._influx_client = None
-        self._metrics = self.params().metrics
+        self._metrics = self.metrics()
 
     @property
     def influx_client(self):
@@ -220,16 +224,8 @@ class InfluxSourceLBTiming(InfluxSource):
     _values_for_error_message = {'cpu_utilization', 'node_distribution',
                                  'network_bytes_recv', 'network_bytes_send'}
 
-    _threshold = 60
+    threshold = 60
     _error_message_file = 'error_message_lb_timing.txt'
-
-    @property
-    def threshold(self):
-        return self._threshold
-
-    @threshold.setter
-    def threshold(self, threshold):
-        self._threshold = threshold
 
     async def init_list_elapsed_time(self):
         for host in self._hosts:
@@ -245,7 +241,7 @@ class InfluxSourceLBTiming(InfluxSource):
                 results.append(generate_status(main_metric, status,
                                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
-                if min(self._list_timings[host]) > self._threshold:
+                if min(self._list_timings[host]) > self.threshold:
                     faulty.append(host)
         if faulty:
             state = await self._get_influx_data()
@@ -268,7 +264,7 @@ class InfluxSourceLBTiming(InfluxSource):
         return host_results
 
     async def _get_error_message(self, host, state):
-        with open(_CONFIGS[self. _error_message_file], 'r') as file:
+        with open(_CONFIGS[self._error_message_file], 'r') as file:
             str_template = file.read()
         try:
             current_response_time = self._list_timings[host][4]
@@ -305,7 +301,6 @@ class InfluxSourceLBTiming(InfluxSource):
             try:
                 last_time = seria['values'][0][0]
                 hostname = seria['tags']['server']
-                self._list_timings[hostname].popleft()
                 self._list_timings[hostname].append(seria['values'][0][1])
                 now = datetime.utcnow().timestamp()
                 last_time_ms = _convert_time(last_time)
@@ -397,7 +392,6 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
             values = seria['values'][0]
             last_time = values[0]
             count = values[1]
-            self._list_fail_count.popleft()
             self._list_fail_count.append(count)
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
