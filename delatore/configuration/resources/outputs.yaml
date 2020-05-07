@@ -17,3 +17,5 @@
     origin: 'delatore'
     severity: 'minor'
   subscriptions:
+    - 'INFLUX_CHANGES'
+    - 'INFLUX_INFO'
