@@ -69,7 +69,7 @@ def influx_source_data():
             'details_url': None
         },
         {
-            'name': 'LB_DOWN',
+            'name': 'TEST3_INFLUX',
             'status': 'ok',
             'timestamp': '2005-08-09T18:31:42',
             'details_url': None
@@ -91,7 +91,7 @@ def influx_source_data():
                 'details_url': None
             },
             {
-                'name': 'LB_DOWN',
+                'name': 'TEST3_INFLUX',
                 'status': 'ok',
                 'timestamp': '09.08.2005 18:31',
                 'details_url': None
@@ -217,12 +217,20 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
 
 
 @pytest.fixture
-async def patched_alerta(service, stop_event):
+async def patched_alerta(service, stop_event, bot_alert_queue: Queue):
     alerta = AlertaRunner(service, stop_event)
+
+    def _alert(item):
+        bot_alert_queue.put_nowait(item)
+
+    alerta.alert = _alert
     asyncio.create_task(alerta.start())
     await asyncio.sleep(.5)
     yield alerta
     alerta.stop_event.set()
+    while not bot_alert_queue.empty():
+        bot_alert_queue.get_nowait()
+        bot_alert_queue.task_done()
 
 
 @pytest.fixture
