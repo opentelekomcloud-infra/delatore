@@ -7,17 +7,16 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, NamedTuple
-from ocomone import Resources
+
 import aiohttp
 from aiohttp_socks import ProxyConnector
-from apubsub.client import Client
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
+from ocomone import Resources
 
-from .base import Source
-from ..configuration import DEFAULT_INSTANCE_CONFIG
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_message, generate_status, generate_error
+from .base import Source, SourceMeta
+from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -66,6 +65,7 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
         if query.lower().startswith('select ') and ' into ' in query.lower():
             method = 'POST'
 
+        # noinspection PyTypeChecker
         data = await self.request(
             url='query',
             method=method,
@@ -144,36 +144,34 @@ class InfluxParams(NamedTuple):
     metrics: List[Metric]
 
 
-class InfluxSource(Source):
+class InfluxSourceMeta(SourceMeta):
+    """Metaclass for InfluxSource setting params"""
+
+    def __init__(cls, *args, **kwargs):
+        SourceMeta.__init__(cls, *args, **kwargs)
+        params = cls.config.params
+        metrics = params.pop('metrics')
+        metrics = [Metric(**met) for met in metrics]
+        cls._params = InfluxParams(metrics=metrics, **params)
+
+
+class InfluxSource(Source, metaclass=InfluxSourceMeta):
     """InfluxDB client"""
 
     CONFIG_ID = 'influxdb'
-    _params: InfluxParams = None
-    _error_message_file = None
+    _params: InfluxParams
+    _error_message_file: str = None
+    _influx_client = None
 
-    @classmethod
-    def params(cls) -> InfluxParams:
-        if cls._params is None:
-            params = cls.config.params
-            cls._metrics = params.pop('metrics')
-            metrics = [Metric(**met) for met in cls._metrics]
-            cls._params = InfluxParams(metrics=metrics, **params)
-        return cls._params
-
-    @classmethod
-    def metrics(cls):
-        return cls.params().metrics
-
-    def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
-        super().__init__(client, instance_config=instance_config)
-        self._influx_client = None
-        self._metrics = self.metrics()
+    @property
+    def _metrics(self):
+        return self._params.metrics
 
     @property
     def influx_client(self):
         """Return new instance of influx client"""
         if self._influx_client is None:
-            params = self.params()
+            params = self._params
             self._influx_client = AsyncInfluxClient(
                 host=params.host,
                 port=params.port,
@@ -213,16 +211,9 @@ class InfluxSourceLBTiming(InfluxSource):
 
     # pylint: disable=unused-variable
 
-
     CONFIG_ID = 'influxdb_lb_timing'
-    _params: InfluxParams = None
     _list_timings = {}
     _hosts = []
-
-    _allowed_metrics = {'lb_timing', 'cpu_utilization', 'node_distribution',
-                        'network_bytes_recv', 'network_bytes_send'}
-    _values_for_error_message = {'cpu_utilization', 'node_distribution',
-                                 'network_bytes_recv', 'network_bytes_send'}
 
     threshold = 60
     _error_message_file = 'error_message_lb_timing.txt'
@@ -253,7 +244,7 @@ class InfluxSourceLBTiming(InfluxSource):
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
-            ])
+        ])
         host_results = {}
         for host in self._hosts:
             host_results[host] = []
@@ -282,8 +273,8 @@ class InfluxSourceLBTiming(InfluxSource):
             current_response_time=current_response_time,
             hostname=host,
             cpu_utilization=round(state[host][0], 3),
-            network_bytes_recv=round(state[host][2]/1000, 2),
-            network_bytes_send=round(state[host][3]/1000, 2))
+            network_bytes_recv=round(state[host][2] / 1000, 2),
+            network_bytes_send=round(state[host][3] / 1000, 2))
         return str_template
 
     async def _get_status(self, metric):
@@ -319,9 +310,7 @@ class InfluxSourceLBDOWN(InfluxSource):
 
     # pylint: disable=unused-variable
 
-
     CONFIG_ID = 'influxdb_lb_down'
-    _params: InfluxParams = None
     _error_message_file = 'error_message_lb_down.txt'
 
     async def get_update(self) -> dict:
@@ -362,21 +351,18 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
     # pylint: disable=attribute-defined-outside-init
 
-
     CONFIG_ID = 'influxdb_lb_down_fail_count'
-    _params: InfluxParams = None
     _error_message_file = 'error_message_lb_down_fail_count.txt'
     _list_fail_count = deque([1, 1, 1, 1, 1])
     _hostname: str = None
     threshold = 5
-
 
     async def get_update(self) -> dict:
         last_time_ms, status = await self._get_status(self._metrics[0])
         results = []
         if status == Status.FAIL:
             results.append(generate_status(self._metrics[0].name, status,
-                                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
             if min(self._list_fail_count) > self.threshold:
                 results.append(generate_error(self._metrics[0].name, await self._get_error_message()))
