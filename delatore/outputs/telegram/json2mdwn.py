@@ -7,7 +7,7 @@ from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
 
 
-regex = re.compile(r'([.\-_]{1})')
+regex = re.compile(r'([.\-_()]{1})')
 
 
 def _status_to_md_row(status_record):
@@ -28,15 +28,17 @@ def convert(data: dict):
     source = escape_md(data['source'])
     src_row = f'*From {source}*'
     status_list = ''
-    if 'error' in data['status_list'][0]:
-        string = data['status_list'][0]['error']
-        message = regex.sub(r'\\\1', string)
-        status_list = f'Error:\n{message}'
-    else:
-        if 'status_list' in data:
-            status_list = '\n'.join(
-                _status_to_md_row(status) for status in data['status_list']
-            )
+    for status in data['status_list']:
+        if 'error' in status:
+            string = status['error']
+            message = regex.sub(r'\\\1', string)
+            status_list += f'Error:\n{message}\n'
+        else:
+            if 'status_list' in data:
+                status_list = '\n'.join(
+                    _status_to_md_row(status) for status in data['status_list']
+                )
+
     return f'{src_row}\n{status_list}'
 
 

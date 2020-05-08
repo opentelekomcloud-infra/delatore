@@ -6,7 +6,7 @@ import re
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
-from statistics import StatisticsError, fmean
+from statistics import StatisticsError, mean
 from typing import Dict, List, NamedTuple, Optional
 
 import aiohttp
@@ -17,7 +17,7 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import NoUpdates, Source, SourceMeta
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status
+from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_host
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -240,12 +240,13 @@ class InfluxSourceLBTiming(InfluxSource):
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        host_statuses = await self._get_status(main_metric)
+        last_time_ms, host_statuses = await self._get_status(main_metric)
         results = []
         faulty = []
         for host, status in host_statuses.items():
             if status == Status.FAIL:
-                results.append(status)
+                results.append(generate_status_for_host(main_metric.name, host, status[host],
+                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
                     faulty.append(host)
@@ -273,9 +274,9 @@ class InfluxSourceLBTiming(InfluxSource):
             host_results[host] = _InfluxTimingAuxMetrics(*res)
         return host_results
 
-    async def _get_error_message(self, host, aux_metrics: Dict[str, _InfluxTimingAuxMetrics]):
+    def _get_error_message(self, host, aux_metrics: Dict[str, _InfluxTimingAuxMetrics]):
         try:
-            current_response_time = f'{round(fmean(self._host_timings[host]), 2)}'
+            current_response_time = f'{round(mean(self._host_timings[host]))}'
         except StatisticsError:
             current_response_time = 'No data'
         host_state = aux_metrics[host]
@@ -289,11 +290,11 @@ class InfluxSourceLBTiming(InfluxSource):
             network_bytes_recv=round(host_state.network_bytes_recv / 1000, 2),
             network_bytes_send=round(host_state.network_bytes_send / 1000, 2))
 
-    async def _get_status(self, metric) -> Dict[str, dict]:
+    async def _get_status(self, metric):
         """Generate status, line per server"""
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-
+        last_time_ms = None
         if not self._host_timings:
             for series in last_record.raw['series']:
                 host = series['tags']['server']
@@ -308,7 +309,7 @@ class InfluxSourceLBTiming(InfluxSource):
             try:
                 query_time = series['values'][0][0]
                 server_response_time = series['values'][0][1]
-                self._list_timings[hostname].append(server_response_time)
+                self._host_timings[hostname].append(server_response_time)
                 now = datetime.utcnow().timestamp()
                 last_time_ms = _convert_time(query_time)
                 status = Status.OK
@@ -317,7 +318,7 @@ class InfluxSourceLBTiming(InfluxSource):
                 statuses[hostname] = generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
             except (KeyError, IndexError):
                 statuses[hostname] = generate_status(metric.name, Status.NO_DATA, None)
-        return statuses
+        return last_time_ms, statuses
 
 
 class InfluxSourceLBDOWN(InfluxSource):
