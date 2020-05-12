@@ -240,13 +240,13 @@ class InfluxSourceLBTiming(InfluxSource):
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        last_time_ms, host_statuses = await self._get_status(main_metric)
+        host_statuses = await self._get_status(main_metric)
         results = []
         faulty = []
         for host, status in host_statuses.items():
-            if status == Status.FAIL:
-                results.append(generate_status_for_host(main_metric.name, host, status,
-                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            if status[0] == Status.FAIL:
+                results.append(generate_status_for_host(main_metric.name, host, status[0],
+                                               status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
                     faulty.append(host)
@@ -315,10 +315,10 @@ class InfluxSourceLBTiming(InfluxSource):
                 status = Status.OK
                 if now - last_time_ms.timestamp() > metric.timeout:
                     status = Status.FAIL
-                statuses[hostname] = status
+                statuses[hostname] = (status, last_time_ms)
             except (KeyError, IndexError):
-                statuses[hostname] = Status.NO_DATA
-        return last_time_ms, statuses
+                statuses[hostname] = (Status.NO_DATA, last_time_ms)
+        return statuses
 
 
 class InfluxSourceLBDOWN(InfluxSource):
