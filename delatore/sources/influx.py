@@ -16,7 +16,7 @@ from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
 from ocomone import Resources
 
-from .base import NoUpdates, Source, SourceMeta
+from .base import Source, SourceMeta
 from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_host
 
 LOGGER = logging.getLogger(__name__)
@@ -308,10 +308,10 @@ class InfluxSourceLBTiming(InfluxSource):
                 continue
             try:
                 query_time = series['values'][0][0]
+                last_time_ms = _convert_time(query_time)
                 server_response_time = series['values'][0][1]
                 self._host_timings[hostname].append(server_response_time)
                 now = datetime.utcnow().timestamp()
-                last_time_ms = _convert_time(query_time)
                 status = Status.OK
                 if now - last_time_ms.timestamp() > metric.timeout:
                     status = Status.FAIL
@@ -375,7 +375,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     async def get_update(self) -> dict:
         status = await self._get_status(self._metrics[0])
         if status is None:
-            raise NoUpdates
+            status = {}
         return generate_message(self.CONFIG_ID, [status])
 
     async def _get_status(self, metric) -> Optional[dict]:
