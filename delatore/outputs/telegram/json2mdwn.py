@@ -34,10 +34,8 @@ def convert(data: dict):
             message = regex.sub(r'\\\1', string)
             status_list += f'Error:\n{message}\n'
         else:
-            if 'status_list' in data:
-                status_list = '\n'.join(
-                    _status_to_md_row(status) for status in data['status_list']
-                )
+            entry = _status_to_md_row(status)
+            status_list += f'{entry}\n'
 
     return f'{src_row}\n{status_list}'
 

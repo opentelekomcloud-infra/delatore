@@ -245,7 +245,7 @@ class InfluxSourceLBTiming(InfluxSource):
         faulty = []
         for host, status in host_statuses.items():
             if status == Status.FAIL:
-                results.append(generate_status_for_host(main_metric.name, host, status[host],
+                results.append(generate_status_for_host(main_metric.name, host, status,
                                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
@@ -315,9 +315,9 @@ class InfluxSourceLBTiming(InfluxSource):
                 status = Status.OK
                 if now - last_time_ms.timestamp() > metric.timeout:
                     status = Status.FAIL
-                statuses[hostname] = generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+                statuses[hostname] = status
             except (KeyError, IndexError):
-                statuses[hostname] = generate_status(metric.name, Status.NO_DATA, None)
+                statuses[hostname] = Status.NO_DATA
         return last_time_ms, statuses
 
 
@@ -333,11 +333,12 @@ class InfluxSourceLBDOWN(InfluxSource):
         main_metric = self._metrics[0]
         error_script_status, last_time_ms, status = await self._get_status(main_metric)
         results = []
-        if not error_script_status:
-            results.append(generate_status(main_metric.name, status,
-                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        else:
-            results.append(generate_error(main_metric.name, self._error_message_template))
+        if error_script_status:
+            if status == status.FAIL:
+                results.append(generate_status(main_metric.name, status,
+                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            else:
+                results.append(generate_error(main_metric.name, self._error_message_template))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -345,15 +346,15 @@ class InfluxSourceLBDOWN(InfluxSource):
         last_record = await self.influx_client.query(query)
         last_time_ms = None
         status = Status.OK
-        error_script_status = False
         if 'series' in last_record.raw:
             error_script_status = True
-        else:
             last_time = last_record.raw['series'][0]['values'][0][0]
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
             if now - last_time_ms.timestamp() > metric.timeout:
                 status = Status.FAIL
+        else:
+            error_script_status = False
         return error_script_status, last_time_ms, status
 
 
@@ -380,15 +381,13 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     async def _get_status(self, metric) -> Optional[dict]:
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        series = last_record.raw['series'][0]
-        hostname = series['tags']['host']
         try:
+            series = last_record.raw['series'][0]
+            hostname = series['tags']['host']
             values = series['values'][0]
             last_time = values[0]
             self._fail_count.append(values[1])
-        except KeyError:
-            return generate_status(metric.name, Status.NO_DATA, None)
-        except IndexError:
+        except (KeyError, IndexError):
             return generate_status(metric.name, Status.NO_DATA, None)
 
         if min(self._fail_count) > 0:  # if there are at least one error per minute for 5 minutes
