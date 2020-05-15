@@ -84,11 +84,11 @@
     metrics:
       - name: DISK_STATE_READ
         metric_id: disk_state_read
-        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"reads\" FROM (SELECT max(\"reads\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m)) GROUP BY \"name\" LIMIT 1"
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"reads\" FROM (SELECT max(\"reads\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m) ORDER BY time DESC) GROUP BY \"name\"  ORDER BY time DESC LIMIT 10"
         timeout: 60
       - name: DISK_STATE_WRITE
         metric_id: disk_state_write
-        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"writes\" FROM (SELECT max(\"writes\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m)) GROUP BY \"name\" LIMIT 1"
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"writes\" FROM (SELECT max(\"writes\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m) ORDER BY time DESC) GROUP BY \"name\" ORDER BY time DESC LIMIT 10"
         timeout: 60
       - name: DISK_STATE:CPU
         metric_id: disk_state_write

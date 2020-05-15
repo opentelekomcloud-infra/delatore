@@ -17,7 +17,7 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_host
+from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_host, generate_status_for_disk
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -415,19 +415,21 @@ class InfluxSourceDiskState(InfluxSource):
     async def get_update(self) -> dict:
         disk_statuses_reads = await self._get_status(self._metrics[0])
         disk_statuses_writes = await self._get_status(self._metrics[1])
+
         disk_status_fail_read = [device for device in self.devices if disk_statuses_reads[device][2] == Status.FAIL]
         disk_status_fail_write = [device for device in self.devices if disk_statuses_writes[device][2] == Status.FAIL]
-        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] > 0 and disk_statuses_reads[device][2] != Status.FAIL]
+
+        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] == 0 and disk_statuses_reads[device][2] != Status.FAIL]
         disk_error_write = [device for device in self.devices if disk_statuses_writes[device][0] == 0 and disk_statuses_writes[device][2] != Status.FAIL]
-        results = []
+
         text_message_read = 'for {device} allowed only read operations'
-        text_message_writes = 'Cannot read and write any data on {device}'
-        for disk in disk_status_fail_read:
-            results.append(generate_status(self._metrics[0].name, Status.FAIL,
+        text_message_write = 'Cannot read and write any data on {device}'
+        results = []
+
+        for disk in disk_status_fail_read or disk_status_fail_write:
+            results.append(generate_status_for_disk(self._metrics[0].name, disk,  Status.FAIL,
                                                disk_statuses_reads[disk][1].strftime(UNIFIED_TIME_PATTERN)))
-        for disk in disk_status_fail_write:
-            results.append(generate_status(self._metrics[0].name, Status.FAIL,
-                                           disk_statuses_writes[disk][1].strftime(UNIFIED_TIME_PATTERN)))
+
         if disk_error_read or disk_error_write:
             auxiliary_metrics = await self._get_auxiliary_metrics()
             for device in disk_error_read:
@@ -436,13 +438,8 @@ class InfluxSourceDiskState(InfluxSource):
                                                                                       device=device))))
             for device in disk_error_write:
                 results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                 text_message_writes.format(device=device))))
+                                                                                 text_message_write.format(device=device))))
         return generate_message(self.CONFIG_ID, results)
-
-    def get_message_for_state(self, disk_statuses, text_message):
-        results = []
-        results = []
-        return results
 
     def _get_error_message(self, auxiliary_metrics, text_message):
         try:
@@ -478,7 +475,7 @@ class InfluxSourceDiskState(InfluxSource):
             name = seria['tags']['name']
             if name in self.devices:
                 disk_statuses[name].append(seria['values'][0][1])
-                last_time = last_record.raw['series'][0]['values'][0][0]
+                last_time = seria['values'][0][0]
                 now = datetime.utcnow().timestamp()
                 last_time_ms = _convert_time(last_time)
                 disk_statuses[name].append(last_time_ms)
