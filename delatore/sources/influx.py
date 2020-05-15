@@ -413,31 +413,36 @@ class InfluxSourceDiskState(InfluxSource):
     devices = ('vdb', 'vdc', 'vdd', 'sda')
 
     async def get_update(self) -> dict:
-        last_time_ms_read, status_read, disk_statuses_reads = await self._get_status(self._metrics[0])
-        last_time_ms_write, status_write, disk_statuses_writes = await self._get_status(self._metrics[1])
-        disk_fail_read = [device for device in self.devices if disk_statuses_reads[device] == 0]
-        disk_fail_write = [device for device in self.devices if disk_statuses_writes[device] == 0]
+        disk_statuses_reads = await self._get_status(self._metrics[0])
+        disk_statuses_writes = await self._get_status(self._metrics[1])
+        disk_status_fail_read = [device for device in self.devices if disk_statuses_reads[device][2] == Status.FAIL]
+        disk_status_fail_write = [device for device in self.devices if disk_statuses_writes[device][2] == Status.FAIL]
+        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] > 0 and disk_statuses_reads[device][2] != Status.FAIL]
+        disk_error_write = [device for device in self.devices if disk_statuses_writes[device][0] == 0 and disk_statuses_writes[device][2] != Status.FAIL]
         results = []
         text_message_read = 'for {device} allowed only read operations'
         text_message_writes = 'Cannot read and write any data on {device}'
-        if disk_fail_read or disk_fail_write:
+        for disk in disk_status_fail_read:
+            results.append(generate_status(self._metrics[0].name, Status.FAIL,
+                                               disk_statuses_reads[disk][1].strftime(UNIFIED_TIME_PATTERN)))
+        for disk in disk_status_fail_write:
+            results.append(generate_status(self._metrics[0].name, Status.FAIL,
+                                           disk_statuses_writes[disk][1].strftime(UNIFIED_TIME_PATTERN)))
+        if disk_error_read or disk_error_write:
             auxiliary_metrics = await self._get_auxiliary_metrics()
-            for device in disk_fail_read:
-                if status_read == Status.Fail:
-                    results.append(generate_status(self._metrics[0].name, status_read,
-                                                   last_time_ms_read.strftime(UNIFIED_TIME_PATTERN)))
-                else:
-                    results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                      text_message_read.format(
-                                                                                          device=device))))
-            for device in disk_fail_write:
-                if status_read == Status.Fail:
-                    results.append(generate_status(self._metrics[1].name, status_write,
-                                                   last_time_ms_write.strftime(UNIFIED_TIME_PATTERN)))
-                else:
-                    results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                     text_message_writes.format(device=device))))
+            for device in disk_error_read:
+                results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
+                                                                                  text_message_read.format(
+                                                                                      device=device))))
+            for device in disk_error_write:
+                results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
+                                                                                 text_message_writes.format(device=device))))
         return generate_message(self.CONFIG_ID, results)
+
+    def get_message_for_state(self, disk_statuses, text_message):
+        results = []
+        results = []
+        return results
 
     def _get_error_message(self, auxiliary_metrics, text_message):
         try:
@@ -464,20 +469,23 @@ class InfluxSourceDiskState(InfluxSource):
             auxiliary_metrics['memory'] = None
         return auxiliary_metrics
 
-    async def _get_status(self, metric) -> Optional[dict]:
+    async def _get_status(self, metric) :
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
         disk_statuses = {device:[] for device in self.devices}
         status = Status.OK
         for seria in last_record.raw['series']:
-            if seria['tags']['name'] in self.devices:
-                disk_statuses[seria['tags']['name']] = seria['values'][0][1]
-        last_time = last_record.raw['series'][0]['values'][0][0]
-        now = datetime.utcnow().timestamp()
-        last_time_ms = _convert_time(last_time)
-        if now - last_time_ms.timestamp() > metric.timeout:
-            status = Status.FAIL
-        return status, disk_statuses
+            name = seria['tags']['name']
+            if name in self.devices:
+                disk_statuses[name].append(seria['values'][0][1])
+                last_time = last_record.raw['series'][0]['values'][0][0]
+                now = datetime.utcnow().timestamp()
+                last_time_ms = _convert_time(last_time)
+                disk_statuses[name].append(last_time_ms)
+                if now - last_time_ms.timestamp() > metric.timeout:
+                    status = Status.FAIL
+                disk_statuses[name].append(status)
+        return disk_statuses
 
 
 class InfluxTimestampParseException(Exception):
