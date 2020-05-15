@@ -419,7 +419,7 @@ class InfluxSourceDiskState(InfluxSource):
         disk_status_fail_read = [device for device in self.devices if disk_statuses_reads[device][2] == Status.FAIL]
         disk_status_fail_write = [device for device in self.devices if disk_statuses_writes[device][2] == Status.FAIL]
 
-        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] == 0 and disk_statuses_reads[device][2] != Status.FAIL]
+        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] > 0 and disk_statuses_reads[device][2] != Status.FAIL]
         disk_error_write = [device for device in self.devices if disk_statuses_writes[device][0] == 0 and disk_statuses_writes[device][2] != Status.FAIL]
 
         text_message_read = 'for {device} allowed only read operations'
