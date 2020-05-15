@@ -69,7 +69,7 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY host, time(1m)"
+        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY host, time(1m) LIMIT 1"
         timeout: 60
   topic_prefix: 'LB_DOWN'
   timings:
@@ -84,8 +84,8 @@
     metrics:
       - name: LB_DOWN:Fail count
         metric_id: lb_down_test
-        query: "SELECT count(\"requests\") FROM \"lb_down\" WHERE (\"ok\" = 'False') GROUP BY host, time(1m) fill(null)"
-        timeout: 60
+        query: "SELECT count(\"requests\") FROM \"lb_down\" WHERE (\"ok\" = 'False') GROUP BY host, time(1m) fill(null) LIMIT 1"
+        timeout: 500
   topic_prefix: 'LB_DOWN_FAIL_COUNT'
   timings:
     polling_interval: 60
