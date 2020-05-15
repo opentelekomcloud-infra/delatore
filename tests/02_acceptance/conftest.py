@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount
+from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceDiskState
 
 
 @pytest.fixture
@@ -19,6 +19,16 @@ async def influxdb(service):
 @pytest.fixture
 async def influxdb_lb_timing(service):
     src = InfluxSourceLBTiming(service.get_client())
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+
+@pytest.fixture
+async def influxdb_disk_state(service):
+    src = InfluxSourceDiskState(service.get_client())
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))

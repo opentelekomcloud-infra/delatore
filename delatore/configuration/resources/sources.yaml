@@ -75,6 +75,33 @@
   timings:
     polling_interval: 60
     request_timeout: 25
+- name: influxdb_disk_state
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: DISK_STATE_READ
+        metric_id: disk_state_read
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"reads\" FROM (SELECT max(\"reads\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m)) GROUP BY \"name\" LIMIT 1"
+        timeout: 60
+      - name: DISK_STATE_WRITE
+        metric_id: disk_state_write
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(max, 1s) AS \"writes\" FROM (SELECT max(\"writes\") FROM  \"diskio\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(10m)) GROUP BY \"name\" LIMIT 1"
+        timeout: 60
+      - name: DISK_STATE:CPU
+        metric_id: disk_state_write
+        query: "SELECT mean(\"usage_system\") AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^scn3-*/ AND \"cpu\" = 'cpu-total') GROUP BY time(10s) LIMIT 1"
+        timeout: 60
+      - name: DISK_STATE:MEMORY
+        metric_id: disk_state_write
+        query: "SELECT mean(\"total\") AS \"total\", mean(\"used\") AS \"used\", mean(\"cached\") AS \"cached\", mean(\"free\") AS \"free\", mean(\"buffered\") AS \"buffered\" FROM \"mem\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(5s) LIMIT 1"
+        timeout: 60
+  topic_prefix: 'DISK_STATE'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
 - name: influxdb_lb_down_fail_count
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'

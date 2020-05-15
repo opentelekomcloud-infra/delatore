@@ -404,6 +404,60 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return str_template
 
 
+class InfluxSourceDiskState(InfluxSource):
+    """InfluxSourceDiskState client"""
+
+
+    CONFIG_ID = 'influxdb_disk_state'
+    _error_message_template = _err_message_template('error_message_disk_state.txt')
+    devices = ('vdb', 'vdc', 'vdd', 'sda')
+
+    async def get_update(self) -> dict:
+        disk_statuses_reads = await self._get_status(self._metrics[0])
+        disk_statuses_writes = await self._get_status(self._metrics[1])
+        disk_fail_read = [device for device in self.devices if disk_statuses_reads[device] == 0]
+        disk_fail_write = [device for device in self.devices if disk_statuses_writes[device] == 0]
+        results = []
+        if disk_fail_read or disk_fail_write:
+            auxiliary_metrics = await self._get_auxiliary_metrics()
+            for device in disk_fail_read:
+                text_message = 'for {device} allowed only read operations'
+                message = generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
+                                                                                 text_message.format(device=device)))
+                results.append(message)
+            for device in disk_fail_write:
+                text_message = 'Cannot read and write any data on {device}'
+                message = generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
+                                                                                 text_message.format(device=device)))
+                results.append(message)
+        return generate_message(self.CONFIG_ID, results)
+
+    def _get_error_message(self, auxiliary_metrics, text_message):
+        str_template = self._error_message_template.format(text_message=text_message,
+                                                           cpu=round(auxiliary_metrics['cpu'], 2),
+                                                           memory=round(auxiliary_metrics['memory'], 2))
+        return str_template
+
+    async def _get_auxiliary_metrics(self):
+        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[2:]]
+        results = await asyncio.gather(*[
+            self.influx_client.query(query) for query in list_queries
+        ])
+        auxiliary_metrics = {}
+        auxiliary_metrics['cpu'] = results[0].raw['series'][0]['values'][0][1]
+        auxiliary_metrics['memory'] = results[1].raw['series'][0]['values'][0][1]
+        return auxiliary_metrics
+
+    async def _get_status(self, metric) -> Optional[dict]:
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        disk_statuses = {device:[] for device in self.devices}
+        for seria in last_record.raw['series']:
+            if seria['tags']['name'] in self.devices:
+                disk_statuses[seria['tags']['name']] = seria['values'][0][1]
+        return disk_statuses
+
+
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
 
