@@ -115,7 +115,7 @@
         timeout: 60
   topic_prefix: 'LB_DOWN_FAIL_COUNT'
   timings:
-    polling_interval: 60
+    polling_interval:
     request_timeout: 25
 - name: awx_api
   params:
