@@ -235,7 +235,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    threshold = 60
+    threshold = 30
     _error_message_template = _err_message_template('error_message_lb_timing.txt')
 
     async def get_update(self) -> dict:
@@ -363,14 +363,15 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
     # pylint: disable=attribute-defined-outside-init
 
-    CONFIG_ID = 'influxdb_lb_down_fail_count'
+    CONFIG_ID = 'influxdb_lb_failed_requests_to_host'
     _error_message_template = _err_message_template('error_message_lb_down_fail_count.txt')
     _fail_count: deque = None
+    threshold_size = 5
     threshold = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fail_count = deque([0] * self.threshold, self.threshold)
+        self._fail_count = deque([0] * self.threshold_size, self.threshold_size)
 
     async def get_update(self) -> dict:
         status = await self._get_status(self._metrics[0])
@@ -390,7 +391,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         except (KeyError, IndexError):
             return generate_status(metric.name, Status.NO_DATA, None)
 
-        if min(self._fail_count) > 0:  # if there are at least one error per minute for 5 minutes
+        if min(self._fail_count) > self.threshold:  # if there are at least one error per minute for 5 minutes
             return generate_error(metric.name, self._get_error_message(hostname))
 
         now = datetime.utcnow().timestamp()
