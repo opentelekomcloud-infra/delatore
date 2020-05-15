@@ -418,24 +418,28 @@ class InfluxSourceDiskState(InfluxSource):
         disk_fail_read = [device for device in self.devices if disk_statuses_reads[device] == 0]
         disk_fail_write = [device for device in self.devices if disk_statuses_writes[device] == 0]
         results = []
+        text_message_read = 'for {device} allowed only read operations'
+        text_message_writes = 'Cannot read and write any data on {device}'
         if disk_fail_read or disk_fail_write:
             auxiliary_metrics = await self._get_auxiliary_metrics()
             for device in disk_fail_read:
-                text_message = 'for {device} allowed only read operations'
                 message = generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                 text_message.format(device=device)))
+                                                                                 text_message_read.format(device=device)))
                 results.append(message)
             for device in disk_fail_write:
-                text_message = 'Cannot read and write any data on {device}'
+
                 message = generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                 text_message.format(device=device)))
+                                                                                 text_message_writes.format(device=device)))
                 results.append(message)
         return generate_message(self.CONFIG_ID, results)
 
     def _get_error_message(self, auxiliary_metrics, text_message):
-        str_template = self._error_message_template.format(text_message=text_message,
-                                                           cpu=round(auxiliary_metrics['cpu'], 2),
-                                                           memory=round(auxiliary_metrics['memory'], 2))
+        try:
+            str_template = self._error_message_template.format(text_message=text_message,
+                                                               cpu=round(auxiliary_metrics['cpu'], 2),
+                                                               memory=round(auxiliary_metrics['memory'], 2))
+        except:
+            str_template = "No data about current cpu utilization and current memory utilization"
         return str_template
 
     async def _get_auxiliary_metrics(self):
