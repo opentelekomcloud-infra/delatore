@@ -1,0 +1,3 @@
+- LB_DOWN_FAIL_COUNT
+- Status: Alerting
+- Alert message: Failed requests are above 5 for host {hostname}

@@ -17,7 +17,7 @@ chardet==3.0.4
 click==7.1.1
 codecov==2.0.22
 colorama==0.4.3; sys_platform == "win32"
-coverage==5.0.4
+coverage==5.1
 idna==2.9
 importlib-metadata==1.6.0; python_version < "3.8"
 influxdb==5.2.3

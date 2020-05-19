@@ -1,8 +1,13 @@
 """Conversion of source data to markdown v2"""
+import re
+
 from aiogram.utils.markdown import escape_md, link
 
 from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
+
+
+PATTERN_REGEX = re.compile(r'([.\-_()]{1})')
 
 
 def _status_to_md_row(status_record):
@@ -22,14 +27,19 @@ def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
     source = escape_md(data['source'])
     src_row = f'*From {source}*'
-    if 'status_list' in data:
-        status_list = '\n'.join(
-            _status_to_md_row(status) for status in data['status_list']
-        )
-    else:
-        status_list = f'Error: {data["error"]}'
+    status_list = ''
+    for status in data['status_list']:
+        if 'error' in status:
+            string = status['error']
+            message = PATTERN_REGEX.sub(r'\\\1', string)
+            status_list += f'Error:\n{message}\n'
+        else:
+            entry = _status_to_md_row(status)
+            status_list += f'{entry}\n'
+
     return f'{src_row}\n{status_list}'
 
 
 def replace_emoji(status):
+    """Replace state of status to emoji"""
     return EMOJI.get(Status(status), '')
