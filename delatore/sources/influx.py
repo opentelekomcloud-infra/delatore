@@ -411,34 +411,21 @@ class InfluxSourceDiskState(InfluxSource):
     CONFIG_ID = 'influxdb_disk_state'
     _error_message_template = _err_message_template('error_message_disk_state.txt')
     devices = ('vdb', 'vdc', 'vdd', 'sda')
+    hosts = ("scn3-5-initiator-instance", "scn3-5-test-bastion", "test-scn3-eu-de-01",
+                                            "test-scn3-eu-de-02", "test-scn3-eu-de-03")
 
     async def get_update(self) -> dict:
         disk_statuses_reads = await self._get_status(self._metrics[0])
         disk_statuses_writes = await self._get_status(self._metrics[1])
 
-        disk_status_fail_read = [device for device in self.devices if disk_statuses_reads[device][2] == Status.FAIL]
-        disk_status_fail_write = [device for device in self.devices if disk_statuses_writes[device][2] == Status.FAIL]
-
-        disk_error_read = [device for device in self.devices if disk_statuses_reads[device][0] > 0 and disk_statuses_reads[device][2] != Status.FAIL]
-        disk_error_write = [device for device in self.devices if disk_statuses_writes[device][0] == 0 and disk_statuses_writes[device][2] != Status.FAIL]
-
         text_message_read = 'for {device} allowed only read operations'
         text_message_write = 'Cannot read and write any data on {device}'
         results = []
+        failed_devices_reads = self.get_failed_devices(disk_statuses_reads)
+        failed_devices_writes = self.get_failed_devices(disk_statuses_writes)
 
-        for disk in disk_status_fail_read or disk_status_fail_write:
-            results.append(generate_status_for_disk(self._metrics[0].name, disk,  Status.FAIL,
-                                               disk_statuses_reads[disk][1].strftime(UNIFIED_TIME_PATTERN)))
-
-        if disk_error_read or disk_error_write:
-            auxiliary_metrics = await self._get_auxiliary_metrics()
-            for device in disk_error_read:
-                results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                  text_message_read.format(
-                                                                                      device=device))))
-            for device in disk_error_write:
-                results.append(generate_error(self.CONFIG_ID, self._get_error_message(auxiliary_metrics,
-                                                                                 text_message_write.format(device=device))))
+        error_devices_reads = self.get_error_devices(disk_statuses_reads)
+        error_devices_writes = self.get_error_devices(disk_statuses_writes)
         return generate_message(self.CONFIG_ID, results)
 
     def _get_error_message(self, auxiliary_metrics, text_message):
@@ -449,6 +436,22 @@ class InfluxSourceDiskState(InfluxSource):
         except:
             str_template = "No data about current cpu utilization and current memory utilization"
         return str_template
+
+    def get_failed_devices(self, disk_statuses):
+        failed_devices = {hostname: [] for hostname in disk_statuses.keys()}
+        for hostname in disk_statuses.keys():
+            for device in disk_statuses[hostname].keys():
+                if disk_statuses[hostname][device][2] == Status.Fail:
+                    failed_devices[hostname].append(device)
+        return failed_devices
+
+    def get_error_devices(self, disk_statuses):
+        error_devices = {hostname: [] for hostname in disk_statuses.keys()}
+        for hostname in disk_statuses.keys():
+            for device in disk_statuses[hostname].keys():
+                if disk_statuses[hostname][device][0] == 0:
+                    error_devices[hostname].append(device)
+        return error_devices
 
     async def _get_auxiliary_metrics(self):
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[2:]]
@@ -466,22 +469,28 @@ class InfluxSourceDiskState(InfluxSource):
             auxiliary_metrics['memory'] = None
         return auxiliary_metrics
 
-    async def _get_status(self, metric) :
+    async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        disk_statuses = {device:[] for device in self.devices}
         status = Status.OK
+        disk_statuses = {hostname: {} for hostname in self.hosts}
         for seria in last_record.raw['series']:
-            name = seria['tags']['name']
-            if name in self.devices:
-                disk_statuses[name].append(seria['values'][0][1])
+            try:
+                hostname = seria['tags']['host']
+                device = seria['tags']['name']
+                target_value = seria['values'][0][1]
                 last_time = seria['values'][0][0]
-                now = datetime.utcnow().timestamp()
-                last_time_ms = _convert_time(last_time)
-                disk_statuses[name].append(last_time_ms)
-                if now - last_time_ms.timestamp() > metric.timeout:
-                    status = Status.FAIL
-                disk_statuses[name].append(status)
+                if device in self.devices and hostname in self.hosts:
+                    disk_statuses[hostname][device] = []
+                    disk_statuses[hostname][device].append(target_value)
+                    now = datetime.utcnow().timestamp()
+                    last_time_ms = _convert_time(last_time)
+                    disk_statuses[hostname][device].append(last_time_ms)
+                    if now - last_time_ms.timestamp() > metric.timeout:
+                        status = Status.FAIL
+                    disk_statuses[hostname][device].append(status)
+            except (IndexError, KeyError):
+                continue
         return disk_statuses
 
 

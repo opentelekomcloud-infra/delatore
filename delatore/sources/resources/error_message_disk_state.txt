@@ -1,5 +1,6 @@
 - HDD_TEST
 - Status: Alerting
+- Host: {hostname}
 - Alert message: {text_message}
 - CPU utilization: {cpu}
 - Memory utilization: {memory}
