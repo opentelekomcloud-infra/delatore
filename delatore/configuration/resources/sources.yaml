@@ -7,23 +7,23 @@
     metrics:
       - name: LB_LOAD
         metric_id: lb_timing
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(elapsed) FROM {entity} LIMIT 1;"
         timeout: 300
       - name: LB_DOWN
         metric_id: lb_down
-        query: 'SELECT LAST(requests) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(requests) FROM {entity} LIMIT 1;"
         timeout: 900
       - name: SCSI_HDD_TEST
         metric_id: iscsi_connection
-        query: 'SELECT LAST(state) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(state) FROM {entity} LIMIT 1;"
         timeout: 300
       - name: RDS_TEST
         metric_id: ce_result
-        query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(elapsed) FROM {entity} LIMIT 1;"
         timeout: 300
       - name: AUTOSCALING
         metric_id: as_result
-        query: 'SELECT LAST(value) FROM {entity} LIMIT 1;'
+        query: "SELECT LAST(value) FROM {entity} LIMIT 1;"
         timeout: 5400
       - name: HDD_TEST
         metric_id: diskio
@@ -33,6 +33,63 @@
   timings:
     polling_interval: 60
     request_timeout: 5
+- name: influxdb_lb_timing
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_LOAD
+        metric_id: lb_timing
+        query: "SELECT LAST(elapsed) FROM \"lb_timing\" WHERE (\"server\" =~ /^*test-scn1-*/ AND \"client\" =~ /^80.+/) GROUP BY server LIMIT 1;"
+        timeout: 60
+      - name: LB_LOAD:CPU_utilization
+        metric_id: cpu_utilization
+        query: "SELECT max(\"usage_user\")  FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn1-basic*/) GROUP BY host, time(5m) LIMIT 1;"
+        timeout: 300
+      - name: LB_LOAD:Network_bytes_recv
+        metric_id: network_bytes_recv
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(mean, 10s) FROM (SELECT MEAN(bytes_recv) FROM net WHERE interface = 'ens3' AND host =~ /^*test-scn1-basic*/  GROUP BY time(10m)) GROUP BY host LIMIT 1;"
+        timeout: 300
+      - name: LB_LOAD:Network_bytes_send
+        metric_id: network_bytes_send
+        query: "SELECT NON_NEGATIVE_DERIVATIVE(\"mean\", 6m) FROM (SELECT MEAN(\"bytes_sent\") FROM \"net\" WHERE (\"interface\" = 'ens3' AND \"host\" =~ /^*test-scn1-basic*/) GROUP BY time(20m), interface)  GROUP BY host LIMIT 1;"
+        timeout: 300
+  topic_prefix: 'LB_TIMING'
+  timings:
+    polling_interval: 60
+    request_timeout: 15
+- name: influxdb_lb_down
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_DOWN
+        metric_id: lb_down_test
+        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY host, time(1m) ORDER BY time DESC LIMIT 1"
+        timeout: 60
+  topic_prefix: 'LB_DOWN'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
+- name: influxdb_lb_failed_requests_to_host
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_DOWN:Failed requests for host are above 5
+        metric_id: lb_down_test
+        query: "SELECT count(\"requests\") FROM \"lb_down\" WHERE (\"ok\" = 'False') GROUP BY host, time(1m) fill(null)  ORDER BY time DESC LIMIT 1"
+        timeout: 500
+  topic_prefix: 'LB_DOWN_FAIL_COUNT'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
 - name: awx_api
   params:
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'
