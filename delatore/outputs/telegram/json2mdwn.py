@@ -7,7 +7,7 @@ from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
 
 
-regex = re.compile(r'([.\-_()]{1})')
+PATTERN_REGEX = re.compile(r'([.\-_()]{1})')
 
 
 def _status_to_md_row(status_record):
@@ -31,7 +31,7 @@ def convert(data: dict):
     for status in data['status_list']:
         if 'error' in status:
             string = status['error']
-            message = regex.sub(r'\\\1', string)
+            message = PATTERN_REGEX.sub(r'\\\1', string)
             status_list += f'Error:\n{message}\n'
         else:
             entry = _status_to_md_row(status)
