@@ -1,4 +1,4 @@
-- HDD_TEST
+- {scenario_name}
 - Status: Alerting
 - Host: {hostname}
 - Alert message: {text_message}

@@ -55,6 +55,7 @@ def generate_status(name: str,
     }
 
 def generate_status_for_disk(name: str,
+                    host: str,
                     disk:str,
                     status: Status,
                     timestamp: Optional[str] = None,
@@ -62,6 +63,7 @@ def generate_status_for_disk(name: str,
     """Generate single status line"""
     return {
         'name': name,
+        'host': host,
         'device': disk,
         'status': status.value,
         'timestamp': timestamp,

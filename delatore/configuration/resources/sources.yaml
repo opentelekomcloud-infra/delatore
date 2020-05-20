@@ -92,11 +92,11 @@
         timeout: 60
       - name: DISK_STATE:CPU
         metric_id: disk_state_write
-        query: "SELECT mean(\"usage_system\") AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^scn3-*/ AND \"cpu\" = 'cpu-total') GROUP BY time(10s) LIMIT 1"
+        query: "SELECT top(\"usage_system\",1) AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*/ or \"host\" = \"scn3-5-initiator-instance\"  or \"host\" =\"scn3-5-test-bastion\") GROUP BY host LIMIT 1"
         timeout: 60
       - name: DISK_STATE:MEMORY
         metric_id: disk_state_write
-        query: "SELECT mean(\"total\") AS \"total\", mean(\"used\") AS \"used\", mean(\"cached\") AS \"cached\", mean(\"free\") AS \"free\", mean(\"buffered\") AS \"buffered\" FROM \"mem\" WHERE (\"host\" =~ /^scn3-*/) GROUP BY time(5s) LIMIT 1"
+        query: "SELECT mean(\"used\") AS \"used\", mean(\"free\") AS \"free\" FROM \"mem\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*/ or \"host\" = \"scn3-5-initiator-instance\"  or \"host\" =\"scn3-5-test-bastion\") GROUP BY host, time(60s) LIMIT 1"
         timeout: 60
   topic_prefix: 'DISK_STATE'
   timings:
