@@ -405,99 +405,67 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return str_template
 
 
-class InfluxSourceDiskState(InfluxSource):
-    """InfluxSourceDiskState client"""
+class InfluxSourceDiskStateBase(InfluxSource):
 
 
-    CONFIG_ID = 'influxdb_disk_state'
+    CONFIG_ID = 'influxdb_disk_state_read'
+    text_message = 'for {device} allowed only read operations'
     _error_message_template = _err_message_template('error_message_disk_state.txt')
     devices = ('vdb', 'vdc', 'vdd', 'sda')
     hosts = ("scn3-5-initiator-instance", "scn3-5-test-bastion", "test-scn3-eu-de-01",
                                             "test-scn3-eu-de-02", "test-scn3-eu-de-03")
-    results = []
+
     scenario_name3 = "HDD_TEST"
     scenario_name3_5 = "SCSI_HDD_TEST"
 
 
-    async def get_update(self) -> dict:
-        disk_statuses_reads = await self._get_status(self._metrics[0])
-        disk_statuses_writes = await self._get_status(self._metrics[1])
+    async def get_update(self):
+        disk_statuses = await self._get_status(self._metrics[0])
+        results = []
+        aux_metric = await self.get_auxilary_metrics()
 
-        text_message_read = 'for {device} allowed only read operations'
-        text_message_write = 'Cannot read and write any data on {device}'
-
-        failed_devices_reads, error_devices_reads = self.get_failed_and_error_devices(disk_statuses_reads)
-        failed_devices_writes, error_devices_writes = self.get_failed_and_error_devices(disk_statuses_writes)
-
-        hosts_with_error_devices = []
-        for hostname in self.hosts:
-            if error_devices_reads[hostname] or error_devices_writes[hostname]:
-                hosts_with_error_devices.append(hostname)
-
-        for hostname in failed_devices_reads.keys():
-            for device in failed_devices_reads[hostname]:
-                self.results.append(generate_status_for_disk(self._metrics[0].name, hostname, device, disk_statuses_reads[hostname][device][2],
-                                               disk_statuses_reads[hostname][device][1].strftime(UNIFIED_TIME_PATTERN)))
-
-        for hostname in failed_devices_reads.keys():
-            for device in failed_devices_reads[hostname]:
-                self.results.append(generate_status_for_disk(self._metrics[1].name, hostname, device, disk_statuses_reads[hostname][device][2],
-                                               disk_statuses_reads[hostname][device][1].strftime(UNIFIED_TIME_PATTERN)))
-        if hosts_with_error_devices:
-            auxiliary_metrics_cpu, auxiliary_metrics_mem = await self._get_auxiliary_metrics(hosts_with_error_devices)
-            for hostname in error_devices_reads.keys():
-                for device in error_devices_reads[hostname]:
-                    self.results.append(self.get_error_message(hostname, auxiliary_metrics_cpu, auxiliary_metrics_mem, text_message_read.format(device=device)))
-            for hostname in error_devices_writes.keys():
-                for device in error_devices_reads[hostname]:
-                    self.results.append(self.get_error_message(hostname, auxiliary_metrics_cpu, auxiliary_metrics_mem, text_message_write.format(device=device)))
-        return generate_message(self.CONFIG_ID, self.results)
-
-    def get_error_message(self, hostname, auxiliary_metrics_cpu, auxiliary_metrics_mem, text_message):
-        try:
-            str_template = self._error_message_template.format(text_message=text_message,
-                                                               hostname=hostname,
-                                                               scenario_name=self.scenario_name3,
-                                                               cpu=round(auxiliary_metrics_cpu[hostname], 2),
-                                                               memory=round(auxiliary_metrics_mem[hostname], 2))
-        except (IndexError, KeyError):
-            str_template = "No data about current cpu utilization and current memory utilization"
-        return str_template
-
-    def get_failed_and_error_devices(self, disk_statuses):
-        failed_devices = {hostname: [] for hostname in disk_statuses.keys()}
-        error_devices = {hostname: [] for hostname in disk_statuses.keys()}
         for hostname in disk_statuses.keys():
             for device in disk_statuses[hostname].keys():
                 try:
                     if disk_statuses[hostname][device][2] == Status.FAIL:
-                        failed_devices[hostname].append(device)
-
+                        results.append(generate_status_for_disk(self._metrics[0].name, hostname, device,
+                                                                     disk_statuses[hostname][device][2],
+                                                                     disk_statuses[hostname][device][1].strftime(
+                                                                         UNIFIED_TIME_PATTERN)))
                     if disk_statuses[hostname][device][0] > 0:
-                        error_devices[hostname].append(device)
+                        results.append(generate_error(self._metrics[0].name, self.get_error_message(hostname, device, aux_metric)))
                 except (IndexError, KeyError):
                     continue
-        return failed_devices, error_devices
+        return results
 
-    async def _get_auxiliary_metrics(self, hosts_with_error_devices):
+    def get_error_message(self, hostname, device, auxiliary_metrics):
+        text_message = self.text_message.format(device=device)
+        if device == 'sda': scenario_name = self.scenario_name3_5
+        else: scenario_name = self.scenario_name3
+        try:
+            str_template = self._error_message_template.format(text_message=text_message,
+                                                               hostname=hostname,
+                                                               scenario_name=scenario_name,
+                                                               cpu=round(auxiliary_metrics[hostname][0], 2),
+                                                               memory=round(auxiliary_metrics[hostname][1], 2))
+        except (IndexError, KeyError):
+            str_template = "No data about current cpu utilization and current memory utilization"
+        return str_template
+
+    async def get_auxilary_metrics(self):
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[2:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
         ])
-        auxiliary_metrics_cpu = self.get_values_aux_metric(hosts_with_error_devices, results[0])
-        auxiliary_metrics_mem = self.get_values_aux_metric(hosts_with_error_devices, results[1])
-        return auxiliary_metrics_cpu, auxiliary_metrics_mem
-
-    def get_values_aux_metric(self, hosts_with_error_devices, result):
-        aux_metric = {}
-        try:
+        aux_metric = {hostname: [] for hostname in self.hosts}
+        for result in results:
             for seria in result.raw['series']:
-                hostname = seria['tags']['host']
-                value = seria['values'][0][1]
-                if hostname in hosts_with_error_devices:
-                    aux_metric[hostname] = value
-        except (IndexError, KeyError):
-            aux_metric = None
+                try:
+                    hostname = seria['tags']['host']
+                    value = seria['values'][0][1]
+                    aux_metric[hostname].append(value)
+                except (IndexError, KeyError):
+                    continue
         return aux_metric
 
     async def _get_status(self, metric):
@@ -523,6 +491,12 @@ class InfluxSourceDiskState(InfluxSource):
             except (IndexError, KeyError):
                 continue
         return disk_statuses
+
+
+class InfluxSourceDiskStateWrite(InfluxSourceDiskStateBase):
+
+    CONFIG_ID = 'influxdb_disk_state_write'
+    text_message_write = 'Cannot read and write any data on {device}'
 
 
 class InfluxTimestampParseException(Exception):
