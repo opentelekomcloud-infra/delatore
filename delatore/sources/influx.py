@@ -375,9 +375,10 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
     async def get_update(self) -> dict:
         status = await self._get_status(self._metrics[0])
-        if status is None:
-            status = {}
-        return generate_message(self.CONFIG_ID, [status])
+        results = []
+        if status is not None:
+            results.append(status)
+        return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric) -> Optional[dict]:
         query = metric.query.format(entity=metric.metric_id)
@@ -405,8 +406,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return str_template
 
 
-class InfluxSourceDiskStateBase(InfluxSource):
-
+class InfluxSourceDiskStateRead(InfluxSource):
 
     CONFIG_ID = 'influxdb_disk_state_read'
     text_message = 'for {device} allowed only read operations'
@@ -417,7 +417,7 @@ class InfluxSourceDiskStateBase(InfluxSource):
 
     scenario_name3 = "HDD_TEST"
     scenario_name3_5 = "SCSI_HDD_TEST"
-
+    scenario3_sfs = "SFS_WITH_ENCRYPTION"
 
     async def get_update(self):
         disk_statuses = await self._get_status(self._metrics[0])
@@ -436,12 +436,11 @@ class InfluxSourceDiskStateBase(InfluxSource):
                         results.append(generate_error(self._metrics[0].name, self.get_error_message(hostname, device, aux_metric)))
                 except (IndexError, KeyError):
                     continue
-        return results
+        return generate_message(self.CONFIG_ID, results)
 
     def get_error_message(self, hostname, device, auxiliary_metrics):
         text_message = self.text_message.format(device=device)
-        if device == 'sda': scenario_name = self.scenario_name3_5
-        else: scenario_name = self.scenario_name3
+        scenario_name = self.define_scenario_name(device)
         try:
             str_template = self._error_message_template.format(text_message=text_message,
                                                                hostname=hostname,
@@ -449,11 +448,18 @@ class InfluxSourceDiskStateBase(InfluxSource):
                                                                cpu=round(auxiliary_metrics[hostname][0], 2),
                                                                memory=round(auxiliary_metrics[hostname][1], 2))
         except (IndexError, KeyError):
-            str_template = "No data about current cpu utilization and current memory utilization"
+            str_template = "No data about current cpu utilization and current memory utilization for {device} on {host}".format(device=device, host=hostname)
         return str_template
 
+    def define_scenario_name(self, device):
+        if device == 'sda':
+            scenario_name = self.scenario_name3_5
+        else:
+            scenario_name = self.scenario_name3
+        return scenario_name
+
     async def get_auxilary_metrics(self):
-        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[2:]]
+        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
         ])
@@ -493,10 +499,10 @@ class InfluxSourceDiskStateBase(InfluxSource):
         return disk_statuses
 
 
-class InfluxSourceDiskStateWrite(InfluxSourceDiskStateBase):
+class InfluxSourceDiskStateWrite(InfluxSourceDiskStateRead):
 
     CONFIG_ID = 'influxdb_disk_state_write'
-    text_message_write = 'Cannot read and write any data on {device}'
+    text_message = 'Cannot read and write any data on {device}'
 
 
 class InfluxTimestampParseException(Exception):

@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from apubsub.client import Client
 
-from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceDiskStateBase
+from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite
 pytestmark = pytest.mark.asyncio
 
 
@@ -31,8 +31,13 @@ async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTim
     assert update is not None
 
 
-async def test_influx_data_disk_state(influxdb_disk_state: InfluxSourceDiskStateBase):
-    update = await influxdb_disk_state.get_update()
+async def test_influx_data_disk_read(influxdb_disk_read: InfluxSourceDiskStateRead):
+    update = await influxdb_disk_read.get_update()
+    assert update is not None
+
+
+async def test_influx_data_disk_state_write(influxdb_disk_write: InfluxSourceDiskStateWrite):
+    update = await influxdb_disk_write.get_update()
     assert update is not None
 
 
