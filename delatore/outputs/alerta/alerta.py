@@ -84,8 +84,14 @@ class AlertaRunner:
 
     def process_heartbeat(self, message):
         """Process message for heartbeat report"""
+        args = dict(
+            origin=ALERTA_CONFIG.params['origin'],
+            tags=['csm'],
+            timeout=300,
+        )
+
         if float(message['message_timestamp']) - self._last_heartbeat > HEARTBEAT_INTERVAL:
-            self.alerta.heartbeat(origin=ALERTA_CONFIG.params['origin'])
+            self.alerta.heartbeat(**args)
             self._last_heartbeat = message['message_timestamp']
 
     def get_current_alerts(self, origin):
