@@ -14,6 +14,7 @@ LOGGER.setLevel(logging.DEBUG)
 
 ALERTA_CONFIG = OUTPUTS_CFG['alerta']
 STATUS = 'status'
+HEARTBEAT_INTERVAL = 60
 
 
 def get_name_timeout(conf):
@@ -36,6 +37,7 @@ class AlertaRunner:
     """Alerta runner wrapper"""
     _alerta: Client = None
     _alerta_thread: threading.Thread
+    _last_heartbeat = 0.0
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
@@ -81,7 +83,14 @@ class AlertaRunner:
         return alerta_ids
 
     def process_heartbeat(self, message):
-        """Process message for heartbeat"""
+        """Process message for heartbeat report"""
+        common_args = dict(
+            environment=ALERTA_CONFIG.params['environment'],
+            origin=ALERTA_CONFIG.params['origin']
+        )
+        if float(message['message_timestamp']) - self._last_heartbeat > HEARTBEAT_INTERVAL:
+            self.alerta.heartbeat(**common_args)
+            self._last_heartbeat = message['message_timestamp']
 
     def get_current_alerts(self, origin):
         return self.alerta.get_alerts([('origin', origin), ('repeat', False)])
@@ -103,7 +112,6 @@ class AlertaRunner:
             # message consumed
             message = await self.client.get(.1)
             if message is not None:
-                # TODO: heartbeat func create. process message for heartbeat; 1 - 2 < 60 publish
                 data = json.loads(message)
                 self.process_heartbeat(data)
                 self.alert(data)  # check if TG response was 200
