@@ -17,8 +17,8 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, \
-    generate_status_for_host
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status,
+                            generate_status_for_host)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)

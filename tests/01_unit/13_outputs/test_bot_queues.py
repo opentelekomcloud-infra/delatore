@@ -5,8 +5,9 @@ from asyncio import Queue
 import pytest
 from apubsub.client import Client
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, source_data):
     source_cls, (_, message) = source_data
     message = json.dumps(message)
@@ -18,7 +19,6 @@ async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, sour
         raise AssertionError
 
 
-@pytest.mark.asyncio
 async def test_src_to_alerta(patched_alerta, pub: Client, bot_alert_queue: Queue, source_data_alerta):
     source, (_, message) = source_data_alerta
     message = json.dumps(message)
