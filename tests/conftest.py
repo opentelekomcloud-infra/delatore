@@ -223,11 +223,7 @@ async def patched_alerta(service, stop_event, bot_alert_queue: Queue):
     def _alert(item):
         bot_alert_queue.put_nowait(item)
 
-    def _process_heartbeat(item):  # Stub for heartbeat processing
-        pass
-
     alerta.alert = _alert
-    alerta.process_heartbeat = _process_heartbeat
     asyncio.create_task(alerta.start())
     await asyncio.sleep(.5)
     yield alerta

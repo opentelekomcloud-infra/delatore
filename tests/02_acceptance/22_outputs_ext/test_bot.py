@@ -40,3 +40,8 @@ async def test_alerta_message_series(alerta, source_data_alerta_series):
     source, (_, data) = source_data_alerta_series
     await send_alerta(alerta, data)
     await send_and_remove_alerta(alerta, data)
+
+
+async def test_alerta_heartbeat_proc(alerta):
+    heartbeat_id = alerta.process_heartbeat()
+    assert alerta.alerta.get_heartbeat(heartbeat_id)
