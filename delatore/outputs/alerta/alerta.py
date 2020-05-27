@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import threading
+from datetime import datetime
 
 from alertaclient.api import Client
 from apubsub import Service
@@ -36,6 +37,8 @@ class AlertaRunner:
     """Alerta runner wrapper"""
     _alerta: Client = None
     _alerta_thread: threading.Thread
+    last_heartbeat = 0.0
+    HEARTBEAT_INTERVAL = 300
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
                  config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
@@ -80,6 +83,20 @@ class AlertaRunner:
             LOGGER.debug('Alerta message sent')
         return alerta_ids
 
+    def process_heartbeat(self):
+        """Process message for heartbeat report"""
+        args = dict(
+            origin=ALERTA_CONFIG.params['origin'],
+            tags=['csm'],
+            timeout=600,
+        )
+
+        current_timestamp = datetime.utcnow().timestamp()
+        if current_timestamp - self.last_heartbeat > self.HEARTBEAT_INTERVAL:
+            heartbeat = self.alerta.heartbeat(**args)
+            self.last_heartbeat = current_timestamp
+            return heartbeat.id
+
     def get_current_alerts(self, origin):
         return self.alerta.get_alerts([('origin', origin), ('repeat', False)])
 
@@ -99,6 +116,7 @@ class AlertaRunner:
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
+            self.process_heartbeat()
             if message is not None:
                 data = json.loads(message)
                 self.alert(data)  # check if TG response was 200

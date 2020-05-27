@@ -54,11 +54,12 @@ def generate_status(name: str,
         'details_url': details_url
     }
 
+
 def generate_status_for_host(name: str,
-                    hostname: str,
-                    status: Status,
-                    timestamp: Optional[str] = None,
-                    details_url: Optional[str] = None) -> dict:
+                             hostname: str,
+                             status: Status,
+                             timestamp: Optional[str] = None,
+                             details_url: Optional[str] = None) -> dict:
     """Generate single status line"""
     return {
         'name': name,
@@ -67,6 +68,7 @@ def generate_status_for_host(name: str,
         'timestamp': timestamp,
         'details_url': details_url
     }
+
 
 def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
     """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""

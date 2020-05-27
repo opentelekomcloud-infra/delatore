@@ -3,7 +3,8 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount
+from delatore.sources import (AWXApiSource, InfluxSource, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount,
+                              InfluxSourceLBTiming)
 
 
 @pytest.fixture

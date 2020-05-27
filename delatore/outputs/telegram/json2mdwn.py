@@ -6,7 +6,6 @@ from aiogram.utils.markdown import escape_md, link
 from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
 
-
 PATTERN_REGEX = re.compile(r'([.\-_()]{1})')
 
 
