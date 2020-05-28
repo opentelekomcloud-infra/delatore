@@ -467,10 +467,10 @@ class InfluxSourceDiskStateRead(InfluxSource):
         ])
         aux_metric = {hostname: [] for hostname in self.hosts}
         for result in results:
-            for seria in result.raw['series']:
+            for series in result.raw['series']:
                 try:
-                    hostname = seria['tags']['host']
-                    value = seria['values'][0][1]
+                    hostname = series['tags']['host']
+                    value = series['values'][0][1]
                     aux_metric[hostname].append(value)
                 except (IndexError, KeyError):
                     continue
@@ -521,12 +521,12 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
-        for seria in last_record.raw['series']:
+        for series in last_record.raw['series']:
             try:
-                hostname = seria['tags']['host']
-                target_value = seria['values'][0][1]
+                hostname = series['tags']['host']
+                target_value = series['values'][0][1]
                 device = self.devices[0]
-                last_time = seria['values'][0][0]
+                last_time = series['values'][0][0]
                 if hostname in self.hosts:
                     disk_statuses[hostname][device] = []
                     disk_statuses[hostname][device].append(target_value)
@@ -539,6 +539,41 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
             except (IndexError, KeyError):
                 continue
         return disk_statuses
+
+
+class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
+
+    devices = ('sfs',)
+    hosts = ("scn3-5-test-bastion",)
+    table_name = "nfsiostat"
+    name_column = "ops_sec"
+    scenario_names = {('sfs',): "SFS_WITH_ENCRYPTION"}
+    additional_condition = "and type = \'write\'"
+
+    async def _get_status(self, metric):
+        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column, additional_condition = self.additional_condition)
+        last_record = await self.influx_client.query(query)
+        status = Status.OK
+        disk_statuses = {hostname: {} for hostname in self.hosts}
+        for series in last_record.raw['series']:
+            try:
+                hostname = series['tags']['host']
+                target_value = series['values'][0][1]
+                device = self.devices[0]
+                last_time = series['values'][0][0]
+                if hostname in self.hosts:
+                    disk_statuses[hostname][device] = []
+                    disk_statuses[hostname][device].append(target_value)
+                    now = datetime.utcnow().timestamp()
+                    last_time_ms = _convert_time(last_time)
+                    disk_statuses[hostname][device].append(last_time_ms)
+                    if now - last_time_ms.timestamp() > metric.timeout:
+                        status = Status.FAIL
+                    disk_statuses[hostname][device].append(status)
+            except (IndexError, KeyError):
+                continue
+        return disk_statuses
+
 
 
 class InfluxTimestampParseException(Exception):

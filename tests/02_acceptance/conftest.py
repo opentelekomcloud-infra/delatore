@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite,InfluxSourceDiskStateReadSFS
+from delatore.sources import AWXApiSource, InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite,InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS
 
 
 @pytest.fixture
@@ -49,6 +49,16 @@ async def influxdb_disk_write(service):
 @pytest.fixture
 async def influxdb_disk_read_sfs(service):
     src = InfluxSourceDiskStateReadSFS(service.get_client())
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
+
+
+@pytest.fixture
+async def influxdb_disk_write_sfs(service):
+    src = InfluxSourceDiskStateWriteSFS(service.get_client())
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
