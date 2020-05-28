@@ -514,7 +514,7 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
     table_name = "nfsiostat"
     name_column = "ops_sec"
     scenario_names = {('sfs',): "SFS_WITH_ENCRYPTION"}
-    additional_condition = "and type = \'reads\'"
+    additional_condition = "and type = \'read\'"
 
     async def _get_status(self, metric):
         query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column,
