@@ -54,6 +54,7 @@ def generate_status(name: str,
         'details_url': details_url
     }
 
+
 def generate_status_for_disk(name: str,
                     host: str,
                     disk:str,
@@ -63,12 +64,12 @@ def generate_status_for_disk(name: str,
     """Generate single status line"""
     return {
         'name': name,
-        'host': host,
-        'device': disk,
         'status': status.value,
         'timestamp': timestamp,
-        'details_url': details_url
+        'details_url': details_url,
+        'additional_info': f"host: {host}\ndevice: {disk}"
     }
+
 
 def generate_status_for_host(name: str,
                     hostname: str,
@@ -83,6 +84,8 @@ def generate_status_for_host(name: str,
         'timestamp': timestamp,
         'details_url': details_url
     }
+
+
 
 def convert_timestamp(timestamp: str, timestamp_fmt: str) -> str:
     """Convert timestamp from given format to UNIFIED_TIME_PATTERN"""

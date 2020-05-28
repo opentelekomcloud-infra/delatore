@@ -33,9 +33,11 @@ def convert(data: dict):
             message = PATTERN_REGEX.sub(r'\\\1', string)
             status_list += f'Error:\n{message}\n'
         else:
+            additional_info = ''
+            if 'additional_info' in status.keys():
+                additional_info = PATTERN_REGEX.sub(r'\\\1', status['additional_info']) + '\n'
             entry = _status_to_md_row(status)
-            status_list += f'{entry}\n'
-
+            status_list += f'{entry}\n{additional_info}'
     return f'{src_row}\n{status_list}'
 
 
