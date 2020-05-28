@@ -434,7 +434,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
                                                                 disk_statuses[hostname][device][1].strftime(
                                                                     UNIFIED_TIME_PATTERN)))
                     else:
-                        if disk_statuses[hostname][device][0] > 0:
+                        if disk_statuses[hostname][device][0] == 0:
                             results.append(generate_error(self._metrics[0].name, self.get_error_message(hostname, device, aux_metric)))
                 except (IndexError, KeyError):
                     continue

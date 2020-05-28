@@ -79,10 +79,10 @@ def generate_status_for_host(name: str,
     """Generate single status line"""
     return {
         'name': name,
-        'hostname': hostname,
         'status': status.value,
         'timestamp': timestamp,
-        'details_url': details_url
+        'details_url': details_url,
+        'additional_info': f"host: {hostname}"
     }
 
 
