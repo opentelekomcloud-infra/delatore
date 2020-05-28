@@ -423,16 +423,16 @@ class InfluxSourceDiskStateRead(InfluxSource):
     async def get_update(self):
         disk_statuses = await self._get_status(self._metrics[0])
         results = []
-        aux_metric = await self.get_auxilary_metrics()
+        aux_metric = await self.get_auxiliary_metrics()
 
         for hostname in disk_statuses.keys():
             for device in disk_statuses[hostname].keys():
                 try:
                     if disk_statuses[hostname][device][2] == Status.FAIL:
                         results.append(generate_status_for_disk(self._metrics[0].name, hostname, device,
-                                                                     disk_statuses[hostname][device][2],
-                                                                     disk_statuses[hostname][device][1].strftime(
-                                                                         UNIFIED_TIME_PATTERN)))
+                                                                disk_statuses[hostname][device][2],
+                                                                disk_statuses[hostname][device][1].strftime(
+                                                                    UNIFIED_TIME_PATTERN)))
                     else:
                         if disk_statuses[hostname][device][0] > 0:
                             results.append(generate_error(self._metrics[0].name, self.get_error_message(hostname, device, aux_metric)))
@@ -460,7 +460,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
                 scenario_name = self.scenario_names[key]
         return scenario_name
 
-    async def get_auxilary_metrics(self):
+    async def get_auxiliary_metrics(self):
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
@@ -517,7 +517,8 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
     additional_condition = "and type = \'reads\'"
 
     async def _get_status(self, metric):
-        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column, additional_condition = self.additional_condition)
+        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column,
+                                              additional_condition=self.additional_condition)
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
@@ -551,7 +552,8 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
     additional_condition = "and type = \'write\'"
 
     async def _get_status(self, metric):
-        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column, additional_condition = self.additional_condition)
+        query = Template(metric.query).render(table_name=self.table_name,
+                                              name_column=self.name_column, additional_condition=self.additional_condition)
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
@@ -573,7 +575,6 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
             except (IndexError, KeyError):
                 continue
         return disk_statuses
-
 
 
 class InfluxTimestampParseException(Exception):
