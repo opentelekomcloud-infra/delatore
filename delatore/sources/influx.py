@@ -153,9 +153,9 @@ class InfluxSourceMeta(SourceMeta):
     def __init__(cls, *args, **kwargs):
         SourceMeta.__init__(cls, *args, **kwargs)
         params = cls.config.params
-        metrics = params.pop('metrics')
+        metrics = params['metrics']
         metrics = [Metric(**met) for met in metrics]
-        cls._params = InfluxParams(metrics=metrics, **params)
+        cls._params = InfluxParams(metrics=metrics, host=params['host'], port=params['port'], username=params['username'], database=params['database'])
 
 
 def _err_message_template(mes_file):
@@ -482,12 +482,12 @@ class InfluxSourceDiskStateRead(InfluxSource):
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
-        for seria in last_record.raw['series']:
+        for series in last_record.raw['series']:
             try:
-                hostname = seria['tags']['host']
-                device = seria['tags']['name']
-                target_value = seria['values'][0][1]
-                last_time = seria['values'][0][0]
+                hostname = series['tags']['host']
+                device = series['tags']['name']
+                target_value = series['values'][0][1]
+                last_time = series['values'][0][0]
                 if device in self.devices and hostname in self.hosts:
                     disk_statuses[hostname][device] = []
                     disk_statuses[hostname][device].append(target_value)
@@ -515,9 +515,10 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
     table_name = "nfsiostat"
     name_column = "ops_sec"
     scenario_names = {('sfs',): "SFS_WITH_ENCRYPTION"}
+    additional_condition = "and type = \'reads\'"
 
     async def _get_status(self, metric):
-        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column)
+        query = Template(metric.query).render(table_name=self.table_name, name_column=self.name_column, additional_condition = self.additional_condition)
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}

@@ -69,7 +69,7 @@
     metrics:
       - name: DISK_STATE_READ
         metric_id: disk_state_read
-        query: "SELECT top({{ name_column }}, 1)  FROM  {{ table_name }} WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host, \"name\"  LIMIT 1"
+        query: "SELECT top({{ name_column }}, 1)  FROM  {{ table_name }} WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/ {{ additional_condition }}) GROUP BY host, \"name\"  LIMIT 1"
         timeout: 60
       - name: DISK_STATE:CPU
         metric_id: disk_state_write
