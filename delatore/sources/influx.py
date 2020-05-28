@@ -3,7 +3,6 @@ import asyncio
 import json
 import logging
 import re
-from abc import abstractmethod
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -19,7 +18,8 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_host, generate_status_for_disk
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_disk,
+                            generate_status_for_host)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -248,7 +248,7 @@ class InfluxSourceLBTiming(InfluxSource):
         for host, status in host_statuses.items():
             if status[0] == Status.FAIL:
                 results.append(generate_status_for_host(main_metric.name, host, status[0],
-                                               status[1].strftime(UNIFIED_TIME_PATTERN)))
+                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
                     faulty.append(host)
@@ -377,10 +377,9 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
     async def get_update(self) -> dict:
         status = await self._get_status(self._metrics[0])
-        results = []
-        if status is not None:
-            results.append(status)
-        return generate_message(self.CONFIG_ID, results)
+        if status is None:
+            status = {}
+        return generate_message(self.CONFIG_ID, [status])
 
     async def _get_status(self, metric) -> Optional[dict]:
         query = metric.query.format(entity=metric.metric_id)
