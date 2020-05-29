@@ -56,11 +56,11 @@ def generate_status(name: str,
 
 
 def generate_status_for_disk(name: str,
-                    host: str,
-                    disk:str,
-                    status: Status,
-                    timestamp: Optional[str] = None,
-                    details_url: Optional[str] = None) -> dict:
+                             host: str,
+                             disk: str,
+                             status: Status,
+                             timestamp: Optional[str] = None,
+                             details_url: Optional[str] = None) -> dict:
     """Generate single status line"""
     return {
         'name': name,
@@ -72,10 +72,10 @@ def generate_status_for_disk(name: str,
 
 
 def generate_status_for_host(name: str,
-                    hostname: str,
-                    status: Status,
-                    timestamp: Optional[str] = None,
-                    details_url: Optional[str] = None) -> dict:
+                             hostname: str,
+                             status: Status,
+                             timestamp: Optional[str] = None,
+                             details_url: Optional[str] = None) -> dict:
     """Generate single status line"""
     return {
         'name': name,
