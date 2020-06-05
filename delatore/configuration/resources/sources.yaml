@@ -60,6 +60,29 @@
   timings:
     polling_interval: 60
     request_timeout: 15
+- name: influxdb_disk_state
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: DISK_STATE
+        metric_id: disk_state
+        query: "SELECT top({{ name_column }}, 1)  FROM  {{ table_name }} WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/ {{ additional_condition }}) GROUP BY host, \"name\"  LIMIT 1"
+        timeout: 60
+      - name: DISK_STATE:CPU
+        metric_id: disk_state_write
+        query: "SELECT top(\"usage_system\",1) AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host LIMIT 1"
+        timeout: 60
+      - name: DISK_STATE:MEMORY
+        metric_id: disk_state_write
+        query: "SELECT mean(\"used\") AS \"used\", mean(\"free\") AS \"free\" FROM \"mem\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host, time(60s) LIMIT 1"
+        timeout: 60
+  topic_prefix: 'DISK_STATE'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
 - name: influxdb_lb_down
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'

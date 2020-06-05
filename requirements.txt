@@ -1,3 +1,4 @@
+jinja2
 aiodns==2.0.0
 aiogram==2.7
 aiohttp==3.6.2

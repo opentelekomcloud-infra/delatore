@@ -3,8 +3,8 @@ import asyncio
 import pytest
 from apubsub.client import Client
 
-from delatore.sources import InfluxSource, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceLBTiming
-
+from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, \
+                             InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS
 pytestmark = pytest.mark.asyncio
 
 
@@ -29,6 +29,26 @@ async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTim
     await sub.subscribe(influxdb_lb_timing.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(5)
+    assert update is not None
+
+
+async def test_influx_data_disk_read(influxdb_disk_read: InfluxSourceDiskStateRead):
+    update = await influxdb_disk_read.get_update()
+    assert update is not None
+
+
+async def test_influx_data_disk_write(influxdb_disk_write: InfluxSourceDiskStateWrite):
+    update = await influxdb_disk_write.get_update()
+    assert update is not None
+
+
+async def test_influx_data_disk_read_sfs(influxdb_disk_read_sfs: InfluxSourceDiskStateReadSFS):
+    update = await influxdb_disk_read_sfs.get_update()
+    assert update is not None
+
+
+async def test_influx_data_disk_write_sfs(influxdb_disk_write_sfs: InfluxSourceDiskStateWriteSFS):
+    update = await influxdb_disk_write_sfs.get_update()
     assert update is not None
 
 
@@ -78,7 +98,7 @@ async def test_result_lb_down_fail_count_error(influxdb_lb_down_fail_count_error
     await asyncio.sleep(.1)
     update = await sub.get(15)
     if '"status": "fail"' not in update:
-        assert 'Alert message' in update
+     assert 'Alert message' in update
 
 
 async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: InfluxSourceLBDOWNFailCount, sub):
