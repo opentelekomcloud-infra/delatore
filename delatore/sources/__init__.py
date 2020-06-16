@@ -27,7 +27,7 @@ async def start_influx_sources(msg_service: Service, stop_event: asyncio.Event, 
     await asyncio.wait([
         InfluxSource(msg_service.get_client(), config).start(stop_event),
         InfluxSourceLBTiming(msg_service.get_client(), config).start(stop_event),
-        # InfluxSourceLBDOWN(msg_service.get_client(), config).start(stop_event),
+        InfluxSourceLBDOWN(msg_service.get_client(), config).start(stop_event),
         # InfluxSourceLBDOWNFailCount(msg_service.get_client(), config).start(stop_event),
         # InfluxSourceDiskStateRead(msg_service.get_client(), config).start(stop_event),
         # InfluxSourceDiskStateWrite(msg_service.get_client(), config).start(stop_event),

@@ -69,15 +69,15 @@
     metrics:
       - name: DISK_STATE
         metric_id: disk_state
-        query: "SELECT top({{ name_column }}, 1)  FROM  {{ table_name }} WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/ {{ additional_condition }}) GROUP BY host, \"name\"  LIMIT 1"
+        query: "SELECT TOP({column}, 1) FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ {{ additional_condition }} GROUP BY host, name LIMIT 1;"
         timeout: 60
       - name: DISK_STATE:CPU
-        metric_id: disk_state_write
-        query: "SELECT top(\"usage_system\",1) AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host LIMIT 1"
+        metric_id: cpu
+        query: "SELECT TOP(usage_system, 1) AS system FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host LIMIT 1;"
         timeout: 60
       - name: DISK_STATE:MEMORY
-        metric_id: disk_state_write
-        query: "SELECT mean(\"used\") AS \"used\", mean(\"free\") AS \"free\" FROM \"mem\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host, time(60s) LIMIT 1"
+        metric_id: mem
+        query: "SELECT MEAN(used) AS used, MEAN(free) AS free FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host, time(60s) LIMIT 1;"
         timeout: 60
   topic_prefix: 'DISK_STATE'
   timings:
@@ -92,7 +92,7 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: "SELECT count(\"state\") FROM \"lb_down_test\" WHERE (\"reason\" != \"0\") GROUP BY host, time(1m) ORDER BY time DESC LIMIT 1"
+        query: "SELECT COUNT(state) FROM {entity} WHERE reason!=\"0\" GROUP BY host, time(1m) ORDER BY time DESC LIMIT 1;"
         timeout: 60
   topic_prefix: 'LB_DOWN'
   timings:
@@ -106,8 +106,8 @@
     database: 'csm'
     metrics:
       - name: LB_DOWN:Failed requests for host are above 5
-        metric_id: lb_down_test
-        query: "SELECT count(\"requests\") FROM \"lb_down\" WHERE (\"ok\" = 'False') GROUP BY host, time(1m) fill(null)  ORDER BY time DESC LIMIT 1"
+        metric_id: lb_down
+        query: "SELECT COUNT(requests) FROM {entity} WHERE ok='False' GROUP BY host, time(1m) fill(null) ORDER BY time DESC LIMIT 1;"
         timeout: 500
   topic_prefix: 'LB_DOWN_FAIL_COUNT'
   timings:
