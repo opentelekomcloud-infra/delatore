@@ -8,18 +8,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import StatisticsError, mean
 from typing import Dict, List, NamedTuple, Optional
-from jinja2 import Template
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
+from jinja2 import Template
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status, generate_status_for_disk,
-                            generate_status_for_host)
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_error, generate_message, generate_status,
+                            generate_status_for_disk, generate_status_for_host)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -155,7 +155,8 @@ class InfluxSourceMeta(SourceMeta):
         params = cls.config.params
         metrics = params['metrics']
         metrics = [Metric(**met) for met in metrics]
-        cls._params = InfluxParams(metrics=metrics, host=params['host'], port=params['port'], username=params['username'], database=params['database'])
+        cls._params = InfluxParams(metrics=metrics, host=params['host'], port=params['port'],
+                                   username=params['username'], database=params['database'])
 
 
 def _err_message_template(mes_file):
@@ -231,8 +232,6 @@ class _InfluxTimingAuxMetrics(NamedTuple):
 class InfluxSourceLBTiming(InfluxSource):
     """InfluxSourceLBTiming client"""
 
-    # pylint: disable=unused-variable
-
     CONFIG_ID = 'influxdb_lb_timing'
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
@@ -247,7 +246,9 @@ class InfluxSourceLBTiming(InfluxSource):
         faulty = []
         for host, status in host_statuses.items():
             if status[0] == Status.FAIL:
-                results.append(generate_status_for_host(main_metric.name, host, status[0],
+                results.append(generate_status_for_host(main_metric.name,
+                                                        host,
+                                                        status[0],
                                                         status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
@@ -408,13 +409,12 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
 
 class InfluxSourceDiskStateRead(InfluxSource):
-
     CONFIG_ID = 'influxdb_disk_state'
     text_message = 'for {device} not allowed read operations'
     _error_message_template = _err_message_template('error_message_disk_state.txt')
     devices = ('vdb', 'vdc', 'vdd', 'sda')
     hosts = ("scn3-5-initiator-instance", "scn3-5-test-bastion", "test-scn3-eu-de-01",
-                                            "test-scn3-eu-de-02", "test-scn3-eu-de-03")
+             "test-scn3-eu-de-02", "test-scn3-eu-de-03")
     table_name = "diskio"
     name_column = "reads"
 
@@ -435,7 +435,8 @@ class InfluxSourceDiskStateRead(InfluxSource):
                                                                     UNIFIED_TIME_PATTERN)))
                     else:
                         if disk_statuses[hostname][device][0] == 0:
-                            results.append(generate_error(self._metrics[0].name, self.get_error_message(hostname, device, aux_metric)))
+                            results.append(generate_error(self._metrics[0].name,
+                                                          self.get_error_message(hostname, device, aux_metric)))
                 except (IndexError, KeyError):
                     continue
         return generate_message(self.CONFIG_ID, results)
@@ -450,7 +451,8 @@ class InfluxSourceDiskStateRead(InfluxSource):
                                                                cpu=round(auxiliary_metrics[hostname][0], 2),
                                                                memory=round(auxiliary_metrics[hostname][1], 2))
         except (IndexError, KeyError):
-            str_template = "No data about current cpu utilization and current memory utilization for {device} on {host}".format(device=device, host=hostname)
+            str_template = "No data about current cpu utilization and current memory utilization for {device} on {host}".format(
+                device=device, host=hostname)
         return str_template
 
     def determine_scenario_name(self, device):
@@ -502,13 +504,11 @@ class InfluxSourceDiskStateRead(InfluxSource):
 
 
 class InfluxSourceDiskStateWrite(InfluxSourceDiskStateRead):
-
     text_message = 'For {device} not allowed write operations'
     name_column = "writes"
 
 
 class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
-
     devices = ('sfs',)
     hosts = ("scn3-5-test-bastion",)
     table_name = "nfsiostat"
@@ -543,7 +543,6 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
 
 
 class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
-
     devices = ('sfs',)
     hosts = ("scn3-5-test-bastion",)
     table_name = "nfsiostat"
@@ -553,7 +552,8 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
 
     async def _get_status(self, metric):
         query = Template(metric.query).render(table_name=self.table_name,
-                                              name_column=self.name_column, additional_condition=self.additional_condition)
+                                              name_column=self.name_column,
+                                              additional_condition=self.additional_condition)
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
