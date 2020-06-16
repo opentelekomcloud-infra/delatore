@@ -5,8 +5,9 @@ from apubsub import Service
 
 from .awx_api import AWXApiSource
 from .http import AWXWebHookSource
-from .influx import InfluxSource, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWrite, \
-    InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceLBTiming
+from .influx import (InfluxSource, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWrite,
+                     InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount,
+                     InfluxSourceLBTiming)
 from ..configuration import InstanceConfig
 
 LOGGER = logging.getLogger(__name__)
