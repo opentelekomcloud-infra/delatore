@@ -8,6 +8,7 @@
       - name: LB_LOAD
         metric_id: lb_timing
         query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        timeout: 300
       - name: LB_DOWN
         metric_id: lb_down
         query: 'SELECT LAST(requests) FROM {entity} LIMIT 1;'
@@ -15,9 +16,11 @@
       - name: SCSI_HDD_TEST
         metric_id: iscsi_connection
         query: 'SELECT LAST(state) FROM {entity} LIMIT 1;'
+        timeout: 300
       - name: RDS_TEST
         metric_id: ce_result
         query: 'SELECT LAST(elapsed) FROM {entity} LIMIT 1;'
+        timeout: 300
       - name: AUTOSCALING
         metric_id: as_result
         query: 'SELECT LAST(value) FROM {entity} LIMIT 1;'
@@ -25,6 +28,7 @@
       - name: HDD_TEST
         metric_id: diskio
         query: 'SELECT LAST(writes) FROM {entity} WHERE host=~/scn3/ LIMIT 1;'
+        timeout: 300
   topic_prefix: 'INFLUX'
   timings:
     polling_interval: 60
@@ -48,7 +52,7 @@
         query: 'SELECT NON_NEGATIVE_DERIVATIVE(mean, 10m) FROM (SELECT MEAN(bytes_recv) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host LIMIT 1;'
       - name: LB_LOAD:Network_bytes_send
         metric_id: net
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(mean, 10m) FROM (SELECT MEAN(bytes_sent) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m), interface) GROUP BY host LIMIT 1;'
+        query: 'SELECT NON_NEGATIVE_DERIVATIVE(mean, 10m) FROM (SELECT MEAN(bytes_sent) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host LIMIT 1;'
   topic_prefix: 'LB_TIMING'
   timings:
     polling_interval: 60
@@ -62,18 +66,18 @@
     metrics:
       - name: DISK_STATE
         metric_id: disk_state
-        query: 'SELECT TOP({column}, 1) FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ {additional_condition} GROUP BY host, name LIMIT 1;'
+        query: 'SELECT TOP({column},1) FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ {additional_condition} GROUP BY host, name LIMIT 1;'
         timeout: 90
       - name: DISK_STATE:CPU
         metric_id: cpu
-        query: 'SELECT TOP(usage_system, 1) AS system FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host LIMIT 1;'
+        query: 'SELECT TOP(usage_system,1) AS system FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host LIMIT 1;'
       - name: DISK_STATE:MEMORY
         metric_id: mem
         query: 'SELECT MEAN(used) AS used, MEAN(free) AS free FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host, time(60s) LIMIT 1;'
   topic_prefix: 'DISK_STATE'
   timings:
     polling_interval: 60
-    request_timeout: 10
+    request_timeout: 5
 - name: influxdb_lb_down
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'
@@ -83,20 +87,20 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: 'SELECT COUNT(state) FROM {entity} WHERE reason!=0 GROUP BY host, time(60s) ORDER BY time DESC LIMIT 1;'
+        query: 'SELECT COUNT(state) FROM {entity} WHERE reason!="0" GROUP BY host, time(60s) ORDER BY time DESC LIMIT 1;'
         timeout: 90
   topic_prefix: 'LB_DOWN'
   timings:
     polling_interval: 60
     request_timeout: 5
-- name: influxdb_lb_failed_requests_to_host
+- name: influxdb_lb_down_failed_requests
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'
     port: 8086
     username: 'csm'
     database: 'csm'
     metrics:
-      - name: LB_DOWN:Failed requests for host when fail hits 5
+      - name: LB_DOWN:Failed requests hit 5
         metric_id: lb_down
         query: 'SELECT COUNT(requests) FROM {entity} WHERE ok=~/False/ GROUP BY host, time(60s) fill(null) ORDER BY time DESC LIMIT 1;'
         timeout: 90
