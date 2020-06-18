@@ -250,11 +250,8 @@ class InfluxSourceLBTiming(InfluxSource):
                 else:
                     results.append(generate_status_for_host(main_metric.name, host, Status.OK,
                                                             status[1].strftime(UNIFIED_TIME_PATTERN)))
-            if status[0] == Status.FAIL:
-                results.append(generate_status_for_host(main_metric.name, host, Status.FAIL,
-                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
-            if status[0] == Status.NO_DATA:
-                results.append(generate_status_for_host(main_metric.name, host, Status.NO_DATA,
+            else:
+                results.append(generate_status_for_host(main_metric.name, host, status[0],
                                                         status[1].strftime(UNIFIED_TIME_PATTERN)))
         if faulty:
             state = await self._get_auxiliary_metrics()  # get overall host state
@@ -405,23 +402,25 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
 
 
 class InfluxSourceDiskStateRead(InfluxSource):
+    """InfluxSourceDiskStateRead client"""
+
     CONFIG_ID = 'influxdb_disk_state'
     text_message = 'for {device} not allowed read operations'
     _error_message_template = _err_message_template('error_message_disk_state.txt')
-    devices = ('vdb', 'vdc', 'vdd', 'sda')
+    devices = ('vdb', 'vdc', 'vdd', 'sda',)
     hosts = (
         'scn3-5-initiator-instance',
         'scn3-5-test-bastion',
         'test-scn3-eu-de-01',
         'test-scn3-eu-de-02',
-        'test-scn3-eu-de-03'
+        'test-scn3-eu-de-03',
     )
     entity = 'diskio'
     column = 'reads'
 
     scenario_names = {
         ('sda',): 'SCSI_HDD_TEST',
-        ('vdb', 'vdc', 'vdd',): 'HDD_TEST'
+        ('vdb', 'vdc', 'vdd',): 'HDD_TEST',
     }
 
     async def get_update(self):
@@ -515,8 +514,8 @@ class InfluxSourceDiskStateRead(InfluxSource):
 
 
 class InfluxSourceDiskStateWrite(InfluxSourceDiskStateRead):
-    text_message = 'For {device} not allowed write operations'
-    column = "writes"
+    text_message = 'for {device} not allowed write operations'
+    column = 'writes'
 
 
 class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
@@ -525,11 +524,10 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
     entity = 'nfsiostat'
     column = 'ops_sec'
     scenario_names = {('sfs',): 'SFS_WITH_ENCRYPTION'}
-    additional_condition = "AND type=\'read\'"
+    additional_condition = 'AND type="read"'
 
     async def _get_status(self, metric):
-        query = metric.query.format(entity=self.entity,
-                                    column=self.column,
+        query = metric.query.format(entity=self.entity, column=self.column,
                                     additional_condition=self.additional_condition)
         last_record = await self.influx_client.query(query)
         status = Status.OK
