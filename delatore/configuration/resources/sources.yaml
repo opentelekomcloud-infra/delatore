@@ -49,10 +49,10 @@
         query: 'SELECT MAX(usage_user) FROM {entity} WHERE host=~/test-scn1-basic/ GROUP BY host, time(5m) LIMIT 1;'
       - name: LB_LOAD:Network_bytes_recv
         metric_id: net
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(mean, 10m) FROM (SELECT MEAN(bytes_recv) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host LIMIT 1;'
+        query: 'SELECT mean FROM (SELECT MEAN(bytes_recv) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host ORDER BY DESC LIMIT 1;'
       - name: LB_LOAD:Network_bytes_send
         metric_id: net
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(mean, 10m) FROM (SELECT MEAN(bytes_sent) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host LIMIT 1;'
+        query: 'SELECT mean FROM (SELECT MEAN(bytes_sent) FROM {entity} WHERE interface=~/ens3/ AND host=~/test-scn1-basic/ GROUP BY time(10m)) GROUP BY host ORDER BY DESC LIMIT 1;'
   topic_prefix: 'LB_TIMING'
   timings:
     polling_interval: 60

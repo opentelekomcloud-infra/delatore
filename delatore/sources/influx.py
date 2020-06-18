@@ -244,14 +244,18 @@ class InfluxSourceLBTiming(InfluxSource):
         results = []
         faulty = []
         for host, status in host_statuses.items():
-            if status[0] == Status.FAIL:
-                results.append(generate_status_for_host(main_metric.name,
-                                                        host,
-                                                        status[0],
-                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
-            else:
+            if status[0] == Status.OK:
                 if min(self._host_timings[host]) > self.threshold:
                     faulty.append(host)
+                else:
+                    results.append(generate_status_for_host(main_metric.name, host, Status.OK,
+                                                            status[1].strftime(UNIFIED_TIME_PATTERN)))
+            if status[0] == Status.FAIL:
+                results.append(generate_status_for_host(main_metric.name, host, Status.FAIL,
+                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
+            if status[0] == Status.NO_DATA:
+                results.append(generate_status_for_host(main_metric.name, host, Status.NO_DATA,
+                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
         if faulty:
             state = await self._get_auxiliary_metrics()  # get overall host state
             for host in faulty:
