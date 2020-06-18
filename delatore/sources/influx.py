@@ -301,7 +301,6 @@ class InfluxSourceLBTiming(InfluxSource):
             for series in last_record.raw['series']:
                 host = series['tags']['server']
                 self._host_timings[host] = deque([], self.DEQUE_SIZE)
-
         statuses = {}
         for series in last_record.raw['series']:
             try:
@@ -366,7 +365,6 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     _error_message_template = _err_message_template('error_message_lb_down_fail_count.txt')
     _fail_count: deque = None
     threshold_size = 5
-    threshold = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -375,7 +373,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     async def get_update(self) -> dict:
         status = await self._get_status(self._metrics[0])
         if status is None:
-            status = {}
+            return generate_error(self.CONFIG_ID, 'check sql query')
         return generate_message(self.CONFIG_ID, [status])
 
     async def _get_status(self, metric) -> Optional[dict]:
@@ -390,7 +388,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         except (KeyError, IndexError):
             return generate_status(metric.name, Status.NO_DATA, None)
 
-        if min(self._fail_count) > self.threshold:  # if there are at least one error per minute for 5 minutes
+        if min(self._fail_count) > self.threshold_size:  # if there are at least one error per minute for 5 minutes
             return generate_error(metric.name, self._get_error_message(hostname))
 
         now = datetime.utcnow().timestamp()
@@ -488,7 +486,9 @@ class InfluxSourceDiskStateRead(InfluxSource):
         return aux_metric
 
     async def _get_status(self, metric):
-        query = metric.query.format(entity=self.entity, column=self.column)
+        query = metric.query.format(entity=self.entity,
+                                    column=self.column,
+                                    additional_condition='')
         last_record = await self.influx_client.query(query)
         status = Status.OK
         disk_statuses = {hostname: {} for hostname in self.hosts}
