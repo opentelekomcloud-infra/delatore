@@ -318,7 +318,7 @@ class InfluxSourceLBTiming(InfluxSource):
                     status = Status.FAIL
                 statuses[hostname] = (status, last_time_ms)
             except (KeyError, IndexError):
-                statuses[hostname] = (Status.NO_DATA, last_time_ms)
+                statuses[hostname] = (Status.NO_DATA, last_time_ms)  # FIXME: Check last_time_ms
         return statuses
 
 
@@ -523,11 +523,15 @@ class InfluxSourceDiskStateRead(InfluxSource):
 
 
 class InfluxSourceDiskStateWrite(InfluxSourceDiskStateRead):
+    """InfluxSourceDiskStateWrite client"""
+
     text_message = 'for {device} not allowed write operations'
     column = 'writes'
 
 
 class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
+    """InfluxSourceDiskStateReadSFS client"""
+
     devices = ('sfs',)
     hosts = ('scn3-5-test-bastion',)
     entity = 'nfsiostat'
@@ -565,6 +569,8 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
 
 
 class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateReadSFS):
+    """InfluxSourceDiskStateWriteSFS client"""
+
     additional_condition = 'AND type=~/write/'
 
 
