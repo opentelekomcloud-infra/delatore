@@ -92,10 +92,11 @@ class AlertaRunner:
         )
 
         current_timestamp = datetime.utcnow().timestamp()
-        if current_timestamp - self.last_heartbeat > self.HEARTBEAT_INTERVAL:
-            heartbeat = self.alerta.heartbeat(**args)
-            self.last_heartbeat = current_timestamp
-            return heartbeat.id
+        if current_timestamp - self.last_heartbeat < self.HEARTBEAT_INTERVAL:
+            return
+        heartbeat = self.alerta.heartbeat(**args)
+        self.last_heartbeat = current_timestamp
+        return heartbeat.id
 
     def get_current_alerts(self, origin):
         return self.alerta.get_alerts([('origin', origin), ('repeat', False)])

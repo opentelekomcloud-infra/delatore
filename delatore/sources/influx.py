@@ -387,7 +387,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         except (KeyError, IndexError):
             return generate_status(metric.name, Status.NO_DATA, None)
 
-        if max(self._fail_count) > self.threshold_size:  # if there are at least one error per minute for 5 minutes
+        if min(self._fail_count) > self.threshold_size:  # if there are at least one error per minute for 5 minutes
             return generate_error(metric.name, self._get_error_message(hostname))
 
         now = datetime.utcnow().timestamp()
@@ -401,7 +401,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return str_template
 
 
-def get_disk_statuses_info(target_value, last_time, timeout) -> List:
+def get_disk_info(target_value, last_time, timeout) -> List:
     disc_info = [target_value]
     now = datetime.utcnow().timestamp()
     last_time_ms = _convert_time(last_time)
@@ -501,7 +501,6 @@ class InfluxSourceDiskStateRead(InfluxSource):
                                     column=self.column,
                                     additional_condition='')
         last_record = await self.influx_client.query(query)
-        status = Status.OK
         disc_statuses = {hostname: {} for hostname in self.hosts}
         for series in last_record.raw['series']:
             try:
@@ -510,7 +509,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
                 target_value = series['values'][0][1]
                 last_time = series['values'][0][0]
                 if device in self.devices and hostname in self.hosts:
-                    disc_statuses[hostname][device] = get_disk_statuses_info(target_value, last_time, metric.timeout)
+                    disc_statuses[hostname][device] = get_disk_info(target_value, last_time, metric.timeout)
             except (IndexError, KeyError):
                 continue
         return disc_statuses
@@ -540,7 +539,6 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
                                     column=self.column,
                                     additional_condition=self.additional_condition)
         last_record = await self.influx_client.query(query)
-        status = Status.OK
         disc_statuses = {hostname: {} for hostname in self.hosts}
         for series in last_record.raw['series']:
             try:
@@ -549,7 +547,7 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
                 device = self.devices[0]
                 last_time = series['values'][0][0]
                 if hostname in self.hosts:
-                    disc_statuses[hostname][device] = get_disk_statuses_info(target_value, last_time, metric.timeout)
+                    disc_statuses[hostname][device] = get_disk_info(target_value, last_time, metric.timeout)
             except (IndexError, KeyError):
                 continue
         return disc_statuses
