@@ -4,11 +4,9 @@ import logging
 from apubsub import Service
 from apubsub.client import Client
 
+from . import influx
 from .awx_api import AWXApiSource
 from .http import AWXWebHookSource
-from .influx import (InfluxSource, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWrite,
-                     InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount,
-                     InfluxSourceLBTiming)
 from ..configuration import InstanceConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -26,12 +24,12 @@ async def start_sources(msg_service: Service, stop_event: asyncio.Event, config:
 
 async def start_influx_sources(msg_service: Client, stop_event: asyncio.Event, config: InstanceConfig):
     await asyncio.wait([
-        InfluxSource(msg_service, config).start(stop_event),
-        InfluxSourceLBTiming(msg_service, config).start(stop_event),
-        InfluxSourceLBDOWN(msg_service, config).start(stop_event),
-        InfluxSourceLBDOWNFailCount(msg_service, config).start(stop_event),
-        InfluxSourceDiskStateRead(msg_service, config).start(stop_event),
-        InfluxSourceDiskStateWrite(msg_service, config).start(stop_event),
-        InfluxSourceDiskStateReadSFS(msg_service, config).start(stop_event),
-        InfluxSourceDiskStateWriteSFS(msg_service, config).start(stop_event)
+        influx.InfluxSource(msg_service, config).start(stop_event),
+        influx.InfluxSourceLBTiming(msg_service, config).start(stop_event),
+        influx.InfluxSourceLBDOWN(msg_service, config).start(stop_event),
+        influx.InfluxSourceLBDOWNFailCount(msg_service, config).start(stop_event),
+        influx.InfluxSourceDiskStateRead(msg_service, config).start(stop_event),
+        influx.InfluxSourceDiskStateWrite(msg_service, config).start(stop_event),
+        influx.InfluxSourceDiskStateReadSFS(msg_service, config).start(stop_event),
+        influx.InfluxSourceDiskStateWriteSFS(msg_service, config).start(stop_event)
     ])

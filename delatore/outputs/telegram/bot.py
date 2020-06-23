@@ -31,9 +31,7 @@ __MESSAGES_PATH = Resources(__file__, resources_dir='messages')
 def _load_help():
     msg_path = __MESSAGES_PATH['help.md']
     with open(msg_path, encoding='utf-8') as msg_file:
-        msg = ''
-        for line in msg_file:
-            msg += line
+        msg = ''.join(msg_file)
     return {HELP: msg}
 
 
@@ -58,7 +56,6 @@ def log_msg(message: Message):
 
 class BotRunner:
     """Bot runner wrapper"""
-
 
     _bot: Bot = None
     _dispatcher: Dispatcher = None
