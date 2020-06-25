@@ -299,15 +299,12 @@ class InfluxSourceLBTiming(InfluxSource):
         last_record = await self.influx_client.query(query)
         if not self._host_timings:
             for series in last_record.raw['series']:
-                host = series['tags']['server']
-                self._host_timings[host] = deque([], self.DEQUE_SIZE)
+                hostname = series['tags']['server']
+                self._host_timings[hostname] = deque([], self.DEQUE_SIZE)
         statuses = {}
         for series in last_record.raw['series']:
             try:
                 hostname = series['tags']['server']
-            except KeyError:
-                continue
-            try:
                 last_time = series['values'][0][0]
                 last_time_ms = _convert_time(last_time)
                 server_response_time = series['values'][0][1]
@@ -318,7 +315,7 @@ class InfluxSourceLBTiming(InfluxSource):
                     status = Status.FAIL
                 statuses[hostname] = (status, last_time_ms)
             except (KeyError, IndexError):
-                statuses[hostname] = (Status.NO_DATA, last_time_ms)  # FIXME: Check last_time_ms
+                raise InfluxGetInfoFromQueryException
         return statuses
 
 
@@ -401,7 +398,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return str_template
 
 
-def get_disk_info(target_value, last_time, timeout) -> List:
+def _get_disk_info(target_value, last_time, timeout) -> List:
     disc_info = [target_value]
     now = datetime.utcnow().timestamp()
     last_time_ms = _convert_time(last_time)
@@ -438,7 +435,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
     async def get_update(self):
         disc_statuses = await self._get_status(self._metrics[0])
         results = []
-        aux_metric = await self.get_auxiliary_metrics()  # TODO: Check test-bastion scn3-5-test-bastion device
+        aux_metric = await self.get_auxiliary_metrics()  # TODO: Check test-bastion scn3-5-test-bastion device!
 
         for hostname in disc_statuses.keys():
             for device in disc_statuses[hostname].keys():
@@ -509,7 +506,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
                 target_value = series['values'][0][1]
                 last_time = series['values'][0][0]
                 if device in self.devices and hostname in self.hosts:
-                    disc_statuses[hostname][device] = get_disk_info(target_value, last_time, metric.timeout)
+                    disc_statuses[hostname][device] = _get_disk_info(target_value, last_time, metric.timeout)
             except (IndexError, KeyError):
                 continue
         return disc_statuses
@@ -547,7 +544,7 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
                 device = self.devices[0]
                 last_time = series['values'][0][0]
                 if hostname in self.hosts:
-                    disc_statuses[hostname][device] = get_disk_info(target_value, last_time, metric.timeout)
+                    disc_statuses[hostname][device] = _get_disk_info(target_value, last_time, metric.timeout)
             except (IndexError, KeyError):
                 continue
         return disc_statuses
@@ -561,6 +558,10 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateReadSFS):
 
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
+
+
+class InfluxGetInfoFromQueryException(Exception):
+    """Error during Influx getting info from query"""
 
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')
