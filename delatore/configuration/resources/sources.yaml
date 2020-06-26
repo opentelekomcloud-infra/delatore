@@ -113,6 +113,21 @@
   timings:
     polling_interval: 60
     request_timeout: 25
+- name: influxdb_autoscalling
+  params:
+    host: 'influx1.eco.tsi-dev.otc-service.com'
+    port: 8086
+    username: 'csm'
+    database: 'csm'
+    metrics:
+      - name: LB_AUTOSCALING
+        metric_id: autoscaling
+        query: "SELECT mean(\"elapsed\") AS \"Response time\" FROM \"as_loadbalancer\" GROUP BY time(10m) fill(linear) ORDER BY time DESC LIMIT 1"
+        timeout: 500
+  topic_prefix: 'LB_DOWN_AUTOSCALLING'
+  timings:
+    polling_interval: 60
+    request_timeout: 25
 - name: awx_api
   params:
     host: 'https://awx.eco.tsi-dev.otc-service.com/api/v2'

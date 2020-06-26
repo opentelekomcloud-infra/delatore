@@ -577,6 +577,52 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateRead):
         return disk_statuses
 
 
+
+class InfluxSourceAutoscalling(InfluxSource):
+    """InfluxSourceAutoscallingclient"""
+
+    # pylint: disable=unused-variable
+
+    CONFIG_ID = 'influxdb_autoscalling'
+    threshold = 30
+    _error_message_template = _err_message_template('error_message_autoscalling.txt')
+
+
+    async def get_update(self) -> dict:
+        main_metric = self._metrics[0]
+        error_status, last_time_ms, status = await self._get_status(main_metric)
+        results = []
+        if status == status.FAIL:
+            results.append(generate_status(main_metric.name, status,
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        if status == status.NO_DATA:
+            results.append(generate_status(main_metric.name, status, None))
+        else:
+            if error_status == True:
+                results.append(generate_error(main_metric.name, self._error_message_template))
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        last_time_ms = None
+        error_status = False
+        status = Status.OK
+        try:
+            response_time = last_record.raw['series'][0]['values'][0][1]
+            if response_time < self.threshold:
+                error_status = True
+            last_time = last_record.raw['series'][0]['values'][0][0]
+            now = datetime.utcnow().timestamp()
+            last_time_ms = _convert_time(last_time)
+            if now - last_time_ms.timestamp() > metric.timeout:
+                status = Status.FAIL
+        except(IndexError, KeyError):
+           status = Status.NO_DATA
+        return error_status, last_time_ms, status
+
+
+
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
 

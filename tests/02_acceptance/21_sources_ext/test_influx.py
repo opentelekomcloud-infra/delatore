@@ -4,7 +4,7 @@ import pytest
 from apubsub.client import Client
 
 from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, \
-                             InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS
+                             InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS,  InfluxSourceDiskStateWriteSFS, InfluxSourceAutoscalling
 pytestmark = pytest.mark.asyncio
 
 
@@ -106,3 +106,9 @@ async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: Infl
     await asyncio.sleep(.1)
     update = await sub.get(5)
     assert 'Alert message' not in update
+
+
+async def test_influx_autoscalling(influxdb_autoscalling: InfluxSourceAutoscalling):
+    update = await influxdb_autoscalling.get_update()
+    a = 5
+    assert update is not None
