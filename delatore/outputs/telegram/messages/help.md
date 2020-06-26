@@ -18,3 +18,4 @@ Implemented sources:
 Examples:
 `/status awx` — return last job status for all __scenarios__
 `/status awx "Scenario 1.5"` — return last status for Scenario 1\.5
+`/status awx "Scenario 1.5" 3` — return last 3 statuses for Scenario 1\.5

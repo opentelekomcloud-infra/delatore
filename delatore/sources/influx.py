@@ -419,7 +419,6 @@ class InfluxSourceDiskStateRead(InfluxSource):
     devices = ('vdb', 'vdc', 'vdd', 'sda',)
     hosts = (
         'scn3-5-initiator-instance',
-        'scn3-5-test-bastion',
         'test-scn3-eu-de-01',
         'test-scn3-eu-de-02',
         'test-scn3-eu-de-03',
@@ -435,7 +434,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
     async def get_update(self):
         disc_statuses = await self._get_status(self._metrics[0])
         results = []
-        aux_metric = await self.get_auxiliary_metrics()  # TODO: Check test-bastion scn3-5-test-bastion device!
+        aux_metric = await self.get_auxiliary_metrics()
 
         for hostname in disc_statuses.keys():
             for device in disc_statuses[hostname].keys():
@@ -554,6 +553,33 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateReadSFS):
     """InfluxSourceDiskStateWriteSFS client"""
 
     additional_condition = 'AND type=~/write/'
+
+
+class InfluxSourceSFS(InfluxSource):  # FIXME: Naming! Like in sources.yaml file
+    """InfluxSourceSFS client"""
+
+    CONFIG_ID = 'SFS'
+
+    async def get_update(self) -> dict:
+        metric = self._metrics[0]
+        status, last_time_ms = await self._get_status(metric)
+        results = []
+        if status == status.OK:
+            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        status = Status.OK
+        last_time_ms = None
+        if 'series' in last_record.raw:
+            last_time = last_record.raw['series'][0]['values'][0][0]
+            now = datetime.utcnow().timestamp()
+            last_time_ms = _convert_time(last_time)
+            if now - last_time_ms.timestamp() > metric.timeout:
+                status = Status.FAIL
+        return status, last_time_ms
 
 
 class InfluxTimestampParseException(Exception):
