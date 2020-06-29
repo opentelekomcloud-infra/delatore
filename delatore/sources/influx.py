@@ -584,7 +584,7 @@ class InfluxSourceAutoscalling(InfluxSource):
     # pylint: disable=unused-variable
 
     CONFIG_ID = 'influxdb_autoscalling'
-    threshold = 30
+    _threshold = 30
     _error_message_template = _err_message_template('error_message_autoscalling.txt')
 
 
@@ -601,14 +601,14 @@ class InfluxSourceAutoscalling(InfluxSource):
             if error_status == True:
                 auxilary_metric = self._metrics[1]
                 cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
-                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self.threshold, cpu_utilization=cpu_utilization)))
+                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_auxilary_metrics(self, metric):
-        query =  metric.query.format(entity=metric.metric_id)
-        result = await asyncio.gather(self.influx_client.query(query))
+        query = metric.query.format(entity=metric.metric_id)
+        result = await self.influx_client.query(query)
         try:
-
+            cpu_utilization = result.raw['series'][0]['values'][0][1]
         except(IndexError, KeyError):
             cpu_utilization = 'NO DATA'
         return cpu_utilization
@@ -622,7 +622,7 @@ class InfluxSourceAutoscalling(InfluxSource):
         status = Status.OK
         try:
             response_time = last_record.raw['series'][0]['values'][0][1]
-            if response_time < self.threshold:
+            if response_time > self._threshold:
                 error_status = True
             last_time = last_record.raw['series'][0]['values'][0][0]
             now = datetime.utcnow().timestamp()

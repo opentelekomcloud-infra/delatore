@@ -126,9 +126,9 @@
         timeout: 500
       - name: LB_AUTOSCALING:CPU utilization
         metric_id: autoscaling_cpu_utilization
-        query: "SELECT top(\"usage_system\",1) AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host LIMIT 1"
+        query: "SELECT max(\"usage_system\") AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*scn4/) LIMIT 1"
         timeout: 500
-  topic_prefix: 'LB_DOWN_AUTOSCALLING'
+  topic_prefix: 'INFLUX_AUTOSCALLING'
   timings:
     polling_interval: 60
     request_timeout: 25
