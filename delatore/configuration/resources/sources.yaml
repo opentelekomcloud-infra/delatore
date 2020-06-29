@@ -124,6 +124,10 @@
         metric_id: autoscaling
         query: "SELECT mean(\"elapsed\") AS \"Response time\" FROM \"as_loadbalancer\" GROUP BY time(10m) fill(linear) ORDER BY time DESC LIMIT 1"
         timeout: 500
+      - name: LB_AUTOSCALING:CPU utilization
+        metric_id: autoscaling_cpu_utilization
+        query: "SELECT top(\"usage_system\",1) AS \"system\" FROM \"cpu\" WHERE (\"host\" =~ /^*test-scn3-eu-de-*|scn3-5-initiator-instance|scn3-5-test-bastion/) GROUP BY host LIMIT 1"
+        timeout: 500
   topic_prefix: 'LB_DOWN_AUTOSCALLING'
   timings:
     polling_interval: 60

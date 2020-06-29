@@ -599,8 +599,20 @@ class InfluxSourceAutoscalling(InfluxSource):
             results.append(generate_status(main_metric.name, status, None))
         else:
             if error_status == True:
-                results.append(generate_error(main_metric.name, self._error_message_template))
+                auxilary_metric = self._metrics[1]
+                cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
+                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self.threshold, cpu_utilization=cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
+
+    async def _get_auxilary_metrics(self, metric):
+        query =  metric.query.format(entity=metric.metric_id)
+        result = await asyncio.gather(self.influx_client.query(query))
+        try:
+
+        except(IndexError, KeyError):
+            cpu_utilization = 'NO DATA'
+        return cpu_utilization
+
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
