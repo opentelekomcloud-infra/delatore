@@ -577,7 +577,7 @@ class InfluxSourceSFSStatus(InfluxSource):
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        status = Status.NO_DATA
+        status = Status.OK
         last_time_ms = None
         control_value = 1
         if 'series' in last_record.raw:
