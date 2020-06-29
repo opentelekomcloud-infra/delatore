@@ -7,7 +7,7 @@ from .awx_api import AWXApiSource
 from .http import AWXWebHookSource
 from .influx import (InfluxSource, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWrite,
                      InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount,
-                     InfluxSourceLBTiming)
+                     InfluxSourceLBTiming, InfluxSourceSFSStatus)
 from ..configuration import InstanceConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -32,5 +32,6 @@ async def start_influx_sources(msg_service: Service, stop_event: asyncio.Event, 
         InfluxSourceDiskStateRead(msg_service.get_client(), config).start(stop_event),
         InfluxSourceDiskStateWrite(msg_service.get_client(), config).start(stop_event),
         InfluxSourceDiskStateReadSFS(msg_service.get_client(), config).start(stop_event),
-        InfluxSourceDiskStateWriteSFS(msg_service.get_client(), config).start(stop_event)
+        InfluxSourceDiskStateWriteSFS(msg_service.get_client(), config).start(stop_event),
+        InfluxSourceSFSStatus(msg_service.get_client(), config).start(stop_event)
     ])

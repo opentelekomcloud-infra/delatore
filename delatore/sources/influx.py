@@ -555,31 +555,39 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateReadSFS):
     additional_condition = 'AND type=~/write/'
 
 
-class InfluxSourceSFS(InfluxSource):  # FIXME: Naming! Like in sources.yaml file
-    """InfluxSourceSFS client"""
+class InfluxSourceSFSStatus(InfluxSource):
+    """InfluxSourceSFSStatus client"""
 
-    CONFIG_ID = 'SFS'
+    CONFIG_ID = 'influxdb_sfs_status'
+    _error_message_template = _err_message_template('error_message_sfs_status.txt')
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
-        status, last_time_ms = await self._get_status(metric)
+        status, last_time_ms, control_value = await self._get_status(metric)
         results = []
         if status == status.OK:
-            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            if control_value == 0:
+                results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            else:
+                results.append(generate_error(self.CONFIG_ID, self._error_message_template))
+        else:
+            results.append(generate_error(self.CONFIG_ID, "Metric failed due to query timeout"))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        status = Status.OK
+        status = Status.NO_DATA
         last_time_ms = None
+        control_value = 1
         if 'series' in last_record.raw:
             last_time = last_record.raw['series'][0]['values'][0][0]
+            control_value = last_record.raw['series'][0]['values'][0][1]
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
             if now - last_time_ms.timestamp() > metric.timeout:
                 status = Status.FAIL
-        return status, last_time_ms
+        return status, last_time_ms, control_value
 
 
 class InfluxTimestampParseException(Exception):
