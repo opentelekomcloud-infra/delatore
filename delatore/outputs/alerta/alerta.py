@@ -67,7 +67,7 @@ class AlertaRunner:
         for record in message['status_list']:
             if record['status'] in ['fail', 'no_data']:
                 report_id = self.alerta.send_alert(
-                    event=record["name"],
+                    event=record['name'],
                     value=create_msg(record),
                     severity=ALERTA_CONFIG.params['severity'],
                     **common_args,
@@ -93,7 +93,7 @@ class AlertaRunner:
 
         current_timestamp = datetime.utcnow().timestamp()
         if current_timestamp - self.last_heartbeat < self.HEARTBEAT_INTERVAL:
-            return
+            return None
         heartbeat = self.alerta.heartbeat(**args)
         self.last_heartbeat = current_timestamp
         return heartbeat.id
@@ -132,7 +132,7 @@ class AlertaRunner:
 
         self._alerta_thread = threading.Thread(
             target=lambda: asyncio.run(self.start_posting()),
-            name="Alerta-Thread")
+            name='Alerta-Thread')
         self._alerta_thread.start()
         await self._stopper()
         self._alerta_thread.join()

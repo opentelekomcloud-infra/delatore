@@ -88,13 +88,13 @@ class AWXWebHookSource(HttpListenerSource):
             data = await request.json()
         except JSONDecodeError:
             return web.Response(status=400,
-                                text="Failed to parse request data as JSON")
+                                text='Failed to parse request data as JSON')
         try:
             validate(data, WEB_HOOK_JSON_SCHEMA, format_checker=draft7_format_checker)
         except ValidationError:
             return web.Response(status=400,
-                                text=f"Fail to parse data: \n{data}\n"
-                                     f"Expected Schema: {WEB_HOOK_JSON_SCHEMA}")
+                                text=f'Fail to parse data: \n{data}\n'
+                                     f'Expected Schema: {WEB_HOOK_JSON_SCHEMA}')
         LOGGER.debug('Data from AWX: %s', data)
         await self.updates.put(data)
         return web.Response(text='OK')

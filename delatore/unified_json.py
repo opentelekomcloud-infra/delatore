@@ -55,7 +55,7 @@ def generate_status(name: str,
     }
 
 
-def generate_status_for_disk(name: str,
+def generate_status_for_disс(name: str,
                              host: str,
                              disk: str,
                              status: Status,
