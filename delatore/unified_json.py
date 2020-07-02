@@ -71,11 +71,11 @@ def generate_disk_status(name: str,
     }
 
 
-def generate_status_for_host(name: str,
-                             hostname: str,
-                             status: Status,
-                             timestamp: Optional[str] = None,
-                             details_url: Optional[str] = None) -> dict:
+def generate_host_status(name: str,
+                         hostname: str,
+                         status: Status,
+                         timestamp: Optional[str] = None,
+                         details_url: Optional[str] = None) -> dict:
     """Generate single status line"""
     return {
         'name': name,

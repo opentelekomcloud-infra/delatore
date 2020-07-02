@@ -17,8 +17,8 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_disk_status, generate_error, generate_message,
-                            generate_status, generate_status_for_host)
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_disk_status, generate_error, generate_host_status,
+                            generate_message, generate_status)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -208,9 +208,10 @@ class InfluxSource(Source, metaclass=InfluxSourceMeta):
             return generate_status(metric.name, Status.NO_DATA, None)
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
+        status = Status.FAIL
         if now - last_time_ms.timestamp() < metric.timeout:
-            return generate_status(metric.name, Status.OK, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
-        return generate_status(metric.name, Status.FAIL, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+            status = Status.OK
+        return generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
 
 class _InfluxTimingAuxMetrics(NamedTuple):
@@ -245,8 +246,8 @@ class InfluxSourceLBTiming(InfluxSource):
             if min(self._host_timings[host]) > self.threshold:
                 faulty.append(host)
             else:
-                results.append(generate_status_for_host(main_metric.name, host, status[0],
-                                                        status[1].strftime(UNIFIED_TIME_PATTERN)))
+                results.append(
+                    generate_host_status(main_metric.name, host, status[0], status[1].strftime(UNIFIED_TIME_PATTERN)))
         if faulty:
             state = await self._get_auxiliary_metrics()  # get overall host state
             for host in faulty:
@@ -255,6 +256,7 @@ class InfluxSourceLBTiming(InfluxSource):
 
     async def _get_auxiliary_metrics(self) -> Dict[str, _InfluxTimingAuxMetrics]:
         """Return hosts with results of predefined diagnostic queries for each host"""
+
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
@@ -301,11 +303,11 @@ class InfluxSourceLBTiming(InfluxSource):
             try:
                 host = series['tags']['server']
                 last_time = series['values'][0][0]
-                server_response_time = series['values'][0][1]
+                response_time = series['values'][0][1]
             except(KeyError, IndexError):
                 continue
             last_time_ms = _convert_time(last_time)
-            self._host_timings[host].append(server_response_time)
+            self._host_timings[host].append(response_time)
             now = datetime.utcnow().timestamp()
             status = Status.OK
             if now - last_time_ms.timestamp() > metric.timeout:
