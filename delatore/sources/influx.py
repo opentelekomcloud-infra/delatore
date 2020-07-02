@@ -301,7 +301,7 @@ class InfluxSourceLBTiming(InfluxSource):
         for series in last_record.raw['series']:
             try:
                 host = series['tags']['server']
-                last_time, response_time, _ = series['values'][0]
+                last_time, response_time, *_ = series['values'][0]
             except(KeyError, IndexError):
                 continue
             last_time_ms = _convert_time(last_time)
@@ -337,8 +337,7 @@ class InfluxSourceLBDOWN(InfluxSource):
         last_time_ms = None
         control_value = 1
         if 'series' in last_record.raw:
-            last_time = last_record.raw['series'][0]['values'][0][0]
-            control_value = last_record.raw['series'][0]['values'][0][1]
+            last_time, control_value, *_ = last_record.raw['series'][0]['values'][0]
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
             if now - last_time_ms.timestamp() > metric.timeout:
