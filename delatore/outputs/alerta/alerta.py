@@ -74,7 +74,7 @@ class AlertaRunner:
                 )[0]
             else:
                 report_id = self.alerta.send_alert(
-                    event=record["name"],
+                    event=record['name'],
                     severity='ok',
                     **common_args,
                 )[0]

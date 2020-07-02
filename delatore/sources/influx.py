@@ -158,7 +158,7 @@ class InfluxSourceMeta(SourceMeta):
                                    username=params['username'], database=params['database'])
 
 
-def _err_message_template(mes_file):
+def _get_error_template(mes_file):
     with open(_CONFIGS[mes_file], 'r') as file:
         str_template = file.read()
     return str_template
@@ -169,7 +169,7 @@ class InfluxSource(Source, metaclass=InfluxSourceMeta):
 
     CONFIG_ID = 'influxdb'
     _params: InfluxParams
-    _error_message_template: str = None
+    _error_template: str = None
     _influx_client = None
 
     @property
@@ -235,7 +235,7 @@ class InfluxSourceLBTiming(InfluxSource):
     DEQUE_SIZE = 5
 
     threshold = 30
-    _error_message_template = _err_message_template('error_message_lb_timing.txt')
+    _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
@@ -256,7 +256,6 @@ class InfluxSourceLBTiming(InfluxSource):
 
     async def _get_auxiliary_metrics(self) -> Dict[str, _InfluxTimingAuxMetrics]:
         """Return hosts with results of predefined diagnostic queries for each host"""
-
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
         results = await asyncio.gather(*[
             self.influx_client.query(query) for query in list_queries
@@ -281,7 +280,7 @@ class InfluxSourceLBTiming(InfluxSource):
         host_state = aux_metrics[host]
         if host_state is None:
             return f'Invalid aux metrics for host {host}'
-        return self._error_message_template.format(
+        return self._error_template.format(
             threshold=self.threshold,
             current_response_time=current_response_time,
             hostname=host,
@@ -302,8 +301,7 @@ class InfluxSourceLBTiming(InfluxSource):
         for series in last_record.raw['series']:
             try:
                 host = series['tags']['server']
-                last_time = series['values'][0][0]
-                response_time = series['values'][0][1]
+                last_time, response_time, _ = series['values'][0]
             except(KeyError, IndexError):
                 continue
             last_time_ms = _convert_time(last_time)
@@ -320,41 +318,39 @@ class InfluxSourceLBDOWN(InfluxSource):
     """InfluxSourceLBDOWN client"""
 
     CONFIG_ID = 'influxdb_lb_down'
-    _error_message_template = _err_message_template('error_message_lb_down.txt')
+    _error_template = _get_error_template('error_lb_down.txt')
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
-        script_status, last_time_ms, status = await self._get_status(metric)
+        status, last_time_ms, control_value = await self._get_status(metric)
         results = []
-        if script_status:
+        if control_value == 0:
             results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error(metric.name, self._error_message_template))
+            results.append(generate_error(self.CONFIG_ID, self._error_template))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = None
         status = Status.OK
+        last_time_ms = None
+        control_value = 1
         if 'series' in last_record.raw:
-            script_status = True
             last_time = last_record.raw['series'][0]['values'][0][0]
+            control_value = last_record.raw['series'][0]['values'][0][1]
             now = datetime.utcnow().timestamp()
             last_time_ms = _convert_time(last_time)
             if now - last_time_ms.timestamp() > metric.timeout:
                 status = Status.FAIL
-        else:
-            script_status = False
-            status = Status.NO_DATA
-        return script_status, last_time_ms, status
+        return status, last_time_ms, control_value
 
 
 class InfluxSourceLBDOWNFailCount(InfluxSource):
     """InfluxSourceLBDOWNFailCount client"""
 
     CONFIG_ID = 'influxdb_lb_down_failed_requests'
-    _error_message_template = _err_message_template('error_message_lb_down_fail_count.txt')
+    _error_template = _get_error_template('error_lb_down_fail_count.txt')
     _fail_count: deque = None
     _threshold_size = 5
 
@@ -389,7 +385,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         return generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
 
     def _get_error_message(self, host):
-        str_template = self._error_message_template.format(hostname=host)
+        str_template = self._error_template.format(hostname=host)
         return str_template
 
 
@@ -410,7 +406,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
 
     CONFIG_ID = 'influxdb_disk_state'
     text_message = 'for {device} not allowed read operations'
-    _error_message_template = _err_message_template('error_message_disk_state.txt')
+    _error_template = _get_error_template('error_disk_state.txt')
     devices = ('vdb', 'vdc', 'vdd', 'sda',)
     hosts = (
         'scn3-5-initiator-instance',
@@ -453,11 +449,11 @@ class InfluxSourceDiskStateRead(InfluxSource):
         text_message = self.text_message.format(device=device)
         scenario_name = self.determine_scenario_name(device)
         try:
-            str_template = self._error_message_template.format(text_message=text_message,
-                                                               hostname=host,
-                                                               scenario_name=scenario_name,
-                                                               cpu=round(auxiliary_metrics[host][0], 2),
-                                                               memory=round(auxiliary_metrics[host][1], 2))
+            str_template = self._error_template.format(text_message=text_message,
+                                                       hostname=host,
+                                                       scenario_name=scenario_name,
+                                                       cpu=round(auxiliary_metrics[host][0], 2),
+                                                       memory=round(auxiliary_metrics[host][1], 2))
         except (IndexError, KeyError):
             str_template = ('No data about current cpu utilization '
                             'and current memory utilization '
@@ -550,36 +546,11 @@ class InfluxSourceDiskStateWriteSFS(InfluxSourceDiskStateReadSFS):
     additional_condition = 'AND type=~/write/'
 
 
-class InfluxSourceSFSStatus(InfluxSource):
+class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
     """InfluxSourceSFSStatus client"""
 
     CONFIG_ID = 'influxdb_sfs_status'
-    _error_message_template = _err_message_template('error_message_sfs_status.txt')
-
-    async def get_update(self) -> dict:
-        metric = self._metrics[0]
-        status, last_time_ms, control_value = await self._get_status(metric)
-        results = []
-        if control_value == 0:
-            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        else:
-            results.append(generate_error(self.CONFIG_ID, self._error_message_template))
-        return generate_message(self.CONFIG_ID, results)
-
-    async def _get_status(self, metric):
-        query = metric.query.format(entity=metric.metric_id)
-        last_record = await self.influx_client.query(query)
-        status = Status.OK
-        last_time_ms = None
-        control_value = 1
-        if 'series' in last_record.raw:
-            last_time = last_record.raw['series'][0]['values'][0][0]
-            control_value = last_record.raw['series'][0]['values'][0][1]
-            now = datetime.utcnow().timestamp()
-            last_time_ms = _convert_time(last_time)
-            if now - last_time_ms.timestamp() > metric.timeout:
-                status = Status.FAIL
-        return status, last_time_ms, control_value
+    _error_template = _get_error_template('error_sfs_status.txt')
 
 
 class InfluxTimestampParseException(Exception):
