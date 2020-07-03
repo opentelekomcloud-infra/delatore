@@ -7,7 +7,7 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
 from statistics import StatisticsError, mean
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -242,12 +242,13 @@ class InfluxSourceLBTiming(InfluxSource):
         host_statuses = await self._get_status(main_metric)
         results = []
         faulty = []
-        for host, status in host_statuses.items():
-            if min(self._host_timings[host]) > self.threshold:
-                faulty.append(host)
-            else:
+        for host, info in host_statuses.items():
+            if info[0] != Status.OK:
                 results.append(
-                    generate_host_status(main_metric.name, host, status[0], status[1].strftime(UNIFIED_TIME_PATTERN)))
+                    generate_host_status(main_metric.name, host, info[0], info[1].strftime(UNIFIED_TIME_PATTERN)))
+            else:
+                if min(self._host_timings[host]) > self.threshold:
+                    faulty.append(host)
         if faulty:
             state = await self._get_auxiliary_metrics()  # get overall host state
             for host in faulty:
@@ -324,10 +325,12 @@ class InfluxSourceLBDOWN(InfluxSource):
         metric = self._metrics[0]
         status, last_time_ms, control_value = await self._get_status(metric)
         results = []
-        if control_value == 0:
+        if status != Status.OK:
             results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            results.append(generate_error(self.CONFIG_ID, self._error_template))
+            if control_value == 1:
+                results.append(generate_error(self.CONFIG_ID, self._error_template))
+
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -358,30 +361,32 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         self._fail_count = deque([0] * self._threshold_size, self._threshold_size)
 
     async def get_update(self) -> dict:
-        status = await self._get_status(self._metrics[0])
-        return generate_message(self.CONFIG_ID, [status])
+        host, status, last_time_ms = await self._get_status(self._metrics[0])
+        results = []
+        if status != Status.OK:
+            results.append(generate_status(self._metrics[0].name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        else:
+            if min(self._fail_count) > self._threshold_size:  # if there are at least one error per minute for 5 minutes
+                results.append(generate_error(self._metrics[0].name, self._get_error_message(host)))
 
-    async def _get_status(self, metric) -> Optional[dict]:
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
         try:
             series = last_record.raw['series'][0]
             host = series['tags']['host']
-            values = series['values'][0]
-            last_time = values[0]
-            self._fail_count.append(values[1])
+            last_time, fail_count, *_ = series['values'][0]
+            self._fail_count.append(fail_count)
         except (KeyError, IndexError):
-            return generate_status(metric.name, Status.NO_DATA, None)
-
-        if min(self._fail_count) > self._threshold_size:  # if there are at least one error per minute for 5 minutes
-            return generate_error(metric.name, self._get_error_message(host))
-
+            raise InfluxQueryResultsException
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         status = Status.OK
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        return generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN))
+        return host, status, last_time_ms
 
     def _get_error_message(self, host):
         str_template = self._error_template.format(hostname=host)
@@ -428,20 +433,18 @@ class InfluxSourceDiskStateRead(InfluxSource):
 
         for host in disk_statuses.keys():
             for device in disk_statuses[host].keys():
-                try:
-                    if disk_statuses[host][device][0] > 0:
-                        results.append(
-                            generate_disk_status(self._metrics[0].name,
-                                                 host,
-                                                 device,
-                                                 disk_statuses[host][device][2],
-                                                 disk_statuses[host][device][1].strftime(UNIFIED_TIME_PATTERN)))
-
-                    else:
+                if disk_statuses[host][device][2] != Status.OK:
+                    results.append(
+                        generate_disk_status(self._metrics[0].name,
+                                             host,
+                                             device,
+                                             disk_statuses[host][device][2],
+                                             disk_statuses[host][device][1].strftime(UNIFIED_TIME_PATTERN)))
+                else:
+                    if disk_statuses[host][device][0] <= 0:
                         results.append(
                             generate_error(self._metrics[0].name, self.get_error_message(host, device, aux_metric)))
-                except (IndexError, KeyError):
-                    continue
+
         return generate_message(self.__class__.__name__, results)
 
     def get_error_message(self, host, device, auxiliary_metrics):
@@ -554,6 +557,10 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
 
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""
+
+
+class InfluxQueryResultsException(Exception):
+    """Error during Influx query results parsing"""
 
 
 _RE_TIME_GROUPS = re.compile(r'(.+)\.(\d+)(Z)')

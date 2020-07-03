@@ -128,7 +128,7 @@ class BotRunner:
             message = await self.client.get(.1)
             if message is not None:
                 data = json.loads(message)
-                if (len(data['status_list'])) > 0 and ('status_list' in data):
+                if 'status_list' in data and len(data['status_list']) > 0:
                     try:
                         await self.alert(convert(data))  # check if TG response was 200
                     except Exception:  # pylint:disable=broad-except
