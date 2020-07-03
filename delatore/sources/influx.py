@@ -578,14 +578,14 @@ class InfluxSourceAutoscaling(InfluxSource):
             if error_status == True:
                 auxilary_metric = self._metrics[1]
                 cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
-                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=round(cpu_utilization, 2))))
+                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_auxilary_metrics(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         result = await self.influx_client.query(query)
         try:
-            cpu_utilization = result.raw['series'][0]['values'][0][1]
+            cpu_utilization = round(result.raw['series'][0]['values'][0][1], 2)
         except(IndexError, KeyError):
             cpu_utilization = 'No data'
         return cpu_utilization
