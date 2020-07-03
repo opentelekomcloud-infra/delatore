@@ -9,6 +9,7 @@
     - 'LB_DOWN_CHANGES'
     - 'LB_DOWN_FAIL_COUNT_CHANGES'
     - 'DISK_STATE_CHANGES'
+    - 'SFS_STATUS_CHANGES'
 
 - name: alerta
   params:

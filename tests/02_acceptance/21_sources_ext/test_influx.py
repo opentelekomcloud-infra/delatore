@@ -3,8 +3,10 @@ import asyncio
 import pytest
 from apubsub.client import Client
 
-from delatore.sources import InfluxSource, InfluxSourceLBTiming, InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, \
-                             InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS
+from delatore.sources import (InfluxSource, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS,
+                              InfluxSourceDiskStateWrite, InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN,
+                              InfluxSourceLBDOWNFailCount, InfluxSourceLBTiming)
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -82,14 +84,14 @@ async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSou
     await asyncio.sleep(.1)
     update = await sub.get(15)
     if '"status": "fail"' not in update:
-        assert "Alert message" in update
+        assert 'Alert message' in update
 
 
 async def test_result_lb_timing_ok(influxdb_lb_timing_result_ok: InfluxSourceLBTiming, sub):
     await sub.subscribe(influxdb_lb_timing_result_ok.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(15)
-    assert "Alert message" not in update
+    assert 'Alert message' not in update
 
 
 @pytest.mark.skip
@@ -98,7 +100,7 @@ async def test_result_lb_down_fail_count_error(influxdb_lb_down_fail_count_error
     await asyncio.sleep(.1)
     update = await sub.get(15)
     if '"status": "fail"' not in update:
-     assert 'Alert message' in update
+        assert 'Alert message' in update
 
 
 async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: InfluxSourceLBDOWNFailCount, sub):

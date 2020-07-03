@@ -21,6 +21,7 @@ class OutputConfiguration(Configuration):
 
 @dataclass(frozen=True)
 class Timings:
+    """Timings configuration"""
     polling_interval: float
     request_timeout: float
 

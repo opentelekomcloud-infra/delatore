@@ -12,7 +12,7 @@ from ..unified_json import Status, convert_timestamp, generate_error, generate_m
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-__awx_status_override = {
+__AWX_STATUS_OVERRIDE = {
     'failed': Status.FAIL,
     'successful': Status.OK,
     'canceled': Status.CANCELED,
@@ -21,7 +21,7 @@ __awx_status_override = {
 
 
 def switch_awx_status(argument) -> Status:
-    status = __awx_status_override.get(argument, argument)
+    status = __AWX_STATUS_OVERRIDE.get(argument, argument)
     return Status(status)
 
 
