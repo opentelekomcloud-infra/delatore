@@ -351,7 +351,7 @@ class InfluxSourceLBDOWN(InfluxSource):
 class InfluxSourceLBDOWNFailCount(InfluxSource):
     """InfluxSourceLBDOWNFailCount client"""
 
-    CONFIG_ID = 'influxdb_lb_down_failed_requests'
+    CONFIG_ID = 'influxdb_lb_down_fail_requests'
     _error_template = _get_error_template('error_lb_down_fail_count.txt')
     _fail_count: deque = None
     _threshold_size = 5
@@ -361,13 +361,14 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
         self._fail_count = deque([0] * self._threshold_size, self._threshold_size)
 
     async def get_update(self) -> dict:
+        metric = self._metrics[0]
         host, status, last_time_ms = await self._get_status(self._metrics[0])
         results = []
         if status != Status.OK:
-            results.append(generate_status(self._metrics[0].name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
             if min(self._fail_count) > self._threshold_size:  # if there are at least one error per minute for 5 minutes
-                results.append(generate_error(self._metrics[0].name, self._get_error_message(host)))
+                results.append(generate_error(metric.name, self._get_error_message(host)))
 
         return generate_message(self.CONFIG_ID, results)
 
@@ -427,7 +428,8 @@ class InfluxSourceDiskStateRead(InfluxSource):
     }
 
     async def get_update(self):
-        disk_statuses = await self._get_status(self._metrics[0])
+        main_metric = self._metrics[0]
+        disk_statuses = await self._get_status(main_metric)
         results = []
         aux_metric = await self.get_auxiliary_metrics()
 
@@ -435,7 +437,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
             for device in disk_statuses[host].keys():
                 if disk_statuses[host][device][2] != Status.OK:
                     results.append(
-                        generate_disk_status(self._metrics[0].name,
+                        generate_disk_status(main_metric.name,
                                              host,
                                              device,
                                              disk_statuses[host][device][2],
@@ -443,7 +445,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
                 else:
                     if disk_statuses[host][device][0] <= 0:
                         results.append(
-                            generate_error(self._metrics[0].name, self.get_error_message(host, device, aux_metric)))
+                            generate_error(main_metric.name, self.get_error_message(host, device, aux_metric)))
 
         return generate_message(self.__class__.__name__, results)
 

@@ -93,7 +93,7 @@
   timings:
     polling_interval: 60
     request_timeout: 5
-- name: influxdb_lb_down_failed_requests
+- name: influxdb_lb_down_fail_requests
   params:
     host: 'influx1.eco.tsi-dev.otc-service.com'
     port: 8086
