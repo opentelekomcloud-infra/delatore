@@ -556,6 +556,61 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
     CONFIG_ID = 'influxdb_sfs_status'
     _error_template = _get_error_template('error_sfs_status.txt')
 
+class InfluxSourceAutoscaling(InfluxSource):
+    """InfluxSourceAutoscallingclient"""
+
+
+    CONFIG_ID = 'influxdb_autoscaling'
+    _threshold = 30
+    _error_message_template = _get_error_template('error_message_autoscaling.txt')
+
+
+    async def get_update(self) -> dict:
+        main_metric = self._metrics[0]
+        error_status, last_time_ms, status = await self._get_status(main_metric)
+        results = []
+        if status == status.FAIL:
+            results.append(generate_status(main_metric.name, status,
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        if status == status.NO_DATA:
+            results.append(generate_status(main_metric.name, status, None))
+        else:
+            if error_status:
+                auxilary_metric = self._metrics[1]
+                cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
+                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)))
+        return generate_message(self.CONFIG_ID, results)
+
+    async def _get_auxilary_metrics(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        result = await self.influx_client.query(query)
+        try:
+            cpu_utilization = round(result.raw['series'][0]['values'][0][1], 2)
+        except(IndexError, KeyError):
+            cpu_utilization = 'No data'
+        return cpu_utilization
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        last_time_ms = None
+        error_status = False
+        status = Status.OK
+        try:
+            response_line = last_record.raw['series'][0]['values'][0]
+        except(IndexError, KeyError):
+            status = Status.NO_DATA
+            return error_status, last_time_ms, status
+        response_time = response_line[1]
+        if response_time > self._threshold:
+            error_status = True
+        last_time = response_line[0]
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms.timestamp() > metric.timeout:
+            status = Status.FAIL
+        return error_status, last_time_ms, status
+
 
 class InfluxTimestampParseException(Exception):
     """Error during Influx timestamp parsing"""

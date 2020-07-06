@@ -1,0 +1,4 @@
+- AUTOSCALING
+- Status: Alerting
+- Alert message: Response time are above {threshold}
+- CPU utilization: {cpu_utilization}%

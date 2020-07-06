@@ -10,6 +10,7 @@
     - 'LB_DOWN_FAIL_COUNT_CHANGES'
     - 'DISK_STATE_CHANGES'
     - 'SFS_STATUS_CHANGES'
+    - 'INFLUX_AUTOSCALING_CHANGES'
 
 - name: alerta
   params:
