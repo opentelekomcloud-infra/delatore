@@ -575,7 +575,7 @@ class InfluxSourceAutoscaling(InfluxSource):
         if status == status.NO_DATA:
             results.append(generate_status(main_metric.name, status, None))
         else:
-            if error_status == True:
+            if error_status:
                 auxilary_metric = self._metrics[1]
                 cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
                 results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)))
