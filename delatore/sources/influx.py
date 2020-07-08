@@ -603,8 +603,9 @@ class InfluxSourceAutoscaling(InfluxSource):
             status = Status.NO_DATA
             return error_status, last_time_ms, status
         response_time = response_line[1]
-        if response_time > self._threshold:
-            error_status = True
+        if response_time is not None:
+            if response_time > self._threshold:
+                error_status = True
         last_time = response_line[0]
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
