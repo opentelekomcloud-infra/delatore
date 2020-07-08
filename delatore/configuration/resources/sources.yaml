@@ -151,7 +151,7 @@
     metrics:
       - name: RDS TEST
         metric_id: ce_result
-        query: "SELECT count(elapsed) FROM ce_result WHERE result =~ /not_created/ GROUP BY time(10m) ORDER BY time DESC LIMIT 1"
+        query: "SELECT count(elapsed) FROM ce_result WHERE result =~ /not_created/ GROUP BY time(30s) ORDER BY time DESC LIMIT 1"
         timeout: 60
       - name: RDS TEST Currently processed rows
         metric_id: postgresql
