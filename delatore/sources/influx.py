@@ -614,7 +614,7 @@ class InfluxSourceAutoscaling(InfluxSource):
 
 
 class InfluxSourceRDSTest(InfluxSource):
-    """InfluxSourceLBDOWN client"""
+    """InfluxSourceRDSTest client"""
 
 
     CONFIG_ID = 'influxdb_rds_test'
