@@ -124,3 +124,10 @@ async def test_trigger_autoscaling(influxdb_autoscaling: InfluxSourceAutoscaling
 async def test_influx_rds_test(influxdb_rds_test: InfluxSourceRDSTest):
     update = await influxdb_rds_test.get_update()
     assert update is not None
+
+
+async def test_trigger_rds_test(influxdb_rds_test: InfluxSourceRDSTest, sub: Client):
+    await sub.subscribe(influxdb_rds_test.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert update is not None
