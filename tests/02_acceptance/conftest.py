@@ -152,3 +152,14 @@ async def influxdb_autoscaling(service):
     loop.create_task(src.start(asyncio.Event()))
     await asyncio.sleep(.1)
     return src
+
+
+@pytest.fixture
+async def influxdb_rds_test(service):
+    src = InfluxSourceRDSTest(service.get_client())
+    src.threshold = 10
+    src.ignore_duplicates = False
+    loop = asyncio.get_running_loop()
+    loop.create_task(src.start(asyncio.Event()))
+    await asyncio.sleep(.1)
+    return src
