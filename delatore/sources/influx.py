@@ -557,6 +557,7 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
     CONFIG_ID = 'influxdb_sfs_status'
     _error_template = _get_error_template('error_sfs_status.txt')
 
+
 class InfluxSourceAutoscaling(InfluxSource):
     """InfluxSourceAutoscallingclient"""
 
