@@ -3,9 +3,9 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import (AWXApiSource, InfluxSource, InfluxSourceAutoscaling, InfluxSourceLBTiming, InfluxSourceLBDOWN, \
-                             InfluxSourceLBDOWNFailCount, InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite,\
-                             InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWriteSFS, InfluxSourceRDSTest)
+from delatore.sources import (AWXApiSource, InfluxSource, InfluxSourceAutoscaling, InfluxSourceLBDOWN, \
+                              InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS,\
+                              InfluxSourceDiskStateWriteSFS, InfluxSourceRDSTest, InfluxSourceLBTiming, InfluxSourceLBDOWNFailCount,)
 
 
 @pytest.fixture
