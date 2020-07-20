@@ -3,10 +3,8 @@
     check:
       jobs:
         - tox-py37
-          #        - tox-py38
         - tox-linters
     gate:
       jobs:
         - tox-py37
-          # - tox-py38
         - tox-linters
