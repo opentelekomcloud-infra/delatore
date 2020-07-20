@@ -4,7 +4,7 @@ aiogram
 aiohttp
 aiohttp-socks
 alerta
-apubsub
+apubsub>=0.2.1
 async-timeout
 attrs
 babel
@@ -14,7 +14,7 @@ chardet
 click
 idna
 importlib-metadata
-influxdb!=5.2.3
+influxdb==5.2.3
 jsonschema
 mohawk
 multidict
