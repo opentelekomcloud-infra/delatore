@@ -47,7 +47,7 @@ async def test_get_not_existing_scenario(awx_client):
     assert single == []
 
 
-@pytest.mark.parametrize('message', ['Scenario 1.5 (native);1', 'Deploy Delatore;1'])
+@pytest.mark.parametrize('message', ['csm_scenario 1.5 (native);1', 'csm_delatore;1'])
 async def test_trigger_from_loop(awx_client, pub: Client, sub: Client, message):
     await sub.subscribe(awx_client.TOPICS.changes)
     await asyncio.sleep(.2)
