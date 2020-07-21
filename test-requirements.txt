@@ -7,5 +7,5 @@ jsonschema
 ocomone
 pyyaml
 
-git+https://github.com/outcatcher/apubsub.git
-git+https://github.com/outcatcher/pyyaml-typed.git
+git+https://github.com/outcatcher/apubsub.git@master#egg=apubsub
+git+https://github.com/outcatcher/pyyaml-typed.git@master#egg=pyyamltyped
