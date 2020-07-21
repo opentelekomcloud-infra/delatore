@@ -1,8 +1,8 @@
 aiogram
 aiohttp
 aiohttp-socks
-alerta
-apubsub>=0.2.1
+alerta==7.5.7
+apubsub==0.2.3
 influxdb==5.2.3
 jsonschema
 ocomone
