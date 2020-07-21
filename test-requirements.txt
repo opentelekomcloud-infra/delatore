@@ -6,3 +6,6 @@ influxdb==5.2.3
 jsonschema
 ocomone
 pyyaml
+
+git+https://github.com/outcatcher/apubsub.git
+git+https://github.com/outcatcher/pyyaml-typed.git
