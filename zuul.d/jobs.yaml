@@ -8,15 +8,15 @@
     vars:
       python_version: 3.7
 
-- job:
-    name: tox-py37-tests
-    parent: tox-py37
-    description: |
-      Run tests which has secrets for a Python project under cPython version 3.7.
-    secrets:
-      - name: telegram
-        secret: telegram_data
-      - name: alerta
-        secret: alerta_data
-      - name: sources
-        secret: sources_data
+#- job:
+#    name: tox-py37-tests
+#    parent: tox-py37
+#    description: |
+#      Run tests which has secrets for a Python project under cPython version 3.7.
+#    secrets:
+#      - name: telegram
+#        secret: telegram_data
+#      - name: alerta
+#        secret: alerta_data
+#      - name: sources
+#        secret: sources_data
