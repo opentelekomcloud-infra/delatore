@@ -2,7 +2,9 @@ aiogram
 aiohttp
 aiohttp-socks
 alerta==7.5.7
+apubsub
 influxdb==5.2.3
 jsonschema
 ocomone
 pyyaml
+pyyaml-typed
