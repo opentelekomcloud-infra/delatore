@@ -1,12 +1,11 @@
+---
 - project:
     merge-mode: squash-merge
     check:
       jobs:
-#        - tox-py37-tests
-        - tox-py37
+        - tox-py37-secrets
         - tox-linters-py37
     gate:
       jobs:
-        #        - tox-py37-tests
-        - tox-py37
+        - tox-py37-secrets
         - tox-linters-py37
