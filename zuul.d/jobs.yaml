@@ -1,10 +1,22 @@
-- project:
-    merge-mode: squash-merge
-    check:
-      jobs:
-        - tox-py37
-        - tox-linters
-    gate:
-      jobs:
-        - tox-py37
-        - tox-linters
+- job:
+    name: tox-linters-py37
+    parent: tox-linters
+    description: |
+      Run linters tests for a Python project under cPython version 3.7.
+
+      Uses tox with the ``py37`` environment.
+    vars:
+      python_version: 3.7
+
+- job:
+    name: tox-py37-tests
+    parent: tox-py37
+    description: |
+      Run tests which has secrets for a Python project under cPython version 3.7.
+    secrets:
+      - name: telegram
+        secret: telegram_data
+      - name: alerta
+        secret: alerta_data
+      - name: sources
+        secret: sources_data
