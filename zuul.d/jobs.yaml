@@ -17,8 +17,9 @@
       Run tests with secrets for a Python project under cPython version 3.7.
     secrets:
       - name: telegram
-        secret: telegram_data
+        secret: telegram_data_csm
       - name: alerta
-        secret: alerta_data
+        secret: alerta_data_csm
       - name: sources
-        secret: sources_data
+        secret: sources_data_csm
+
