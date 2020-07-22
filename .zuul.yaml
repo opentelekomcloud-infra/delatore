@@ -1,20 +1,10 @@
-- job:
-    name: tox-linters-py37
-    parent: tox-linters
-    description: |
-      Run linters tests for a Python project under cPython version 3.7.
-
-      Uses tox with the ``py37`` environment.
-    vars:
-      python_version: 3.7
-
 - project:
     merge-mode: squash-merge
     check:
       jobs:
         - tox-py37
-        - tox-linters-py37
+        - tox-linters
     gate:
       jobs:
         - tox-py37
-        - tox-linters-py37
+        - tox-linters
