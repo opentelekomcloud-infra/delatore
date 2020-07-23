@@ -3,15 +3,14 @@ import json
 from asyncio import Queue
 
 import pytest
-from apubsub.client import Client
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, source_data):
+async def test_src_to_bot(patched_bot, bot_alert_queue: Queue, source_data):
     source_cls, (_, message) = source_data
     message = json.dumps(message)
-    await pub.publish(source_cls.TOPICS.changes, message)
+    await patched_bot.alert(message)
     try:
         await asyncio.wait_for(bot_alert_queue.get(), 1.5)
         bot_alert_queue.task_done()
@@ -19,10 +18,10 @@ async def test_src_to_bot(patched_bot, pub: Client, bot_alert_queue: Queue, sour
         raise AssertionError
 
 
-async def test_src_to_alerta(patched_alerta, pub: Client, bot_alert_queue: Queue, source_data_alerta):
+async def test_src_to_alerta(patched_alerta, bot_alert_queue: Queue, source_data_alerta):
     source, (_, message) = source_data_alerta
     message = json.dumps(message)
-    await pub.publish(source.TOPICS.changes, message)
+    patched_alerta.alert(message)
     try:
         await asyncio.wait_for(bot_alert_queue.get(), 1.5)
         bot_alert_queue.task_done()
