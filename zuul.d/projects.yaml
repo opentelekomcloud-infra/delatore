@@ -3,9 +3,9 @@
     merge-mode: squash-merge
     check:
       jobs:
-        - tox-py37-secrets
+        - tox-py37
         - tox-linters-py37
     gate:
       jobs:
-        - tox-py37-secrets
+        - tox-py37
         - tox-linters-py37

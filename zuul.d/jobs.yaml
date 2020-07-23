@@ -9,17 +9,16 @@
     vars:
       python_version: 3.7
 
-- job:
-    name: tox-py37-secrets
-    parent: tox-py37
-    run: playbooks/secrets-to-env.yaml
-    description: |
-      Run tests with secrets for a Python project under cPython version 3.7.
-    secrets:
-      - name: telegram
-        secret: telegram_data_csm
-      - name: alerta
-        secret: alerta_data_csm
-      - name: sources
-        secret: sources_data_csm
-
+#- job:
+#    name: tox-py37-secrets
+#    parent: tox-py37
+#    run: playbooks/secrets-to-env.yaml
+#    description: |
+#      Run tests with secrets for a Python project under cPython version 3.7.
+#    secrets:
+#      - name: telegram
+#        secret: telegram_data_csm
+#      - name: alerta
+#        secret: alerta_data_csm
+#      - name: sources
+#        secret: sources_data_csm
