@@ -2,11 +2,11 @@ from os import path
 
 from setuptools import find_packages, setup
 
-version = '0.4.8a1'
+version = '0.4.7.dev2'
 
-this_directory = path.abspath(path.dirname(__file__))
-with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+cur_dir = path.abspath(path.dirname(__file__))
+with open(path.join(cur_dir, 'README.rst'), encoding='utf-8') as file:
+    long_description = file.read()
 
 setup(
     name='delatore',
@@ -16,16 +16,16 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/opentelekomcloud-infra/delatore',
     license='Apache-2.0',
-    author='Anton Kachurin, Anton Sidelnikov',
-    author_email='katchuring@gmail.com, email@email.com',
+    author='OTC team',
     packages=find_packages(),
     package_data={"delatore.configuration.resources": ["*.yaml"]},
-    classifier=[
+    classifiers=[
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
+    platforms=['any'],
     python_requires='>=3.7'
 )
