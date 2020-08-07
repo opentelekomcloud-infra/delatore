@@ -12,8 +12,10 @@
     check:
       jobs:
         - tox-py37
+        - tox-cover
         - tox-linters-py37
     gate:
       jobs:
         - tox-py37
+        - tox-cover
         - tox-linters-py37
