@@ -2,6 +2,7 @@ Delatore
 ========
 
 | |Build Status|
+| |Zuul|
 | |codecov|
 | |PyPI version|
 | |GitHub|
@@ -48,3 +49,4 @@ Examples:
 .. |PyPI version| image:: https://img.shields.io/pypi/v/delatore.svg
    :target: https://pypi.org/project/delatore/
 .. |GitHub| image:: https://img.shields.io/github/license/opentelekomcloud-infra/delatore
+.. |Zuul| image:: https://zuul-ci.org/gated.svg
