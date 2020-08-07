@@ -1,0 +1,5 @@
+- RDS_TEST
+- Status: Alerting
+- Alert message: Data flow is broken
+- Rows: {rows}
+- Current queries per second: {qps}

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import StatisticsError, mean
 from typing import Dict, List, NamedTuple
+from jinja2 import Template
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -234,7 +235,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    threshold = 30
+    threshold = 60
     _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
@@ -556,6 +557,7 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
     CONFIG_ID = 'influxdb_sfs_status'
     _error_template = _get_error_template('error_sfs_status.txt')
 
+
 class InfluxSourceAutoscaling(InfluxSource):
     """InfluxSourceAutoscallingclient"""
 
@@ -602,7 +604,87 @@ class InfluxSourceAutoscaling(InfluxSource):
             status = Status.NO_DATA
             return error_status, last_time_ms, status
         response_time = response_line[1]
-        if response_time > self._threshold:
+        if response_time is not None:
+            if response_time > self._threshold:
+                error_status = True
+        last_time = response_line[0]
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms.timestamp() > metric.timeout:
+            status = Status.FAIL
+        return error_status, last_time_ms, status
+
+
+class InfluxSourceRDSTest(InfluxSource):
+    """InfluxSourceRDSTest client"""
+
+
+    CONFIG_ID = 'influxdb_rds_test'
+    _error_message_template = _get_error_template('error_message_rds_test.txt')
+    _threshold = 1
+    rows = ("tup_fetched", "tup_returned", "tup_inserted", "tup_updated", "tup_deleted")
+
+    async def get_update(self) -> dict:
+        main_metric = self._metrics[0]
+        error_status, last_time_ms, status = await self._get_status(main_metric)
+        results = []
+        if error_status:
+            if status == status.FAIL or status == status.NO_DATA:
+                results.append(generate_status(main_metric.name, status,
+                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            else:
+                aux_metrics = await self.get_auxiliary_metrics()
+                rows_info = self._get_rows_info(aux_metrics['rows'])
+                results.append(generate_error(main_metric.name, self._error_message_template.format(rows=rows_info,
+                                                                                                    qps=aux_metrics['qps'])))
+        return generate_message(self.CONFIG_ID, results)
+
+    def _get_rows_info(self, rows):
+        rows_info = ''
+        for key, value in rows.items():
+            rows_info += "\n" + "      " + str(key) + " : " + str(value)
+        return rows_info
+
+    async def get_auxiliary_metrics(self):
+        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
+        aux_metrics = {}
+        aux_metrics['rows'] = await self._get_rows(list_queries[0])
+        aux_metrics['qps'] = await self._get_qps(list_queries[1])
+        return aux_metrics
+
+    async def _get_qps(self, query):
+        result = await self.influx_client.query(query)
+        try:
+            qps = round(result.raw['series'][0]['values'][0][1], 2)
+        except(IndexError, KeyError):
+            qps = 'No data'
+        return qps
+
+    async def _get_rows(self, query):
+        row_values = {}
+        template_query = Template(query)
+        for row in self.rows:
+            query_for_row = template_query.render(column_name=row)
+            result = await self.influx_client.query(query_for_row)
+            try:
+                row_values[row] = round(result.raw['series'][0]['values'][0][1], 2)
+            except(IndexError, KeyError):
+                row_values[row] = 'No data'
+        return row_values
+
+    async def _get_status(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        last_time_ms = None
+        error_status = False
+        status = Status.OK
+        try:
+            response_line = last_record.raw['series'][0]['values'][0]
+        except(IndexError, KeyError):
+            status = Status.NO_DATA
+            return error_status, last_time_ms, status
+        returned_value = response_line[1]
+        if returned_value < self._threshold:
             error_status = True
         last_time = response_line[0]
         now = datetime.utcnow().timestamp()

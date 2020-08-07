@@ -7,7 +7,7 @@ from apubsub.client import Client
 from delatore.sources.awx_api import NO_TEMPLATE_PATTERN, single_template_filter
 from tests.helpers import random_string
 
-TEMPLATE_NAME = 'Scenario 1.5 (native)'
+TEMPLATE_NAME = 'csm_scenario 1.5 (native)'
 pytestmark = pytest.mark.asyncio
 
 
