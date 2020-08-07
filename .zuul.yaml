@@ -1,16 +1,4 @@
 ---
-- job:
-    name: tox-linters-py37
-    parent: tox-linters
-    vars:
-      python_version: 3.7
-
-- job:
-    name: tox-cover-py37
-    parent: tox-cover
-    vars:
-      python_version: 3.7
-
 - project:
     merge-mode: squash-merge
     templates:
@@ -20,10 +8,8 @@
     check:
       jobs:
         - tox-py37
-        - tox-cover
         - tox-linters
     gate:
       jobs:
         - tox-py37
-        - tox-cover-py37
-        - tox-linters-py37
+        - tox-linters
