@@ -4,9 +4,8 @@ import pytest
 from apubsub.client import Client
 
 from delatore.sources import (InfluxSource,  InfluxSourceAutoscaling, InfluxSourceDiskStateRead, InfluxSourceDiskStateReadSFS,
-                              InfluxSourceDiskStateWrite, InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN,
+                              InfluxSourceDiskStateWrite, InfluxSourceDiskStateWriteSFS, InfluxSourceLBDOWN, InfluxSourceRDSTest,
                               InfluxSourceLBDOWNFailCount, InfluxSourceLBTiming)
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -78,13 +77,13 @@ async def test_trigger_from_loop_lb_down(influxdb_lb_down: InfluxSourceLBDOWN, s
     assert update is not None
 
 
-@pytest.mark.skip
 async def test_result_lb_timing_error(influxdb_lb_timing_result_error: InfluxSourceLBTiming, sub):
     await sub.subscribe(influxdb_lb_timing_result_error.TOPICS.changes)
     await asyncio.sleep(.1)
     update = await sub.get(15)
     if '"status": "fail"' not in update:
         assert 'Alert message' in update
+
 
 
 async def test_result_lb_timing_ok(influxdb_lb_timing_result_ok: InfluxSourceLBTiming, sub):
@@ -103,6 +102,7 @@ async def test_result_lb_down_fail_count_error(influxdb_lb_down_fail_count_error
         assert 'Alert message' in update
 
 
+@pytest.mark.skip
 async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: InfluxSourceLBDOWNFailCount, sub):
     await sub.subscribe(influxdb_lb_down_fail_count_ok.TOPICS.changes)
     await asyncio.sleep(.1)
@@ -121,3 +121,14 @@ async def test_trigger_autoscaling(influxdb_autoscaling: InfluxSourceAutoscaling
     update = await sub.get(5)
     assert update is not None
 
+
+async def test_influx_rds_test(influxdb_rds_test: InfluxSourceRDSTest):
+    update = await influxdb_rds_test.get_update()
+    assert update is not None
+
+
+async def test_trigger_rds_test(influxdb_rds_test: InfluxSourceRDSTest, sub: Client):
+    await sub.subscribe(influxdb_rds_test.TOPICS.changes)
+    await asyncio.sleep(.1)
+    update = await sub.get(5)
+    assert update is not None
