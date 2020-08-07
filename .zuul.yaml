@@ -5,17 +5,25 @@
     vars:
       python_version: 3.7
 
+- job:
+    name: tox-cover-py37
+    parent: tox-cover
+    vars:
+      python_version: 3.7
+
 - project:
     merge-mode: squash-merge
     templates:
       - publish-to-pypi
+    vars:
+      python_version: 3.7
     check:
       jobs:
         - tox-py37
         - tox-cover
-        - tox-linters-py37
+        - tox-linters
     gate:
       jobs:
         - tox-py37
-        - tox-cover
+        - tox-cover-py37
         - tox-linters-py37
