@@ -218,7 +218,7 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
 
 @pytest.fixture
 async def patched_alerta(service, stop_event, bot_alert_queue: Queue):
-    alerta = AlertaRunner(service, stop_event)
+    alerta = AlertaRunner(msg_service=service, stop_event=stop_event, send_heartbeats=False)
 
     def _alert(item):
         bot_alert_queue.put_nowait(item)

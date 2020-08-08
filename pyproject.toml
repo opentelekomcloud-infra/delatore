@@ -4,7 +4,7 @@ version = "0.4.8"
 description = "Bot for CSM jobs notifications in telegram and alerta"
 authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
-readme = "README.md"
+readme = "README.rst"
 repository = "https://github.com/opentelekomcloud-infra/delatore"
 
 [tool.poetry.dependencies]

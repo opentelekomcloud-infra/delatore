@@ -35,6 +35,7 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
         self.proxy: str = proxy
         super().__init__(*args, **kwargs)
 
+    # pylint:disable=invalid-overridden-method
     async def query(self,
                     query,
                     params=None,
@@ -88,6 +89,7 @@ class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
 
         return results
 
+    # pylint:disable=invalid-overridden-method
     async def request(self, url, method='GET', params=None, data=None,
                       expected_response_code=200, headers=None):
         url = f'{self._baseurl}/{url}'
@@ -561,11 +563,9 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
 class InfluxSourceAutoscaling(InfluxSource):
     """InfluxSourceAutoscallingclient"""
 
-
     CONFIG_ID = 'influxdb_autoscaling'
     _threshold = 30
     _error_message_template = _get_error_template('error_message_autoscaling.txt')
-
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
@@ -580,7 +580,9 @@ class InfluxSourceAutoscaling(InfluxSource):
             if error_status:
                 auxilary_metric = self._metrics[1]
                 cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
-                results.append(generate_error(main_metric.name, self._error_message_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)))
+                results.append(generate_error(main_metric.name,
+                                              self._error_message_template.format(threshold=self._threshold,
+                                                                                  cpu_utilization=cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_auxilary_metrics(self, metric):

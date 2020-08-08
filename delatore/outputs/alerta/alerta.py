@@ -41,11 +41,12 @@ class AlertaRunner:
     HEARTBEAT_INTERVAL = 300
 
     def __init__(self, msg_service: Service, stop_event: threading.Event,
-                 config: InstanceConfig = DEFAULT_INSTANCE_CONFIG):
+                 config: InstanceConfig = DEFAULT_INSTANCE_CONFIG, send_heartbeats: bool = True):
         self.client = msg_service.get_client()
         self.stop_event = stop_event
         self.config = config
         self.alerta_api_key = config.alerta_api_key
+        self._send_heartbeats = send_heartbeats
 
     @property
     def alerta(self):
@@ -117,7 +118,8 @@ class AlertaRunner:
         while not self.stop_event.is_set():
             # message consumed
             message = await self.client.get(.1)
-            self.process_heartbeat()
+            if self._send_heartbeats:
+                self.process_heartbeat()
             if message is not None:
                 data = json.loads(message)
                 self.alert(data)  # check if TG response was 200

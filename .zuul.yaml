@@ -1,0 +1,15 @@
+---
+- project:
+    merge-mode: squash-merge
+    templates:
+      - publish-to-pypi
+    vars:
+      python_version: 3.7
+    check:
+      jobs:
+        - tox-py37
+        - tox-linters
+    gate:
+      jobs:
+        - tox-py37
+        - tox-linters
