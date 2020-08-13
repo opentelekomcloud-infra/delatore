@@ -34,6 +34,6 @@ async def start_influx_sources(msg_service: Service, stop_event: asyncio.Event, 
         # InfluxSourceDiskStateReadSFS(msg_service.get_client(), config).start(stop_event),
         # InfluxSourceDiskStateWriteSFS(msg_service.get_client(), config).start(stop_event),
         # InfluxSourceSFSStatus(msg_service.get_client(), config).start(stop_event),
-        InfluxSourceAutoscaling(msg_service.get_client(), config).start(stop_event),
-        # InfluxSourceRDSTest(msg_service.get_client(), config).start(stop_event)
+        # InfluxSourceAutoscaling(msg_service.get_client(), config).start(stop_event),
+        InfluxSourceRDSTest(msg_service.get_client(), config).start(stop_event)
     ])

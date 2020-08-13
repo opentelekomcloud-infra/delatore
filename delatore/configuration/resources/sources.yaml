@@ -151,15 +151,11 @@
     metrics:
       - name: RDS TEST
         metric_id: ce_result
-        query: 'SELECT COUNT(elapsed) FROM {entity} WHERE result=~/not_created/ GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
+        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
         timeout: 90
-      - name: RDS TEST:Rows per second
+      - name: RDS TEST:RPS/QPS
         metric_id: postgresql
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN({column_name}),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
-        timeout: 90
-      - name: RDS TEST:Queries per second
-        metric_id: postgresql
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN(xact_commit),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
+        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN({insert_row}),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
         timeout: 90
   topic_prefix: 'RDS_TEST'
   timings:
