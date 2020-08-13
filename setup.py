@@ -2,7 +2,7 @@ from os import path
 
 from setuptools import find_packages, setup
 
-version = '0.4.8.dev1'
+version = '0.4.8.dev2'
 
 cur_dir = path.abspath(path.dirname(__file__))
 with open(path.join(cur_dir, 'README.rst'), encoding='utf-8') as file:
