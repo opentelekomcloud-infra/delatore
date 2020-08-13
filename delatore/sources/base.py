@@ -101,7 +101,7 @@ def _delta_seconds(new: dict, last: dict) -> int:
 
 
 def _same_status(new: dict, last: dict) -> bool:
-    if last is None:
+    if last is None or len(last['status_list'] == 0):
         return False
     if new == last:
         return True

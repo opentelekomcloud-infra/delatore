@@ -330,7 +330,6 @@ class InfluxSourceLBDOWN(InfluxSource):
         else:
             if control_value == 1:
                 results.append(generate_error(self.CONFIG_ID, self._error_template))
-
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
