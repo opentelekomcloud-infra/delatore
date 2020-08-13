@@ -8,13 +8,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import StatisticsError, mean
 from typing import Dict, List, NamedTuple
-from jinja2 import Template
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from influxdb.resultset import ResultSet
+from jinja2 import Template
 from ocomone import Resources
 
 from .base import Source, SourceMeta
@@ -28,8 +28,6 @@ _CONFIGS = Resources(__file__)
 
 class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
-
-    # pylint: disable=too-many-arguments
 
     def __init__(self, *args, proxy='', **kwargs):
         self.proxy: str = proxy
@@ -561,50 +559,38 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
 
 
 class InfluxSourceAutoscaling(InfluxSource):
-    """InfluxSourceAutoscallingclient"""
+    """InfluxSourceAutoscaling Client"""
 
     CONFIG_ID = 'influxdb_autoscaling'
     _threshold = 30
-    _error_message_template = _get_error_template('error_message_autoscaling.txt')
+    _error_template = _get_error_template('error_autoscaling.txt')
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
         error_status, last_time_ms, status = await self._get_status(main_metric)
         results = []
-        if status == status.FAIL:
-            results.append(generate_status(main_metric.name, status,
+        if status != status.OK:
+            results.append(generate_status(main_metric.name,
+                                           status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        if status == status.NO_DATA:
-            results.append(generate_status(main_metric.name, status, None))
         else:
             if error_status:
-                auxilary_metric = self._metrics[1]
-                cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
+                auxiliary_metric = self._metrics[1]
+                cpu_utilization = await self._get_auxiliary_metrics(auxiliary_metric)
                 results.append(generate_error(main_metric.name,
-                                              self._error_message_template.format(threshold=self._threshold,
-                                                                                  cpu_utilization=cpu_utilization)))
+                                              self._error_template.format(threshold=self._threshold,
+                                                                          cpu_utilization=cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
-
-    async def _get_auxilary_metrics(self, metric):
-        query = metric.query.format(entity=metric.metric_id)
-        result = await self.influx_client.query(query)
-        try:
-            cpu_utilization = round(result.raw['series'][0]['values'][0][1], 2)
-        except(IndexError, KeyError):
-            cpu_utilization = 'No data'
-        return cpu_utilization
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = None
         error_status = False
         status = Status.OK
         try:
             response_line = last_record.raw['series'][0]['values'][0]
         except(IndexError, KeyError):
-            status = Status.NO_DATA
-            return error_status, last_time_ms, status
+            raise InfluxQueryResultsException
         response_time = response_line[1]
         if response_time is not None:
             if response_time > self._threshold:
@@ -616,29 +602,43 @@ class InfluxSourceAutoscaling(InfluxSource):
             status = Status.FAIL
         return error_status, last_time_ms, status
 
+    async def _get_auxiliary_metrics(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        result = await self.influx_client.query(query)
+        try:
+            cpu_utilization = round(result.raw['series'][0]['values'][0][1], 2)
+        except(IndexError, KeyError):
+            cpu_utilization = 'No data'
+        return cpu_utilization
+
 
 class InfluxSourceRDSTest(InfluxSource):
     """InfluxSourceRDSTest client"""
 
-
     CONFIG_ID = 'influxdb_rds_test'
-    _error_message_template = _get_error_template('error_message_rds_test.txt')
+    _error_template = _get_error_template('error_rds_test.txt')
     _threshold = 1
-    rows = ("tup_fetched", "tup_returned", "tup_inserted", "tup_updated", "tup_deleted")
+    rows = (
+        "tup_fetched",
+        "tup_returned",
+        "tup_inserted",
+        "tup_updated",
+        "tup_deleted"
+    )
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
         error_status, last_time_ms, status = await self._get_status(main_metric)
         results = []
         if error_status:
-            if status == status.FAIL or status == status.NO_DATA:
+            if status != status.OK:
                 results.append(generate_status(main_metric.name, status,
                                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
             else:
                 aux_metrics = await self.get_auxiliary_metrics()
                 rows_info = self._get_rows_info(aux_metrics['rows'])
-                results.append(generate_error(main_metric.name, self._error_message_template.format(rows=rows_info,
-                                                                                                    qps=aux_metrics['qps'])))
+                results.append(generate_error(main_metric.name, self._error_template.format(rows=rows_info,
+                                                                                            qps=aux_metrics['qps'])))
         return generate_message(self.CONFIG_ID, results)
 
     def _get_rows_info(self, rows):
