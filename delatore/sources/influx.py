@@ -635,7 +635,7 @@ class InfluxSourceRDSTest(InfluxSource):
                                            status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if last_value < self._threshold:
+            if last_value < self._threshold:  # TODO: Sometimes it gets fake 0
                 aux_metrics = await self._get_auxiliary_metrics()
                 rows_info = await _get_aux_info(aux_metrics['rps'])
                 results.append(
