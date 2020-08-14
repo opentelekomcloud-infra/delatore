@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import StatisticsError, mean
 from typing import Dict, List, NamedTuple
-from jinja2 import Template
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -333,7 +332,6 @@ class InfluxSourceLBDOWN(InfluxSource):
         else:
             if control_value == 1:
                 results.append(generate_error(self.CONFIG_ID, self._error_template))
-
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -561,139 +559,135 @@ class InfluxSourceSFSStatus(InfluxSourceLBDOWN):
 
 
 class InfluxSourceAutoscaling(InfluxSource):
-    """InfluxSourceAutoscallingclient"""
+    """InfluxSourceAutoscaling Client"""
 
     CONFIG_ID = 'influxdb_autoscaling'
     _threshold = 30
-    _error_message_template = _get_error_template('error_message_autoscaling.txt')
+    _error_template = _get_error_template('error_autoscaling.txt')
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        error_status, last_time_ms, status = await self._get_status(main_metric)
+        response_time, last_time_ms, status = await self._get_status(main_metric)
         results = []
-        if status == status.FAIL:
-            results.append(generate_status(main_metric.name, status,
+        if status != status.OK:
+            results.append(generate_status(main_metric.name,
+                                           status,
                                            last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-        if status == status.NO_DATA:
-            results.append(generate_status(main_metric.name, status, None))
         else:
-            if error_status:
-                auxilary_metric = self._metrics[1]
-                cpu_utilization = await self._get_auxilary_metrics(auxilary_metric)
-                results.append(generate_error(main_metric.name,
-                                              self._error_message_template.format(threshold=self._threshold,
-                                                                                  cpu_utilization=cpu_utilization)))
+            if response_time is not None and response_time > self._threshold:
+                cpu_utilization = await self._get_auxiliary_metrics(self._metrics[1])
+                results.append(generate_error(main_metric.name, self._get_error_message(cpu_utilization)))
         return generate_message(self.CONFIG_ID, results)
-
-    async def _get_auxilary_metrics(self, metric):
-        query = metric.query.format(entity=metric.metric_id)
-        result = await self.influx_client.query(query)
-        try:
-            cpu_utilization = round(result.raw['series'][0]['values'][0][1], 2)
-        except(IndexError, KeyError):
-            cpu_utilization = 'No data'
-        return cpu_utilization
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = None
-        error_status = False
-        status = Status.OK
         try:
-            response_line = last_record.raw['series'][0]['values'][0]
+            last_time, response_time = last_record.raw['series'][0]['values'][0]
         except(IndexError, KeyError):
-            status = Status.NO_DATA
-            return error_status, last_time_ms, status
-        response_time = response_line[1]
-        if response_time is not None:
-            if response_time > self._threshold:
-                error_status = True
-        last_time = response_line[0]
+            raise InfluxQueryResultsException
+        status = Status.OK
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        return error_status, last_time_ms, status
+        return response_time, last_time_ms, status
+
+    async def _get_auxiliary_metrics(self, metric):
+        query = metric.query.format(entity=metric.metric_id)
+        last_record = await self.influx_client.query(query)
+        try:
+            cpu_utilization = round(last_record.raw['series'][0]['values'][0][1], 2)
+        except(IndexError, KeyError):
+            cpu_utilization = 'No data'
+        return cpu_utilization
+
+    def _get_error_message(self, cpu_utilization):
+        return self._error_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)
+
+
+async def _get_aux_info(rps):
+    rows_info = ''
+    for key, value in rps.items():
+        rows_info += '\n\t{0}:{1}'.format(str(key), str(value))
+    return rows_info
 
 
 class InfluxSourceRDSTest(InfluxSource):
     """InfluxSourceRDSTest client"""
 
-
     CONFIG_ID = 'influxdb_rds_test'
-    _error_message_template = _get_error_template('error_message_rds_test.txt')
+    _error_template = _get_error_template('error_rds_test.txt')
     _threshold = 1
-    rows = ("tup_fetched", "tup_returned", "tup_inserted", "tup_updated", "tup_deleted")
+    rows = (
+        'tup_fetched',
+        'tup_returned',
+        'tup_inserted',
+        'tup_updated',
+        'tup_deleted'
+    )
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        error_status, last_time_ms, status = await self._get_status(main_metric)
+        last_value, last_time_ms, status = await self._get_status(main_metric)
         results = []
-        if error_status:
-            if status == status.FAIL or status == status.NO_DATA:
-                results.append(generate_status(main_metric.name, status,
-                                               last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
-            else:
-                aux_metrics = await self.get_auxiliary_metrics()
-                rows_info = self._get_rows_info(aux_metrics['rows'])
-                results.append(generate_error(main_metric.name, self._error_message_template.format(rows=rows_info,
-                                                                                                    qps=aux_metrics['qps'])))
+        if status != status.OK:
+            results.append(generate_status(main_metric.name,
+                                           status,
+                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+        else:
+            if last_value < self._threshold:  # TODO: Sometimes it gets fake 0
+                aux_metrics = await self._get_auxiliary_metrics()
+                rows_info = await _get_aux_info(aux_metrics['rps'])
+                results.append(
+                    generate_error(
+                        main_metric.name,
+                        self._get_error_message(rows_info, aux_metrics['qps'])
+                    )
+                )
         return generate_message(self.CONFIG_ID, results)
 
-    def _get_rows_info(self, rows):
-        rows_info = ''
-        for key, value in rows.items():
-            rows_info += "\n" + "      " + str(key) + " : " + str(value)
-        return rows_info
-
-    async def get_auxiliary_metrics(self):
-        list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
-        aux_metrics = {}
-        aux_metrics['rows'] = await self._get_rows(list_queries[0])
-        aux_metrics['qps'] = await self._get_qps(list_queries[1])
+    async def _get_auxiliary_metrics(self):
+        aux_metric = self._metrics[1]
+        aux_metrics = {'rps': await self._get_rps(aux_metric), 'qps': await self._get_qps(aux_metric)}
         return aux_metrics
 
-    async def _get_qps(self, query):
-        result = await self.influx_client.query(query)
+    async def _get_qps(self, metric):
+        query = metric.query.format(entity=metric.metric_id, insert_row='xact_commit')
+        last_record = await self.influx_client.query(query)
         try:
-            qps = round(result.raw['series'][0]['values'][0][1], 2)
+            qps = round(last_record.raw['series'][0]['values'][0][1], 2)
         except(IndexError, KeyError):
-            qps = 'No data'
+            raise InfluxQueryResultsException
         return qps
 
-    async def _get_rows(self, query):
+    async def _get_rps(self, metric):
         row_values = {}
-        template_query = Template(query)
         for row in self.rows:
-            query_for_row = template_query.render(column_name=row)
-            result = await self.influx_client.query(query_for_row)
+            query = metric.query.format(entity=metric.metric_id, insert_row=row)
+            last_record = await self.influx_client.query(query)
             try:
-                row_values[row] = round(result.raw['series'][0]['values'][0][1], 2)
+                row_values[row] = round(last_record.raw['series'][0]['values'][0][1], 2)
             except(IndexError, KeyError):
-                row_values[row] = 'No data'
+                raise InfluxQueryResultsException
         return row_values
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
-        last_time_ms = None
-        error_status = False
-        status = Status.OK
         try:
-            response_line = last_record.raw['series'][0]['values'][0]
+            last_time, last_value = last_record.raw['series'][0]['values'][0]
         except(IndexError, KeyError):
-            status = Status.NO_DATA
-            return error_status, last_time_ms, status
-        returned_value = response_line[1]
-        if returned_value < self._threshold:
-            error_status = True
-        last_time = response_line[0]
+            raise InfluxQueryResultsException
+        status = Status.OK
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        return error_status, last_time_ms, status
+        return last_value, last_time_ms, status
+
+    def _get_error_message(self, rows_info, qps):
+        return self._error_template.format(rps=rows_info, qps=qps)
 
 
 class InfluxTimestampParseException(Exception):

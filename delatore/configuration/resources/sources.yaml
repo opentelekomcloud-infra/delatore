@@ -87,7 +87,7 @@
     metrics:
       - name: LB_DOWN
         metric_id: lb_down_test
-        query: 'SELECT COUNT(state) FROM {entity} WHERE reason!="0" GROUP BY host, time(60s) ORDER BY time DESC LIMIT 1;'
+        query: 'SELECT COUNT(state) FROM {entity} WHERE reason!="0" GROUP BY host, time(60s) ORDER BY DESC LIMIT 1;'
         timeout: 90
   topic_prefix: 'LB_DOWN'
   timings:
@@ -102,7 +102,7 @@
     metrics:
       - name: LB_DOWN:Failed requests hit 5
         metric_id: lb_down
-        query: 'SELECT COUNT(requests) FROM {entity} WHERE ok=~/False/ GROUP BY host, time(60s) fill(null) ORDER BY time DESC LIMIT 1;'
+        query: 'SELECT COUNT(requests) FROM {entity} WHERE ok=~/False/ GROUP BY host, time(60s) ORDER BY DESC LIMIT 1;'
         timeout: 90
   topic_prefix: 'LB_DOWN_FAIL_COUNT'
   timings:
@@ -132,12 +132,12 @@
     metrics:
       - name: LB_AUTOSCALING
         metric_id: as_loadbalancer
-        query: 'SELECT mean(elapsed) FROM {entity} GROUP BY time(30s) fill(15) ORDER BY time DESC LIMIT 1'
-        timeout: 60
+        query: 'SELECT MEAN(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
+        timeout: 90
       - name: LB_AUTOSCALING:CPU utilization
         metric_id: cpu
-        query: 'SELECT max(usage_system)  FROM {entity}  WHERE host =~ /scn4/ ORDER BY time DESC LIMIT 1'
-        timeout: 60
+        query: 'SELECT MAX(usage_system) FROM {entity} WHERE host=~/scn4/ ORDER BY DESC LIMIT 1;'
+        timeout: 90
   topic_prefix: 'INFLUX_AUTOSCALING'
   timings:
     polling_interval: 60
@@ -151,16 +151,12 @@
     metrics:
       - name: RDS TEST
         metric_id: ce_result
-        query: 'SELECT count(elapsed) FROM {entity} WHERE result =~ /not_created/ GROUP BY time(30s) ORDER BY time DESC LIMIT 1'
-        timeout: 60
-      - name: RDS TEST Currently processed rows
+        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
+        timeout: 90
+      - name: RDS TEST:RPS/QPS
         metric_id: postgresql
-        query: 'SELECT non_negative_derivative(mean, 10s)  FROM (SELECT MEAN({{{{ column_name }}}}) FROM {entity} WHERE db =~ /entities/ GROUP BY time(30s) ORDER BY time DESC) ORDER BY time DESC LIMIT 1'
-        timeout: 60
-      - name: RDS TEST Current queries per second
-        metric_id: postgresql
-        query: 'SELECT non_negative_derivative(mean, 10s)  FROM (SELECT MEAN(xact_commit) FROM {entity} WHERE db =~ /entities/ GROUP BY time(30s) ORDER BY time DESC) ORDER BY time DESC LIMIT 1'
-        timeout: 60
+        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN({insert_row}),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
+        timeout: 90
   topic_prefix: 'RDS_TEST'
   timings:
     polling_interval: 60

@@ -2,7 +2,7 @@ from os import path
 
 from setuptools import find_packages, setup
 
-version = '0.4.7.dev2'
+version = '0.4.8.dev3'
 
 cur_dir = path.abspath(path.dirname(__file__))
 with open(path.join(cur_dir, 'README.rst'), encoding='utf-8') as file:
@@ -18,7 +18,7 @@ setup(
     license='Apache-2.0',
     author='OTC team',
     packages=find_packages(),
-    package_data={"delatore.configuration.resources": ["*.yaml"]},
+    package_data={'delatore.configuration.resources': ['*.yaml']},
     classifiers=[
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: Apache Software License',
