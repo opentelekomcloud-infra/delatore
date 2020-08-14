@@ -18,7 +18,6 @@ async def test_src_to_bot(patched_bot, bot_alert_queue: Queue, source_data):
         raise AssertionError
 
 
-@pytest.skip
 async def test_src_to_alerta(patched_alerta, bot_alert_queue: Queue, source_data_alerta):
     source, (_, message) = source_data_alerta
     message = json.dumps(message)
