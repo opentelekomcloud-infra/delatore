@@ -109,5 +109,5 @@ class AWXWebHookSource(HttpListenerSource):
                 details_url=update['url'],
             )
         except KeyError:
-            return generate_error(self.CONFIG_ID, format_exc(limit=10))
+            return generate_error(format_exc(limit=10))
         return generate_message(self.CONFIG_ID, [status])

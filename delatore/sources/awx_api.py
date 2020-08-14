@@ -54,7 +54,7 @@ class AWXApiSource(Source):
     @classmethod
     def convert(cls, data: List[Dict], template_name) -> Dict:
         if not data:
-            return generate_error(cls.CONFIG_ID, NO_TEMPLATE_PATTERN.format(template_name))
+            return generate_error(NO_TEMPLATE_PATTERN.format(template_name))
         status_list = []
         for record in data:
             status_list.append(

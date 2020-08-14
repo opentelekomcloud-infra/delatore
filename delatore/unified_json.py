@@ -17,6 +17,7 @@ class Status(Enum):
     FAIL = 'fail'
     RUNNING = 'running'
     CANCELED = 'canceled'
+    ALERTING = 'alerting'
 
     _INVALID = 'invalid status'
 
@@ -34,14 +35,6 @@ def generate_message(source: str, status_list: List[dict]) -> dict:
     }
 
 
-def generate_error(source: str, message: str) -> dict:
-    """Generate error message"""
-    return {
-        'source': source,
-        'error': message,
-    }
-
-
 def generate_status(name: str,
                     status: Status,
                     timestamp: Optional[str] = None,
@@ -51,38 +44,37 @@ def generate_status(name: str,
         'name': name,
         'status': status.value,
         'timestamp': timestamp,
-        'details_url': details_url
+        'details_url': details_url,
     }
 
 
-def generate_disk_status(name: str,
-                         host: str,
-                         disk: str,
-                         status: Status,
-                         timestamp: Optional[str] = None,
-                         details_url: Optional[str] = None) -> dict:
-    """Generate single status line"""
+def generate_error_status(name: str,
+                          error: str,
+                          status: Status,
+                          timestamp: Optional[str] = None,
+                          details_url: Optional[str] = None) -> dict:
+    """Generate single error status line"""
     return {
         'name': name,
         'status': status.value,
+        'error': error,
         'timestamp': timestamp,
         'details_url': details_url,
-        'additional_info': f'host: {host}\ndevice: {disk}'
     }
 
 
-def generate_host_status(name: str,
-                         hostname: str,
+def generate_host_status(host: str,
                          status: Status,
                          timestamp: Optional[str] = None,
+                         additional_info: Optional[str] = None,
                          details_url: Optional[str] = None) -> dict:
     """Generate single status line"""
     return {
-        'name': name,
+        'host': host,
         'status': status.value,
         'timestamp': timestamp,
         'details_url': details_url,
-        'additional_info': f'host: {hostname}'
+        'additional_info': additional_info
     }
 
 

@@ -25,11 +25,12 @@ class NoUpdates(Exception):
 class Topics(NamedTuple):
     changes: str
     info: str
+    error: str
 
     @classmethod
     def with_prefix(cls, prefix: str):
         prefix = prefix.upper()
-        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO')
+        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO', f'{prefix}_ERROR')
 
 
 class SourceMeta(ABCMeta):
@@ -80,6 +81,10 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
+            if _is_error_report(new):
+                json_message = json.dumps(new)
+                await self.client.publish(self.TOPICS.error, json_message)
+                await asyncio.sleep(self.polling_interval)
             if self.ignore_duplicates and _same_status(new, last):
                 if _delta_seconds(new, last) >= self.heartbeat_interval:
                     json_message = json.dumps(new)
@@ -108,3 +113,7 @@ def _same_status(new: dict, last: dict) -> bool:
     this_statuses = {st['name']: st['status'] for st in new['status_list']}
     another_statuses = {st['name']: st['status'] for st in last['status_list']}
     return this_statuses == another_statuses
+
+
+def _is_error_report(msg: dict) -> bool:
+    return 'error_list' in msg
