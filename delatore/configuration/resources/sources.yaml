@@ -151,7 +151,7 @@
     metrics:
       - name: RDS TEST
         metric_id: ce_result
-        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
+        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 2;'
         timeout: 90
       - name: RDS TEST:RPS/QPS
         metric_id: postgresql

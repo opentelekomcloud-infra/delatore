@@ -35,6 +35,14 @@ def generate_message(source: str, status_list: List[dict]) -> dict:
     }
 
 
+def generate_error(source: str, error: str):
+    """Generate error message"""
+    return {
+        'source': source,
+        'error': error,
+    }
+
+
 def generate_status(name: str,
                     status: Status,
                     timestamp: Optional[str] = None,
@@ -60,21 +68,6 @@ def generate_error_status(name: str,
         'error': error,
         'timestamp': timestamp,
         'details_url': details_url,
-    }
-
-
-def generate_host_status(host: str,
-                         status: Status,
-                         timestamp: Optional[str] = None,
-                         additional_info: Optional[str] = None,
-                         details_url: Optional[str] = None) -> dict:
-    """Generate single status line"""
-    return {
-        'host': host,
-        'status': status.value,
-        'timestamp': timestamp,
-        'details_url': details_url,
-        'additional_info': additional_info
     }
 
 

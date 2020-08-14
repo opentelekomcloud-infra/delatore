@@ -9,6 +9,7 @@ EMOJI = {
     Status.OK: '✅',
     Status.CANCELED: '⛔',
     Status.NO_DATA: '❔',
+    Status.ALERTING: '🔥',
 }
 
 
