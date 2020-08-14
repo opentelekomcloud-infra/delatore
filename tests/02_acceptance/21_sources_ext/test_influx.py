@@ -37,26 +37,31 @@ async def test_trigger_from_loop_lb_timing(influxdb_lb_timing: InfluxSourceLBTim
 
 async def test_influx_data_disk_read(influxdb_disk_read: InfluxSourceDiskStateRead):
     update = await influxdb_disk_read.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
 async def test_influx_data_disk_write(influxdb_disk_write: InfluxSourceDiskStateWrite):
     update = await influxdb_disk_write.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
 async def test_influx_data_disk_read_sfs(influxdb_disk_read_sfs: InfluxSourceDiskStateReadSFS):
     update = await influxdb_disk_read_sfs.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
 async def test_influx_data_disk_write_sfs(influxdb_disk_write_sfs: InfluxSourceDiskStateWriteSFS):
     update = await influxdb_disk_write_sfs.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
 async def test_influx_data_lb_down(influxdb_lb_down: InfluxSourceLBDOWN):
     update = await influxdb_lb_down.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
@@ -69,6 +74,7 @@ async def test_trigger_from_loop_lb_down_fail_count(influxdb_lb_down: InfluxSour
 
 async def test_influx_data_lb_down_fail_count(influxdb_lb_down_fail_count: InfluxSourceLBDOWNFailCount):
     update = await influxdb_lb_down_fail_count.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
@@ -114,6 +120,7 @@ async def test_result_lb_down_fail_count_ok(influxdb_lb_down_fail_count_ok: Infl
 
 async def test_influx_autoscaling(influxdb_autoscaling: InfluxSourceAutoscaling):
     update = await influxdb_autoscaling.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 
@@ -126,6 +133,7 @@ async def test_trigger_autoscaling(influxdb_autoscaling: InfluxSourceAutoscaling
 
 async def test_influx_rds_test(influxdb_rds_test: InfluxSourceRDSTest):
     update = await influxdb_rds_test.get_update()
+    await asyncio.sleep(1)
     assert update is not None
 
 

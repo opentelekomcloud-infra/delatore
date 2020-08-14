@@ -123,11 +123,12 @@ def _same_status(new: dict, last: dict) -> bool:
 
 
 def _is_error_report(msg: dict) -> bool:
-    for status in msg['status_list']:
-        if 'error' in status:
-            return True
+    if 'status_list' in msg:
+        for status in msg['status_list']:
+            if 'error' in status:
+                return True
     return False
 
 
 def _is_zero_status(msg: dict) -> bool:
-    return len(msg['status_list']) == 0
+    return 'status_list' in msg and len(msg['status_list']) == 0
