@@ -80,8 +80,6 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
-            if _len_check(new):
-                continue
             if self.ignore_duplicates and _same_status(new, last):
                 if _delta_seconds(new, last) >= self.heartbeat_interval:
                     json_message = json.dumps(new)
@@ -110,7 +108,3 @@ def _same_status(new: dict, last: dict) -> bool:
     this_statuses = {st['name']: st['status'] for st in new['status_list']}
     another_statuses = {st['name']: st['status'] for st in last['status_list']}
     return this_statuses == another_statuses
-
-
-def _len_check(msg: dict):
-    return len(msg['status_list']) == 0
