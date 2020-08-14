@@ -28,6 +28,8 @@ _CONFIGS = Resources(__file__)
 class AsyncInfluxClient(InfluxDBClient):  # pragma: no cover
     """Influx client using aiohttp instead of requests"""
 
+    # pylint: disable=too-many-arguments
+
     def __init__(self, *args, proxy='', **kwargs):
         self.proxy: str = proxy
         super().__init__(*args, **kwargs)
@@ -601,14 +603,13 @@ class InfluxSourceAutoscaling(InfluxSource):
         return cpu_utilization
 
     def _get_error_message(self, cpu_utilization):
-        return self._error_template.format(threshold=self._threshold,
-                                           cpu_utilization=cpu_utilization)
+        return self._error_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)
 
 
 async def _get_aux_info(rps):
     rows_info = ''
     for key, value in rps.items():
-        rows_info += "\n\t{0}:{1}".format(str(key), str(value))
+        rows_info += '\n\t{0}:{1}'.format(str(key), str(value))
     return rows_info
 
 
@@ -619,11 +620,11 @@ class InfluxSourceRDSTest(InfluxSource):
     _error_template = _get_error_template('error_rds_test.txt')
     _threshold = 1
     rows = (
-        "tup_fetched",
-        "tup_returned",
-        "tup_inserted",
-        "tup_updated",
-        "tup_deleted"
+        'tup_fetched',
+        'tup_returned',
+        'tup_inserted',
+        'tup_updated',
+        'tup_deleted'
     )
 
     async def get_update(self) -> dict:
