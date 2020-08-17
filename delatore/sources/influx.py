@@ -683,7 +683,7 @@ class InfluxSourceRDSTest(InfluxSource):
         last_record = await self.influx_client.query(query)
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
-            next_last_value = last_record.raw['series'][0]['values'][0][1][1]
+            next_last_value = last_record.raw['series'][0]['values'][1][1]
         except(IndexError, KeyError):
             raise InfluxQueryResultsException
         status = Status.OK

@@ -16,7 +16,7 @@ def _status_to_md_row(status_record):
     else:
         timestamp = f'`{timestamp or "n/a"}`'
     if 'error' in status_record:
-        details = f'{name}\n\t{escape_md(status_record["error"])}'
+        details = f'{name}\n{escape_md(status_record["error"])}'
     else:
         details = rf'{name} \({timestamp}\)'
     return f'{status_emoji}  —  {details}'
