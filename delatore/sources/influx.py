@@ -235,7 +235,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    threshold = 60
+    _threshold = 60
     _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
@@ -249,7 +249,7 @@ class InfluxSourceLBTiming(InfluxSource):
                                     status[0],
                                     status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
-                if min(self._host_timings[host]) > self.threshold:
+                if min(self._host_timings[host]) > self._threshold:
                     state = await self._get_auxiliary_metrics()  # get overall host state
                     results.append(
                         generate_error_status(host,
@@ -284,7 +284,7 @@ class InfluxSourceLBTiming(InfluxSource):
         if host_state is None:
             return f'Invalid aux metrics for host {host}'
         return self._error_template.format(
-            threshold=self.threshold,
+            threshold=self._threshold,
             current_response_time=current_response_time,
             cpu_utilization=round(host_state.cpu_utilization, 3),
             network_bytes_recv=round(host_state.network_bytes_recv / 1000, 2),
