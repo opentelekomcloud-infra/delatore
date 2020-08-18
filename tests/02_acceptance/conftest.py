@@ -103,7 +103,7 @@ async def awx_client(service):
 @pytest.fixture
 async def influxdb_lb_timing_result_error(service):
     src = InfluxSourceLBTiming(service.get_client())
-    src._threshold = 60
+    src._threshold = -1
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
