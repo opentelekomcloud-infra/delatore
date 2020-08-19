@@ -1,3 +1,1 @@
--  SFS_STATUS
--  Status: Alerting
--  Alert message: Test script return error: exit code 1
+        Alert message: Test script return error: exit code 1

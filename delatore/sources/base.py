@@ -25,11 +25,12 @@ class NoUpdates(Exception):
 class Topics(NamedTuple):
     changes: str
     info: str
+    error: str
 
     @classmethod
     def with_prefix(cls, prefix: str):
         prefix = prefix.upper()
-        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO')
+        return Topics(f'{prefix}_CHANGES', f'{prefix}_INFO', f'{prefix}_ERROR')
 
 
 class SourceMeta(ABCMeta):
@@ -80,9 +81,20 @@ class Source(ABC, metaclass=SourceMeta):
                 new = await asyncio.wait_for(self.get_update(), self.request_timeout)
             except (asyncio.TimeoutError, NoUpdates):
                 continue
+            if _is_zero_status(new):
+                continue
+            if _is_error_report(new):
+                json_message = json.dumps(new)
+                LOGGER.debug('New error data received from source: %s\ndata:\n%s', name, new)
+                await self.client.publish(self.TOPICS.error, json_message)
+                last = new
+                LOGGER.debug('Wait for new data for %s', self.polling_interval)
+                await asyncio.sleep(self.polling_interval)
+                continue
             if self.ignore_duplicates and _same_status(new, last):
                 if _delta_seconds(new, last) >= self.heartbeat_interval:
                     json_message = json.dumps(new)
+                    LOGGER.debug('Duplicate data received from source: %s\ndata:\n%s', name, new)
                     await self.client.publish(self.TOPICS.info, json_message)
                     last = new
                 continue
@@ -108,3 +120,15 @@ def _same_status(new: dict, last: dict) -> bool:
     this_statuses = {st['name']: st['status'] for st in new['status_list']}
     another_statuses = {st['name']: st['status'] for st in last['status_list']}
     return this_statuses == another_statuses
+
+
+def _is_error_report(msg: dict) -> bool:
+    if 'status_list' in msg:
+        for status in msg['status_list']:
+            if 'error' in status:
+                return True
+    return False
+
+
+def _is_zero_status(msg: dict) -> bool:
+    return 'status_list' in msg and not msg['status_list']

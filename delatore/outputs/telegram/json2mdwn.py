@@ -1,12 +1,9 @@
 """Conversion of source data to markdown v2"""
-import re
 
 from aiogram.utils.markdown import escape_md, link
 
 from ...outputs.telegram.emoji import EMOJI
 from ...unified_json import Status
-
-PATTERN_REGEX = re.compile(r'([.\-_()]{1})')
 
 
 def _status_to_md_row(status_record):
@@ -18,26 +15,23 @@ def _status_to_md_row(status_record):
         timestamp = link(timestamp, url)
     else:
         timestamp = f'`{timestamp or "n/a"}`'
-    details = rf'{name} \({timestamp}\)'
-    return rf'{status_emoji}  —  {details}'
+    if 'error' in status_record:
+        details = f'{name}\n{escape_md(status_record["error"])}'
+    else:
+        details = rf'{name} \({timestamp}\)'
+    return f'{status_emoji}  —  {details}'
 
 
 def convert(data: dict):
     """Convert dict or list to nice-looking telegram markdown"""
     source = escape_md(data['source'])
     src_row = f'*From {source}*'
-    status_list = ''
-    for status in data['status_list']:
-        if 'error' in status:
-            string = status['error']
-            message = PATTERN_REGEX.sub(r'\\\1', string)
-            status_list += f'Error:\n{message}\n'
-        else:
-            additional_info = ''
-            if 'additional_info' in status.keys():
-                additional_info = PATTERN_REGEX.sub(r'\\\1', status['additional_info']) + '\n'
-            entry = _status_to_md_row(status)
-            status_list += f'{entry}\n{additional_info}'
+    if 'status_list' in data:
+        status_list = '\n'.join(
+            _status_to_md_row(status) for status in data['status_list']
+        )
+    else:
+        status_list = 'Error'
     return f'{src_row}\n{status_list}'
 
 

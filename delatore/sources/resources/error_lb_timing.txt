@@ -1,8 +1,5 @@
-- LB_LOAD
-- Status: Alerting
-- Alert message: Response time are above {threshold}
-- Host: {hostname}
-- Response time: {current_response_time}
-- CPU utilization: {cpu_utilization} %
-- Network bytes recv (Kbyte): {network_bytes_recv}
-- Network bytes send (Kbyte): {network_bytes_send}
+        Alert message: Response time are above {threshold}
+        Response time: {current_response_time}
+        CPU utilization: {cpu_utilization}%
+        Network bytes recv: {network_bytes_recv} (Kbyte)
+        Network bytes sent : {network_bytes_send} (Kbyte)
