@@ -326,7 +326,7 @@ class InfluxSourceLBDOWN(InfluxSource):
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
-        status, last_time_ms, count_errors = await self._get_status(metric)
+        status, last_time_ms, error_count = await self._get_status(metric)
         results = []
         if status != Status.OK:
             results.append(
@@ -334,7 +334,7 @@ class InfluxSourceLBDOWN(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if count_errors >= self.threshold:
+            if error_count >= self.threshold:
                 results.append(
                     generate_error_status(metric.name,
                                           self._get_error_message(),
