@@ -382,7 +382,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if min(self._fail_count) > self.threshold:  # if there are at least one error per minute for 5 minutes
+            if min(self._fail_count) > self.threshold:  # if there are at least 1 error per minute for 5 mins
                 results.append(
                     generate_error_status(host,
                                           self._get_error_message(),
