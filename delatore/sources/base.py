@@ -131,4 +131,4 @@ def _is_error_report(msg: dict) -> bool:
 
 
 def _is_zero_status(msg: dict) -> bool:
-    return 'status_list' in msg and len(msg['status_list']) == 0
+    return 'status_list' in msg and not msg['status_list']

@@ -326,7 +326,7 @@ class InfluxSourceLBDOWN(InfluxSource):
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
-        status, last_time_ms, control_value = await self._get_status(metric)
+        status, last_time_ms, count_errors = await self._get_status(metric)
         results = []
         if status != Status.OK:
             results.append(
@@ -334,7 +334,7 @@ class InfluxSourceLBDOWN(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if control_value == self.threshold:
+            if count_errors >= self.threshold:
                 results.append(
                     generate_error_status(metric.name,
                                           self._get_error_message(),
@@ -346,14 +346,14 @@ class InfluxSourceLBDOWN(InfluxSource):
         last_record = await self.influx_client.query(query)
         status = Status.OK
         try:
-            last_time, control_value, *_ = last_record.raw['series'][0]['values'][0]
+            last_time, count, *_ = last_record.raw['series'][0]['values'][0]
         except (KeyError, IndexError):
             raise InfluxQueryResultsException
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        return status, last_time_ms, control_value
+        return status, last_time_ms, count
 
     def _get_error_message(self):
         return self._error_template
@@ -366,11 +366,11 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     _error_template = _get_error_template('error_lb_down_fail_requests.txt')
     _fail_count: deque = None
     threshold = 5
-    _threshold_size = 5
+    DEQUE_SIZE = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fail_count = deque([0] * self._threshold_size, self._threshold_size)
+        self._fail_count = deque([0] * self.DEQUE_SIZE, self.DEQUE_SIZE)
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
@@ -639,7 +639,7 @@ class InfluxSourceRDSTest(InfluxSource):
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        next_last_value, last_time_ms, status = await self._get_status(main_metric)
+        previous_value, last_time_ms, status = await self._get_status(main_metric)
         results = []
         if status != status.OK:
             results.append(
@@ -647,7 +647,7 @@ class InfluxSourceRDSTest(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if next_last_value < self.threshold:
+            if previous_value < self.threshold:
                 aux_metrics = await self._get_auxiliary_metrics()
                 rows_info = await _get_aux_info(aux_metrics['rps'])
                 results.append(
