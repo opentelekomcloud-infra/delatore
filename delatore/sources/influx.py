@@ -17,7 +17,8 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_error_status, generate_message, generate_status)
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN,
+                            generate_error_status, generate_message, generate_status)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -235,7 +236,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    _threshold = 60
+    threshold = 60
     _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
@@ -249,7 +250,7 @@ class InfluxSourceLBTiming(InfluxSource):
                                     status[0],
                                     status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
-                if min(self._host_timings[host]) > self._threshold:
+                if min(self._host_timings[host]) > self.threshold:
                     state = await self._get_auxiliary_metrics()  # get overall host state
                     results.append(
                         generate_error_status(host,
@@ -284,7 +285,7 @@ class InfluxSourceLBTiming(InfluxSource):
         if host_state is None:
             return f'Invalid aux metrics for host {host}'
         return self._error_template.format(
-            threshold=self._threshold,
+            threshold=self.threshold,
             current_response_time=current_response_time,
             cpu_utilization=round(host_state.cpu_utilization, 3),
             network_bytes_recv=round(host_state.network_bytes_recv / 1000, 2),
@@ -320,19 +321,20 @@ class InfluxSourceLBDOWN(InfluxSource):
     """InfluxSourceLBDOWN client"""
 
     CONFIG_ID = 'influxdb_lb_down'
+    threshold = 1
     _error_template = _get_error_template('error_lb_down.txt')
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
         status, last_time_ms, control_value = await self._get_status(metric)
         results = []
-        if status == Status.OK:
+        if status != Status.OK:
             results.append(
                 generate_status(metric.name,
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if control_value == 1:
+            if control_value == self.threshold:
                 results.append(
                     generate_error_status(metric.name,
                                           self._get_error_message(),
@@ -363,6 +365,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
     CONFIG_ID = 'influxdb_lb_down_fail_requests'
     _error_template = _get_error_template('error_lb_down_fail_requests.txt')
     _fail_count: deque = None
+    threshold = 5
     _threshold_size = 5
 
     def __init__(self, *args, **kwargs):
@@ -379,7 +382,7 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if min(self._fail_count) > self._threshold_size:  # if there are at least one error per minute for 5 minutes
+            if min(self._fail_count) > self.threshold:  # if there are at least one error per minute for 5 minutes
                 results.append(
                     generate_error_status(host,
                                           self._get_error_message(),
@@ -565,7 +568,7 @@ class InfluxSourceAutoscaling(InfluxSource):
     """InfluxSourceAutoscaling Client"""
 
     CONFIG_ID = 'influxdb_autoscaling'
-    _threshold = 30
+    threshold = 30
     _error_template = _get_error_template('error_autoscaling.txt')
 
     async def get_update(self) -> dict:
@@ -578,7 +581,7 @@ class InfluxSourceAutoscaling(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if response_time is not None and response_time > self._threshold:
+            if response_time is not None and response_time > self.threshold:
                 cpu_utilization = await self._get_auxiliary_metrics(self._metrics[1])
                 results.append(
                     generate_error_status(main_metric.name,
@@ -610,7 +613,7 @@ class InfluxSourceAutoscaling(InfluxSource):
         return cpu_utilization
 
     def _get_error_message(self, cpu_utilization):
-        return self._error_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)
+        return self._error_template.format(threshold=self.threshold, cpu_utilization=cpu_utilization)
 
 
 async def _get_aux_info(rps):
@@ -625,7 +628,7 @@ class InfluxSourceRDSTest(InfluxSource):
 
     CONFIG_ID = 'influxdb_rds_test'
     _error_template = _get_error_template('error_rds_test.txt')
-    _threshold = 1
+    threshold = 1
     rows = (
         'tup_fetched',
         'tup_returned',
@@ -644,7 +647,7 @@ class InfluxSourceRDSTest(InfluxSource):
                                 status,
                                 last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if next_last_value < self._threshold:
+            if next_last_value < self.threshold:
                 aux_metrics = await self._get_auxiliary_metrics()
                 rows_info = await _get_aux_info(aux_metrics['rps'])
                 results.append(

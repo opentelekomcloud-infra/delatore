@@ -18,7 +18,10 @@ def replace_emoji(source: str, alias_map: Dict[str, str], replacement='%e %a'):
 
     `alias_map` is map of `{"alias": "<emoji>"}`, where "alias" is replaced according to `replacement` schema
 
-    `replacement` has following syntax: `%e` for emoji, `%a` for alias, others characters is treated as plain text
+    `replacement` has following syntax:
+        `%e` for emoji,
+        `%a` for alias,
+        others characters is treated as plain text
     """
     pattern = re.compile('|'.join(alias_map.keys()))
 
