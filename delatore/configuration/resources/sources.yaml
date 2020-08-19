@@ -73,7 +73,7 @@
         query: 'SELECT LAST(usage_system) FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host, time(60s) LIMIT 1;'
       - name: DISK_STATE:MEMORY
         metric_id: mem
-        query: 'SELECT MEAN(used) AS used, MEAN(free) AS free FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host, time(60s) ORDER BY DESC LIMIT 1;'
+        query: 'SELECT MEAN(used), MEAN(free) FROM {entity} WHERE host=~/test-scn3-eu-de-|scn3-5-initiator-instance|scn3-5-test-bastion/ GROUP BY host, time(60s) ORDER BY DESC LIMIT 1;'
   topic_prefix: 'DISK_STATE'
   timings:
     polling_interval: 60
@@ -151,11 +151,11 @@
     metrics:
       - name: RDS TEST
         metric_id: ce_result
-        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 1;'
+        query: 'SELECT COUNT(elapsed) FROM {entity} GROUP BY time(60s) ORDER BY DESC LIMIT 2;'
         timeout: 90
       - name: RDS TEST:RPS/QPS
         metric_id: postgresql
-        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN({insert_row}),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
+        query: 'SELECT NON_NEGATIVE_DERIVATIVE(MEAN({column}),10s) FROM {entity} WHERE db=~/entities/ AND time>=now()-1d GROUP BY time(60s) LIMIT 1;'
         timeout: 90
   topic_prefix: 'RDS_TEST'
   timings:

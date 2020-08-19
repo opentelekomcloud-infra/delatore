@@ -17,8 +17,8 @@ from influxdb.resultset import ResultSet
 from ocomone import Resources
 
 from .base import Source, SourceMeta
-from ..unified_json import (Status, UNIFIED_TIME_PATTERN, generate_disk_status, generate_error, generate_host_status,
-                            generate_message, generate_status)
+from ..unified_json import (Status, UNIFIED_TIME_PATTERN,
+                            generate_error_status, generate_message, generate_status)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -243,18 +243,19 @@ class InfluxSourceLBTiming(InfluxSource):
         main_metric = self._metrics[0]
         host_statuses = await self._get_status(main_metric)
         results = []
-        faulty = []
-        for host, info in host_statuses.items():
-            if info[0] != Status.OK:
+        for host, status in host_statuses.items():
+            if status[0] != Status.OK:
                 results.append(
-                    generate_host_status(main_metric.name, host, info[0], info[1].strftime(UNIFIED_TIME_PATTERN)))
+                    generate_status(host,
+                                    status[0],
+                                    status[1].strftime(UNIFIED_TIME_PATTERN)))
             else:
                 if min(self._host_timings[host]) > self.threshold:
-                    faulty.append(host)
-        if faulty:
-            state = await self._get_auxiliary_metrics()  # get overall host state
-            for host in faulty:
-                results.append(generate_error(self.CONFIG_ID, self._get_error_message(host, state)))
+                    state = await self._get_auxiliary_metrics()  # get overall host state
+                    results.append(
+                        generate_error_status(host,
+                                              self._get_error_message(host, state),
+                                              Status.ALERTING))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_auxiliary_metrics(self) -> Dict[str, _InfluxTimingAuxMetrics]:
@@ -286,7 +287,6 @@ class InfluxSourceLBTiming(InfluxSource):
         return self._error_template.format(
             threshold=self.threshold,
             current_response_time=current_response_time,
-            hostname=host,
             cpu_utilization=round(host_state.cpu_utilization, 3),
             network_bytes_recv=round(host_state.network_bytes_recv / 1000, 2),
             network_bytes_send=round(host_state.network_bytes_send / 1000, 2)
@@ -321,56 +321,72 @@ class InfluxSourceLBDOWN(InfluxSource):
     """InfluxSourceLBDOWN client"""
 
     CONFIG_ID = 'influxdb_lb_down'
+    threshold = 1
     _error_template = _get_error_template('error_lb_down.txt')
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
-        status, last_time_ms, control_value = await self._get_status(metric)
+        status, last_time_ms, error_count = await self._get_status(metric)
         results = []
         if status != Status.OK:
-            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            results.append(
+                generate_status(metric.name,
+                                status,
+                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if control_value == 1:
-                results.append(generate_error(self.CONFIG_ID, self._error_template))
+            if error_count >= self.threshold:
+                results.append(
+                    generate_error_status(metric.name,
+                                          self._get_error_message(),
+                                          Status.ALERTING))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
         status = Status.OK
-        last_time_ms = None
-        control_value = 1
-        if 'series' in last_record.raw:
-            last_time, control_value, *_ = last_record.raw['series'][0]['values'][0]
-            now = datetime.utcnow().timestamp()
-            last_time_ms = _convert_time(last_time)
-            if now - last_time_ms.timestamp() > metric.timeout:
-                status = Status.FAIL
-        return status, last_time_ms, control_value
+        try:
+            last_time, count, *_ = last_record.raw['series'][0]['values'][0]
+        except (KeyError, IndexError):
+            raise InfluxQueryResultsException
+        now = datetime.utcnow().timestamp()
+        last_time_ms = _convert_time(last_time)
+        if now - last_time_ms.timestamp() > metric.timeout:
+            status = Status.FAIL
+        return status, last_time_ms, count
+
+    def _get_error_message(self):
+        return self._error_template
 
 
 class InfluxSourceLBDOWNFailCount(InfluxSource):
     """InfluxSourceLBDOWNFailCount client"""
 
     CONFIG_ID = 'influxdb_lb_down_fail_requests'
-    _error_template = _get_error_template('error_lb_down_fail_count.txt')
+    _error_template = _get_error_template('error_lb_down_fail_requests.txt')
     _fail_count: deque = None
-    _threshold_size = 5
+    threshold = 5
+    DEQUE_SIZE = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fail_count = deque([0] * self._threshold_size, self._threshold_size)
+        self._fail_count = deque([0] * self.DEQUE_SIZE, self.DEQUE_SIZE)
 
     async def get_update(self) -> dict:
         metric = self._metrics[0]
         host, status, last_time_ms = await self._get_status(self._metrics[0])
         results = []
         if status != Status.OK:
-            results.append(generate_status(metric.name, status, last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            results.append(
+                generate_status(metric.name,
+                                status,
+                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if min(self._fail_count) > self._threshold_size:  # if there are at least one error per minute for 5 minutes
-                results.append(generate_error(metric.name, self._get_error_message(host)))
-
+            if min(self._fail_count) > self.threshold:  # if there are at least 1 error per minute for 5 mins
+                results.append(
+                    generate_error_status(host,
+                                          self._get_error_message(),
+                                          Status.ALERTING))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -390,9 +406,8 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
             status = Status.FAIL
         return host, status, last_time_ms
 
-    def _get_error_message(self, host):
-        str_template = self._error_template.format(hostname=host)
-        return str_template
+    def _get_error_message(self):
+        return self._error_template.format()
 
 
 def _get_disk_info(target_value, last_time, timeout) -> List:
@@ -411,7 +426,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
     """InfluxSourceDiskStateRead client"""
 
     CONFIG_ID = 'influxdb_disk_state'
-    text_message = 'for {device} not allowed read operations'
+    warning_template = 'for {device} not allowed read operations'
     _error_template = _get_error_template('error_disk_state.txt')
     devices = ('vdb', 'vdc', 'vdd', 'sda',)
     hosts = (
@@ -433,44 +448,33 @@ class InfluxSourceDiskStateRead(InfluxSource):
         disk_statuses = await self._get_status(main_metric)
         results = []
         aux_metric = await self.get_auxiliary_metrics()
-
         for host in disk_statuses.keys():
             for device in disk_statuses[host].keys():
                 if disk_statuses[host][device][2] != Status.OK:
                     results.append(
-                        generate_disk_status(main_metric.name,
-                                             host,
-                                             device,
-                                             disk_statuses[host][device][2],
-                                             disk_statuses[host][device][1].strftime(UNIFIED_TIME_PATTERN)))
+                        generate_status(host,
+                                        disk_statuses[host][device][2],
+                                        disk_statuses[host][device][1].strftime(UNIFIED_TIME_PATTERN)))
                 else:
                     if disk_statuses[host][device][0] <= 0:
                         results.append(
-                            generate_error(main_metric.name, self.get_error_message(host, device, aux_metric)))
+                            generate_error_status(host,
+                                                  self._get_error_message(host, device, aux_metric),
+                                                  Status.ALERTING))
 
         return generate_message(self.__class__.__name__, results)
 
-    def get_error_message(self, host, device, auxiliary_metrics):
-        text_message = self.text_message.format(device=device)
-        scenario_name = self.determine_scenario_name(device)
+    def _get_error_message(self, host, device, aux_metric):
+        text_message = self.warning_template.format(device=device)
         try:
             str_template = self._error_template.format(text_message=text_message,
-                                                       hostname=host,
-                                                       scenario_name=scenario_name,
-                                                       cpu=round(auxiliary_metrics[host][0], 2),
-                                                       memory=round(auxiliary_metrics[host][1], 2))
+                                                       cpu=round(aux_metric[host][0], 2),
+                                                       memory=round(aux_metric[host][1], 2))
         except (IndexError, KeyError):
             str_template = ('No data about current cpu utilization '
                             'and current memory utilization '
-                            'for {device} on {host}'.format(device=device, host=host))
+                            f'for {device} on {host}')
         return str_template
-
-    def determine_scenario_name(self, device):
-        scenario_name = None
-        for key in self.scenario_names.keys():
-            if device in key:
-                scenario_name = self.scenario_names[key]
-        return scenario_name
 
     async def get_auxiliary_metrics(self):
         list_queries = [met.query.format(entity=met.metric_id) for met in self._metrics[1:]]
@@ -510,7 +514,7 @@ class InfluxSourceDiskStateRead(InfluxSource):
 class InfluxSourceDiskStateWrite(InfluxSourceDiskStateRead):
     """InfluxSourceDiskStateWrite client"""
 
-    text_message = 'for {device} not allowed write operations'
+    warning_template = 'for {device} not allowed write operations'
     column = 'writes'
 
 
@@ -527,9 +531,11 @@ class InfluxSourceDiskStateReadSFS(InfluxSourceDiskStateRead):
     additional_condition = 'AND type=~/read/'
 
     async def _get_status(self, metric):
-        query = metric.query.format(entity=self.entity,
-                                    column=self.column,
-                                    additional_condition=self.additional_condition)
+        query = metric.query.format(
+            entity=self.entity,
+            column=self.column,
+            additional_condition=self.additional_condition
+        )
         last_record = await self.influx_client.query(query)
         disk_statuses = {host: {} for host in self.hosts}
         for series in last_record.raw['series']:
@@ -562,7 +568,7 @@ class InfluxSourceAutoscaling(InfluxSource):
     """InfluxSourceAutoscaling Client"""
 
     CONFIG_ID = 'influxdb_autoscaling'
-    _threshold = 30
+    threshold = 30
     _error_template = _get_error_template('error_autoscaling.txt')
 
     async def get_update(self) -> dict:
@@ -570,13 +576,17 @@ class InfluxSourceAutoscaling(InfluxSource):
         response_time, last_time_ms, status = await self._get_status(main_metric)
         results = []
         if status != status.OK:
-            results.append(generate_status(main_metric.name,
-                                           status,
-                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            results.append(
+                generate_status(main_metric.name,
+                                status,
+                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if response_time is not None and response_time > self._threshold:
+            if response_time is not None and response_time > self.threshold:
                 cpu_utilization = await self._get_auxiliary_metrics(self._metrics[1])
-                results.append(generate_error(main_metric.name, self._get_error_message(cpu_utilization)))
+                results.append(
+                    generate_error_status(main_metric.name,
+                                          self._get_error_message(cpu_utilization),
+                                          Status.ALERTING))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_status(self, metric):
@@ -603,7 +613,7 @@ class InfluxSourceAutoscaling(InfluxSource):
         return cpu_utilization
 
     def _get_error_message(self, cpu_utilization):
-        return self._error_template.format(threshold=self._threshold, cpu_utilization=cpu_utilization)
+        return self._error_template.format(threshold=self.threshold, cpu_utilization=cpu_utilization)
 
 
 async def _get_aux_info(rps):
@@ -618,7 +628,7 @@ class InfluxSourceRDSTest(InfluxSource):
 
     CONFIG_ID = 'influxdb_rds_test'
     _error_template = _get_error_template('error_rds_test.txt')
-    _threshold = 1
+    threshold = 1
     rows = (
         'tup_fetched',
         'tup_returned',
@@ -629,22 +639,21 @@ class InfluxSourceRDSTest(InfluxSource):
 
     async def get_update(self) -> dict:
         main_metric = self._metrics[0]
-        last_value, last_time_ms, status = await self._get_status(main_metric)
+        previous_value, last_time_ms, status = await self._get_status(main_metric)
         results = []
         if status != status.OK:
-            results.append(generate_status(main_metric.name,
-                                           status,
-                                           last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
+            results.append(
+                generate_status(main_metric.name,
+                                status,
+                                last_time_ms.strftime(UNIFIED_TIME_PATTERN)))
         else:
-            if last_value < self._threshold:  # TODO: Sometimes it gets fake 0
+            if previous_value < self.threshold:
                 aux_metrics = await self._get_auxiliary_metrics()
                 rows_info = await _get_aux_info(aux_metrics['rps'])
                 results.append(
-                    generate_error(
-                        main_metric.name,
-                        self._get_error_message(rows_info, aux_metrics['qps'])
-                    )
-                )
+                    generate_error_status(main_metric.name,
+                                          self._get_error_message(rows_info, aux_metrics['qps']),
+                                          Status.ALERTING))
         return generate_message(self.CONFIG_ID, results)
 
     async def _get_auxiliary_metrics(self):
@@ -653,7 +662,7 @@ class InfluxSourceRDSTest(InfluxSource):
         return aux_metrics
 
     async def _get_qps(self, metric):
-        query = metric.query.format(entity=metric.metric_id, insert_row='xact_commit')
+        query = metric.query.format(entity=metric.metric_id, column='xact_commit')
         last_record = await self.influx_client.query(query)
         try:
             qps = round(last_record.raw['series'][0]['values'][0][1], 2)
@@ -664,7 +673,7 @@ class InfluxSourceRDSTest(InfluxSource):
     async def _get_rps(self, metric):
         row_values = {}
         for row in self.rows:
-            query = metric.query.format(entity=metric.metric_id, insert_row=row)
+            query = metric.query.format(entity=metric.metric_id, column=row)
             last_record = await self.influx_client.query(query)
             try:
                 row_values[row] = round(last_record.raw['series'][0]['values'][0][1], 2)
@@ -676,7 +685,8 @@ class InfluxSourceRDSTest(InfluxSource):
         query = metric.query.format(entity=metric.metric_id)
         last_record = await self.influx_client.query(query)
         try:
-            last_time, last_value = last_record.raw['series'][0]['values'][0]
+            last_time = last_record.raw['series'][0]['values'][0][0]
+            next_last_value = last_record.raw['series'][0]['values'][1][1]
         except(IndexError, KeyError):
             raise InfluxQueryResultsException
         status = Status.OK
@@ -684,7 +694,7 @@ class InfluxSourceRDSTest(InfluxSource):
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() > metric.timeout:
             status = Status.FAIL
-        return last_value, last_time_ms, status
+        return next_last_value, last_time_ms, status
 
     def _get_error_message(self, rows_info, qps):
         return self._error_template.format(rps=rows_info, qps=qps)

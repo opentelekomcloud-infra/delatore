@@ -3,9 +3,10 @@ import asyncio
 import pytest
 
 from delatore.configuration import DEFAULT_INSTANCE_CONFIG
-from delatore.sources import (AWXApiSource, InfluxSource, InfluxSourceAutoscaling, InfluxSourceLBDOWN, \
-                              InfluxSourceDiskStateRead, InfluxSourceDiskStateWrite, InfluxSourceDiskStateReadSFS,\
-                              InfluxSourceDiskStateWriteSFS, InfluxSourceRDSTest, InfluxSourceLBTiming, InfluxSourceLBDOWNFailCount,)
+from delatore.sources import (AWXApiSource, InfluxSource, InfluxSourceAutoscaling, InfluxSourceDiskStateRead,
+                              InfluxSourceDiskStateReadSFS, InfluxSourceDiskStateWrite, InfluxSourceDiskStateWriteSFS,
+                              InfluxSourceLBDOWN, InfluxSourceLBDOWNFailCount, InfluxSourceLBTiming,
+                              InfluxSourceRDSTest)
 
 
 @pytest.fixture
@@ -21,6 +22,7 @@ async def influxdb(service):
 @pytest.fixture
 async def influxdb_lb_timing(service):
     src = InfluxSourceLBTiming(service.get_client())
+    src.threshold = -1
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
@@ -81,6 +83,7 @@ async def influxdb_lb_down_fail_count(service):
 @pytest.fixture
 async def influxdb_lb_down(service):
     src = InfluxSourceLBDOWN(service.get_client())
+    src.threshold = 0
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
@@ -135,7 +138,7 @@ async def influxdb_lb_down_fail_count_error(service):
 @pytest.fixture
 async def influxdb_lb_down_fail_count_ok(service):
     src = InfluxSourceLBDOWNFailCount(service.get_client())
-    src.threshold = 10
+    src.threshold = 0
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
@@ -146,7 +149,7 @@ async def influxdb_lb_down_fail_count_ok(service):
 @pytest.fixture
 async def influxdb_autoscaling(service):
     src = InfluxSourceAutoscaling(service.get_client())
-    src.threshold = 10
+    src.threshold = -1
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
@@ -157,7 +160,7 @@ async def influxdb_autoscaling(service):
 @pytest.fixture
 async def influxdb_rds_test(service):
     src = InfluxSourceRDSTest(service.get_client())
-    src.threshold = 10
+    src.threshold = 100
     src.ignore_duplicates = False
     loop = asyncio.get_running_loop()
     loop.create_task(src.start(asyncio.Event()))
