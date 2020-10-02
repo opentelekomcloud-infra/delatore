@@ -11,7 +11,7 @@ from jsonschema import ValidationError, draft7_format_checker, validate
 
 from .awx_api import switch_awx_status
 from .base import Source
-from ..configuration import DEFAULT_INSTANCE_CONFIG
+from ..configuration import DEFAULT_INSTANCE_CONFIG, InstanceConfig
 from ..unified_json import convert_timestamp, generate_error, generate_message, generate_status
 
 LOGGER = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class HttpListenerSource(Source, ABC):
 
     # pylint: disable=abstract-method
 
-    def __init__(self, client: Client, instance_config=DEFAULT_INSTANCE_CONFIG):
+    def __init__(self, client: Client, instance_config: InstanceConfig=DEFAULT_INSTANCE_CONFIG):
         super().__init__(client,
                          ignore_duplicates=False,
                          instance_config=instance_config)
