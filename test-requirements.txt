@@ -1,5 +1,4 @@
 ansi2html
-jsonschema
 pytest
 pytest-asyncio
 pytest-cov
