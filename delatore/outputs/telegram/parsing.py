@@ -29,7 +29,7 @@ def parse_command(message) -> ParsedStatusCommand:
     try:
         _, target, *args = shlex.split(message)
         return ParsedStatusCommand(target, *args)
-    except ValueError:
-        raise CommandParsingError('Incorrect `/status` command')
-    except TypeError:
-        raise CommandParsingError('Too many arguments for `/status` command')
+    except ValueError as ex:
+        raise CommandParsingError('Incorrect `/status` command') from ex
+    except TypeError as ex:
+        raise CommandParsingError('Too many arguments for `/status` command') from ex
