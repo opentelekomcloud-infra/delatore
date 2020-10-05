@@ -18,7 +18,7 @@ aiohttp-socks = "^0.3.4"
 aiodns = "^2.0.0"
 influxdb = "=5.2.3"
 pyyaml-typed = "^0.1.0"
-jsonschema = {extras = ["format"], version = "^3.2.0"}
+jsonschema = { extras = ["format"], version = "^3.2.0" }
 rfc3339-validator = "^0.1.2"
 alerta = "^7.4.4"
 jinja2 = "^2.11.2"
@@ -32,7 +32,7 @@ pylint-quotes = "^0.2.1"
 pytest-asyncio = "^0.10.0"
 ansi2html = "^1.5.2"
 pytest-html = "^2.0.1"
-pylint-exit = {version = "^1.1.0", platform = "linux"}
+pylint-exit = { version = "^1.1.0", platform = "linux" }
 jsonschema = "^3.2.0"
 
 [build-system]
