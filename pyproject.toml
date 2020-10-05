@@ -48,13 +48,14 @@ skipsdist = True
 ignore_basepython_conflict = True
 
 [testenv]
-# basepython = python3.8
+basepython = python3.7
 usedevelop = True
 setenv =
     VIRTUAL_ENV = {envdir}
 install_command = pip install {opts} {packages}
 deps =
     -r{toxinidir}/requirements.txt
+    -r{toxinidir}/test-requirements.txt
 passenv = *
 commands =
     pytest ./tests/01_unit/

@@ -1,0 +1,10 @@
+ansi2html
+jsonschema
+pytest
+pytest-asyncio
+pytest-cov
+pytest-html
+codecov
+pylint
+pylint-quotes
+pylint-exit==1.2.0
