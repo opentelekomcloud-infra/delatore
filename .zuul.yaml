@@ -8,10 +8,12 @@
         - tox-py37
         - tox-py38
         - tox-linters:
-            python_version: 3.7
+            vars:
+              python_version: 3.7
     gate:
       jobs:
         - tox-py37
         - tox-py38
         - tox-linters:
-            python_version: 3.7
+            vars:
+              python_version: 3.7
