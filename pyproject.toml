@@ -61,6 +61,7 @@ commands =
     pytest ./tests/01_unit/
 
 [testenv:linters]
+basepython = python3.7
 whitelist_externals = bash
 commands =
     bash -c 'pylint delatore || pylint-exit $? -wfail -efail'
