@@ -236,7 +236,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    threshold = 60
+    threshold = 80
     _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
