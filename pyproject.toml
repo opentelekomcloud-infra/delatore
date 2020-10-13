@@ -39,11 +39,6 @@ jsonschema = "^3.2.0"
 requires = ["setuptools", "poetry>=1.0"]
 build-backend = "poetry.masonry.api"
 
-[tool.pytest]
-log_level = "DEBUG"
-log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-log_cli = "True"
-
 [tool.tox]
 legacy_tox_ini = """
 [tox]
