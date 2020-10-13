@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime
 
@@ -16,7 +15,7 @@ def _now():
 
 
 @pytest.fixture
-async def patched_awx_client(awx_client_data, service, stop_event):
+async def patched_awx_client(awx_client_data, service, stop_event, event_loop):
     LOGGER.debug("Creating patched AWX client...")
 
     async def _get_templates(_, filters: dict = None) -> list:
@@ -27,10 +26,7 @@ async def patched_awx_client(awx_client_data, service, stop_event):
 
     client = AWXApiSource(service.get_client(), DEFAULT_INSTANCE_CONFIG)
     client.get_templates = _get_templates
-    loop = asyncio.get_running_loop()
     client.ignore_duplicates = False
-    loop.create_task(client.start(stop_event))
-    LOGGER.debug("Started patched AWX client")
+    event_loop.create_task(client.start(stop_event))
     yield client
-    LOGGER.debug("Stopping patched AWX client")
     stop_event.set()

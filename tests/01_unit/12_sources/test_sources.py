@@ -7,7 +7,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
-async def test_produce_awx_messages(patched_awx_client, sub: Client, pub, service, awx_client_data):
+async def test_produce_awx_messages(patched_awx_client, sub: Client, pub, awx_client_data):
     data, message = awx_client_data
     LOGGER.debug("Subscribing to AWX changes")
     await sub.subscribe(patched_awx_client.TOPICS.changes)

@@ -7,24 +7,19 @@ from random import randrange
 from uuid import uuid4
 
 import pytest
-from apubsub import Service
 
 from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 from delatore.unified_json import convert_timestamp
+from tests import SERVICE
 
 LOGGER = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def service():
-    _service = Service()
-    LOGGER.info("Starting service instance")
-    _service.start()
-    yield _service
-    LOGGER.info("Stopping service instance")
-    _service.stop()
+    return SERVICE
 
 
 @pytest.fixture
@@ -38,8 +33,8 @@ def threading_stop_event():
 
 
 @pytest.fixture
-async def sub(service):
-    _sub = service.get_client()
+async def sub():
+    _sub = SERVICE.get_client()
     LOGGER.debug("Starting SUB")
     await _sub.start_consuming()
     await asyncio.sleep(.01)
@@ -48,9 +43,9 @@ async def sub(service):
 
 
 @pytest.fixture
-def pub(service):
+def pub():
     LOGGER.debug("Starting PUB")
-    client = service.get_client()
+    client = SERVICE.get_client()
     LOGGER.debug("PUB ready")
     return client
 
