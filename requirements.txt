@@ -3,7 +3,7 @@ aiogram==2.9.2
 aiohttp==3.6.2
 aiohttp-socks==0.3.9
 alerta==7.5.7
-apubsub==0.2.3
+apubsub==0.2.5
 async-timeout==3.0.1
 attrs==19.3.0
 babel==2.8.0
@@ -20,6 +20,7 @@ markupsafe==1.1.1
 mohawk==1.1.0
 multidict==4.7.6
 ocomone==0.4.3
+pbr==5.5.0
 pycares==3.1.1
 pycparser==2.20
 pyrsistent==0.16.0

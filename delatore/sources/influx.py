@@ -236,7 +236,7 @@ class InfluxSourceLBTiming(InfluxSource):
     _host_timings: Dict[str, deque] = {}
     DEQUE_SIZE = 5
 
-    threshold = 60
+    threshold = 80
     _error_template = _get_error_template('error_lb_timing.txt')
 
     async def get_update(self) -> dict:
@@ -347,8 +347,8 @@ class InfluxSourceLBDOWN(InfluxSource):
         status = Status.OK
         try:
             last_time, count, *_ = last_record.raw['series'][0]['values'][0]
-        except (KeyError, IndexError):
-            raise InfluxQueryResultsException
+        except (KeyError, IndexError) as ex:
+            raise InfluxQueryResultsException from ex
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         if now - last_time_ms.timestamp() > metric.timeout:
@@ -397,8 +397,8 @@ class InfluxSourceLBDOWNFailCount(InfluxSource):
             host = series['tags']['host']
             last_time, fail_count, *_ = series['values'][0]
             self._fail_count.append(fail_count)
-        except (KeyError, IndexError):
-            raise InfluxQueryResultsException
+        except (KeyError, IndexError) as ex:
+            raise InfluxQueryResultsException from ex
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
         status = Status.OK
@@ -594,8 +594,8 @@ class InfluxSourceAutoscaling(InfluxSource):
         last_record = await self.influx_client.query(query)
         try:
             last_time, response_time = last_record.raw['series'][0]['values'][0]
-        except(IndexError, KeyError):
-            raise InfluxQueryResultsException
+        except(IndexError, KeyError) as ex:
+            raise InfluxQueryResultsException from ex
         status = Status.OK
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)
@@ -666,8 +666,8 @@ class InfluxSourceRDSTest(InfluxSource):
         last_record = await self.influx_client.query(query)
         try:
             qps = round(last_record.raw['series'][0]['values'][0][1], 2)
-        except(IndexError, KeyError):
-            raise InfluxQueryResultsException
+        except(IndexError, KeyError) as ex:
+            raise InfluxQueryResultsException from ex
         return qps
 
     async def _get_rps(self, metric):
@@ -677,8 +677,8 @@ class InfluxSourceRDSTest(InfluxSource):
             last_record = await self.influx_client.query(query)
             try:
                 row_values[row] = round(last_record.raw['series'][0]['values'][0][1], 2)
-            except(IndexError, KeyError):
-                raise InfluxQueryResultsException
+            except(IndexError, KeyError) as ex:
+                raise InfluxQueryResultsException from ex
         return row_values
 
     async def _get_status(self, metric):
@@ -687,8 +687,8 @@ class InfluxSourceRDSTest(InfluxSource):
         try:
             last_time = last_record.raw['series'][0]['values'][0][0]
             next_last_value = last_record.raw['series'][0]['values'][1][1]
-        except(IndexError, KeyError):
-            raise InfluxQueryResultsException
+        except(IndexError, KeyError) as ex:
+            raise InfluxQueryResultsException from ex
         status = Status.OK
         now = datetime.utcnow().timestamp()
         last_time_ms = _convert_time(last_time)

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "delatore"
-version = "0.5.0"
+version = "0.5.1"
 description = "Bot for CSM jobs notifications in telegram and alerta"
 authors = ["OTC customer service monitoring team"]
 license = "Apache-2.0"
@@ -11,30 +11,67 @@ repository = "https://github.com/opentelekomcloud-infra/delatore"
 python = "^3.7"
 
 ocomone = "^0.4.3"
-apubsub = "^0.2.1"
-aiogram = "^2.5.3"
+apubsub = "^0.2.5"
+aiogram = "=2.9.2"
 aiohttp = "^3.6.2"
 aiohttp-socks = "^0.3.4"
 aiodns = "^2.0.0"
 influxdb = "=5.2.3"
 pyyaml-typed = "^0.1.0"
-jsonschema = {extras = ["format"], version = "^3.2.0"}
+jsonschema = { extras = ["format"], version = "^3.2.0" }
 rfc3339-validator = "^0.1.2"
 alerta = "^7.4.4"
 jinja2 = "^2.11.2"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.3"
+pytest = "^6.0"
 pytest-cov = "^2.8.1"
 codecov = "^2.1.7"
 pylint = "^2.4"
 pylint-quotes = "^0.2.1"
-pytest-asyncio = "^0.10.0"
+pytest-asyncio = "^0.14"
 ansi2html = "^1.5.2"
 pytest-html = "^2.0.1"
-pylint-exit = {version = "^1.1.0", platform = "linux"}
+pylint-exit = { version = "^1.1.0", platform = "linux" }
 jsonschema = "^3.2.0"
 
 [build-system]
-requires = ["poetry>=1.0"]
+requires = ["setuptools", "poetry>=1.0"]
 build-backend = "poetry.masonry.api"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+minversion = 3.1
+envlist = py37,pep8
+skipsdist = True
+ignore_basepython_conflict = True
+
+[testenv]
+usedevelop = True
+basepython = python3
+setenv =
+    VIRTUAL_ENV = {envdir}
+install_command = pip install {opts} {packages}
+deps =
+    -r{toxinidir}/requirements.txt
+    -r{toxinidir}/test-requirements.txt
+passenv = *
+commands =
+    pytest ./tests/01_unit/
+
+[testenv:linters]
+basepython = python3.7
+whitelist_externals = bash
+commands =
+    bash -c 'pylint delatore || pylint-exit $? -wfail -efail'
+
+[testenv:pep8]
+install_command = pip install {opts} {packages}
+commands =
+  flake8 {posargs}
+
+[testenv:cover]
+whitelist_externals = bash
+commands = codecov
+"""

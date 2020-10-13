@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import threading
 from asyncio.queues import Queue
@@ -6,20 +7,19 @@ from random import randrange
 from uuid import uuid4
 
 import pytest
-from apubsub import Service
 
 from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
 from delatore.unified_json import convert_timestamp
+from tests import SERVICE
+
+LOGGER = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def service():
-    _service = Service()
-    _service.start()
-    yield _service
-    _service.stop()
+    return SERVICE
 
 
 @pytest.fixture
@@ -33,16 +33,21 @@ def threading_stop_event():
 
 
 @pytest.fixture
-async def sub(service):
-    _sub = service.get_client()
+async def sub():
+    _sub = SERVICE.get_client()
+    LOGGER.debug("Starting SUB")
     await _sub.start_consuming()
     await asyncio.sleep(.01)
+    LOGGER.debug("SUB ready")
     return _sub
 
 
 @pytest.fixture
-def pub(service):
-    return service.get_client()
+def pub():
+    LOGGER.debug("Starting PUB")
+    client = SERVICE.get_client()
+    LOGGER.debug("PUB ready")
+    return client
 
 
 @pytest.fixture(scope='session')
@@ -257,9 +262,11 @@ def json2mdwn_data():
     return actual, expected
 
 
+__TIME_FORMAT_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+
 @pytest.fixture
 def time_data():
-    TIME_FORMAT_PATTERN = '%Y-%m-%dT%H:%M:%S.%fZ'
     received_date = '2005-08-09T18:31:42.123456Z'
-    actual_date = convert_timestamp(received_date, TIME_FORMAT_PATTERN)
+    actual_date = convert_timestamp(received_date, __TIME_FORMAT_PATTERN)
     return actual_date, received_date

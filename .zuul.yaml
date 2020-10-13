@@ -3,13 +3,17 @@
     merge-mode: squash-merge
     templates:
       - publish-to-pypi
-    vars:
-      python_version: 3.7
     check:
       jobs:
         - tox-py37
-        - tox-linters
+        - tox-py38
+        - tox-linters:
+            vars:
+              python_version: 3.7
     gate:
       jobs:
         - tox-py37
-        - tox-linters
+        - tox-py38
+        - tox-linters:
+            vars:
+              python_version: 3.7
