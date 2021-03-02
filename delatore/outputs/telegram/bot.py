@@ -96,7 +96,8 @@ class BotRunner:
             return await message.answer(escape_md('Invalid command. Please check command syntax'))
         source = command.target
         if source in STATUS_TOPICS:
-            return await self.client.publish(STATUS_TOPICS[source], f'{command.detailed};{command.depth}')
+            return await self.client.publish(STATUS_TOPICS[source],
+                                             f'{command.detailed};{command.depth}')
         return await message.answer(rf'Invalid source: `{escape_md(source)}`')
 
     async def alert(self, message):
@@ -119,7 +120,7 @@ class BotRunner:
         await self.client.start_consuming()
         topics = TG_CONFIG.subscriptions
         await asyncio.wait([
-            self.client.subscribe(topic) for topic in topics
+            asyncio.create_task(self.client.subscribe(topic)) for topic in topics
         ])
         LOGGER.info('Bot subscribed to topics: %s', topics)
         await self.silent('__Bot started__')
@@ -133,21 +134,25 @@ class BotRunner:
                         await self.alert(convert(data))  # check if TG response was 200
                     except Exception:  # pylint:disable=broad-except
                         LOGGER.exception('Failed to send message %s', data)
+        LOGGER.debug('Finished posting')
 
     async def _stopper(self):
         while not self.stop_event.is_set():
             await asyncio.sleep(.1)
+        LOGGER.debug('Stopper: begin')
         self.client.stop_getting()
+        await self.bot.session.close()
+        LOGGER.debug('Stopper: bot stopped')
         self.dispatcher.stop_polling()
-        await self.dispatcher.storage.close()
-        await self.dispatcher.storage.wait_closed()
-        await self.dispatcher.bot.close()
+        LOGGER.debug('Stopper: polling stopped')
         await self.dispatcher.wait_closed()
+        LOGGER.debug('Stopper: polling closed')
+        LOGGER.debug('Stopper: done')
 
     async def start(self):
         """Start bot"""
         await asyncio.wait([
-            self.start_posting(),
-            self.dispatcher.start_polling(),
-            self._stopper(),
+            asyncio.create_task(self.start_posting()),
+            asyncio.create_task(self.dispatcher.start_polling()),
+            asyncio.create_task(self._stopper()),
         ])

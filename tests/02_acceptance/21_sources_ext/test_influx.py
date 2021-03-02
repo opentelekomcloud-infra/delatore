@@ -7,6 +7,7 @@ from delatore.sources import (InfluxSource, InfluxSourceAutoscaling, InfluxSourc
                               InfluxSourceRDSTest)
 
 pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.skip(reason="out of date")
 
 
 async def test_influx_data(influxdb: InfluxSource):

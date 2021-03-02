@@ -200,7 +200,8 @@ async def bot_silent_queue():
 
 
 @pytest.fixture
-async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_queue: Queue):
+async def patched_bot(service, stop_event, bot_alert_queue: Queue,
+                      bot_silent_queue: Queue):
     bot = BotRunner(service, stop_event)
 
     async def _alert(a):
@@ -211,7 +212,9 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
 
     bot.alert = _alert
     bot.silent = _silent
-    asyncio.create_task(bot.start())
+    bot.start = bot.start_posting
+
+    bot_task = asyncio.create_task(bot.start())
     await asyncio.sleep(.5)
     yield bot
     bot.stop_event.set()
@@ -219,6 +222,7 @@ async def patched_bot(service, stop_event, bot_alert_queue: Queue, bot_silent_qu
         while not queue.empty():
             queue.get_nowait()
             queue.task_done()
+    await bot_task
 
 
 @pytest.fixture
