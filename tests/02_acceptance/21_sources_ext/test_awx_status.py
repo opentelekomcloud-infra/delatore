@@ -9,6 +9,7 @@ from tests.helpers import random_string
 
 TEMPLATE_NAME = 'csm_scenario 1.5 (native)'
 pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.skip(reason="out of date")
 
 
 async def test_get_data(awx_client):
