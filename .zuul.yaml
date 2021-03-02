@@ -5,15 +5,11 @@
       - publish-to-pypi
     check:
       jobs:
-        - tox-py37
-        - tox-py38
-        - tox-linters:
-            vars:
-              python_version: 3.7
+        - otc-tox-py37
+        - otc-tox-py38
+        - otc-tox-linters
     gate:
       jobs:
-        - tox-py37
-        - tox-py38
-        - tox-linters:
-            vars:
-              python_version: 3.7
+        - otc-tox-py37
+        - otc-tox-py38
+        - otc-tox-linters
