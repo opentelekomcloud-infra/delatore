@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 
+from delatore.configuration.dynamic import InstanceConfig
 from delatore.outputs import AlertaRunner, BotRunner
 from delatore.outputs.telegram.json2mdwn import convert
 from delatore.sources import AWXApiSource, AWXWebHookSource, InfluxSource
@@ -202,7 +203,8 @@ async def bot_silent_queue():
 @pytest.fixture
 async def patched_bot(service, stop_event, bot_alert_queue: Queue,
                       bot_silent_queue: Queue):
-    bot = BotRunner(service, stop_event)
+    patched_cfg = InstanceConfig('1:2:3', *([''] * 5))
+    bot = BotRunner(service, stop_event, patched_cfg)
 
     async def _alert(a):
         await asyncio.wait_for(bot_alert_queue.put(a), .1)

@@ -67,25 +67,13 @@ class BotRunner:
         self.config = config
         self.chat_id = config.chat_id
 
-    @property
-    def bot(self):
-        """Return bot instance, create new if missing"""
-        if _not_in_current_loop(self._bot):
-            LOGGER.warning('No bot exist. Create bot.')
-            self._bot = Bot(self.config.token,
-                            parse_mode=TG_CONFIG.params['parse_mode'],
-                            proxy=self.config.proxy)
-        return self._bot
+        self.bot = Bot(self.config.token,
+                        parse_mode=TG_CONFIG.params['parse_mode'],
+                        proxy=self.config.proxy)
 
-    @property
-    def dispatcher(self):
-        """Return dispatcher instance, create new if missing"""
-        if _not_in_current_loop(self._dispatcher):
-            LOGGER.warning('No dispatcher exist. Create dispatcher.')
-            self._dispatcher = Dispatcher(self.bot)
-            self._dispatcher.register_message_handler(handle_help_cmd, commands=[HELP])
-            self._dispatcher.register_message_handler(self.handle_status, commands=[STATUS])
-        return self._dispatcher
+        self.dispatcher = Dispatcher(self.bot)
+        self.dispatcher.register_message_handler(handle_help_cmd, commands=[HELP])
+        self.dispatcher.register_message_handler(self.handle_status, commands=[STATUS])
 
     async def handle_status(self, message: Message):
         """Handler for /status command"""
