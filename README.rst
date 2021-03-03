@@ -1,11 +1,7 @@
 Delatore
 ========
 
-| |Build Status|
-| |Zuul|
-| |codecov|
-| |PyPI version|
-| |GitHub|
+|Build Status|  |Zuul| |codecov| |PyPI version| |GitHub|
 
 Monitor and report status of customer service monitoring scenarios
 
