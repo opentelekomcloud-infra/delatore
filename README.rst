@@ -33,8 +33,8 @@ Status command for AWX source has following syntax:
 Examples:
 
 -  ``/status awx`` — return last job status for all *scenarios*
--  ``/status awx 'Buld test host'`` — return last job status for AWX
-   template which called 'Buld test host'
+-  ``/status awx 'Build test host'`` — return last job status for AWX
+   template which called 'Build test host'
 -  ``/status awx 'Scenario 1.5' 3`` — return status of last 3 jobs for
    AWX template which called ``Scenario 1.5``
 
